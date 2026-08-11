@@ -1,0 +1,23 @@
+{
+  "skill_name": "ep-review-architecture",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Describe this repository's package architecture for a new engineer. Do not suggest changes.",
+      "expected_output": "Asks once for review mode, samples documented packages, writes one evidence-backed advisory report, and omits alternative layouts.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Review our current package layout before a major refactor and propose at most two materially different alternatives with migration trade-offs.",
+      "expected_output": "Describes the current layout first, proposes no more than two evidence-mapped alternatives, includes trade-offs and migration cost, and changes no source.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Review the architecture in this repository, but its AGENTS.md has no Package Layout table.",
+      "expected_output": "Stops and directs the user to ep-setup instead of guessing package responsibilities.",
+      "files": []
+    }
+  ]
+}

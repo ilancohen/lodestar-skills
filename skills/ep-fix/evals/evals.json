@@ -1,0 +1,23 @@
+{
+  "skill_name": "ep-fix",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Apply all unstarted low-risk items from the latest audit. Do not commit anything, and stop if a fix needs a file outside its declared scope.",
+      "expected_output": "Selects low-risk non-decision items, honors each file list, verifies changes, defers scope creep, updates statuses, and creates no commits.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Work through only the requires_decision items in audit run 2026-08-10. Ask before every source change and commit approved items separately.",
+      "expected_output": "Runs an interactive decision pass, never applies a decision item without consent, verifies each approved change, and stages only declared files per commit.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Resume the interrupted audit remediation. One item is marked in_progress and has a partial diff.",
+      "expected_output": "Surfaces the in-progress item first, shows its state, asks whether to retry, trust, or revert and defer, and does not silently overwrite partial work.",
+      "files": []
+    }
+  ]
+}

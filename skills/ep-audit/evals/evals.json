@@ -1,0 +1,23 @@
+{
+  "skill_name": "ep-audit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Audit this TypeScript monorepo for our documented engineering-principles violations. Produce independently actionable findings, but do not fix source code.",
+      "expected_output": "Runs discovery and planning against AGENTS.md, writes a dated findings seam and self-contained action items, and leaves application source untouched.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Only check imports, package boundaries, and duplicated behavior this time. Pause after findings.md so I can remove false positives.",
+      "expected_output": "Confirms the selected category subset, scans only those categories, writes resumable findings, and pauses before action-item expansion.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Run ep-audit in this new repository. It has no AGENTS.md yet and Fallow is not installed.",
+      "expected_output": "Stops without scanning, explains the missing prerequisites, and directs the user to ep-setup and Fallow installation.",
+      "files": []
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "skill_name": "ep-setup",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Set up the engineering-principles skills in this pnpm monorepo. Preserve our existing deployment notes in AGENTS.md and ask me to confirm the package responsibilities before writing.",
+      "expected_output": "Discovers only required package and command facts, presents one confirmation summary, then updates only the owned sections while preserving unrelated content.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "We added a new worker package and changed from npm to Bun. Refresh the agent engineering setup without auditing the code.",
+      "expected_output": "Updates documented commands and package layout, does not run an audit or propose architectural changes, and asks before optional Fallow or linter edits.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Our package boundaries feel wrong. Run setup and redesign the monorepo into a clean architecture.",
+      "expected_output": "Limits setup to describing the current repository and redirects the architecture redesign request to ep-review-architecture.",
+      "files": []
+    }
+  ]
+}
