@@ -30,12 +30,15 @@ project — the setup skill must always substitute before writing.
       // EXAMPLE — substitute one entry per row in AGENTS.md Package Layout.
       // For rows using a glob like `apps/*/src`, prefer `autoDiscover`
       // (see fallow docs) so each app becomes its own sub-zone.
-      { "name": "<package_name>", "patterns": ["<path_glob>"] }
+      { "name": "<package_name>", "patterns": ["<path_glob>"] },
     ],
     "rules": [
       // EXAMPLE — substitute one entry per package.
-      { "from": "<package_name>", "allow": ["<package_to_right_1>", "<package_to_right_2>"] }
-    ]
+      {
+        "from": "<package_name>",
+        "allow": ["<package_to_right_1>", "<package_to_right_2>"],
+      },
+    ],
   },
 
   // Severities. Boundary violations and circular dependencies are the two
@@ -44,8 +47,8 @@ project — the setup skill must always substitute before writing.
   // not consumed by the audit — leaving them at default `warn` is fine.
   "rules": {
     "boundary-violation": "error",
-    "circular-dependencies": "error"
-  }
+    "circular-dependencies": "error",
+  },
 }
 ```
 
@@ -54,11 +57,11 @@ project — the setup skill must always substitute before writing.
 For an `AGENTS.md` that declares the four-package chain
 `web → server → core → shared` with these path globs:
 
-| Package | Path glob |
-|---|---|
-| `web` | `apps/web/src` |
+| Package  | Path glob             |
+| -------- | --------------------- |
+| `web`    | `apps/web/src`        |
 | `server` | `packages/server/src` |
-| `core` | `packages/core/src` |
+| `core`   | `packages/core/src`   |
 | `shared` | `packages/shared/src` |
 
 The setup skill writes:
@@ -68,22 +71,22 @@ The setup skill writes:
   "$schema": "./node_modules/fallow/schema.json",
   "boundaries": {
     "zones": [
-      { "name": "web",    "patterns": ["apps/web/src/**"] },
+      { "name": "web", "patterns": ["apps/web/src/**"] },
       { "name": "server", "patterns": ["packages/server/src/**"] },
-      { "name": "core",   "patterns": ["packages/core/src/**"] },
-      { "name": "shared", "patterns": ["packages/shared/src/**"] }
+      { "name": "core", "patterns": ["packages/core/src/**"] },
+      { "name": "shared", "patterns": ["packages/shared/src/**"] },
     ],
     "rules": [
-      { "from": "web",    "allow": ["server", "core", "shared"] },
+      { "from": "web", "allow": ["server", "core", "shared"] },
       { "from": "server", "allow": ["core", "shared"] },
-      { "from": "core",   "allow": ["shared"] },
-      { "from": "shared", "allow": [] }
-    ]
+      { "from": "core", "allow": ["shared"] },
+      { "from": "shared", "allow": [] },
+    ],
   },
   "rules": {
     "boundary-violation": "error",
-    "circular-dependencies": "error"
-  }
+    "circular-dependencies": "error",
+  },
 }
 ```
 
@@ -103,10 +106,15 @@ import from each other.
 After writing, run:
 
 ```bash
-node_modules/.bin/fallow list --boundaries --format json --quiet 2>/dev/null || true
+# Absolute path to the installed ep-audit skill script; --root/--out are
+# the target repository.
+node <ep-audit-skill>/scripts/fallow-contract.mjs run \
+  --root <repo> \
+  --id list-boundaries \
+  --out <repo>/.audit-fallow-boundaries.json
 ```
 
 Parse only a `kind: "list-boundaries"` envelope. Every zone must report
-`file_count > 0`. An `error: true` envelope or a zero-file zone means the
+`file_count > 0`. A contract failure or a zero-file zone means the
 path glob in the Package Layout table doesn't match the on-disk layout —
-fix the table and re-run setup.
+fix the table and re-run setup. Delete the temp JSON after reading it.

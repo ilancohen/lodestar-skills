@@ -10,12 +10,14 @@ to complexity hotspots and confirms per-symbol reference traces in D.
 ## What counts as a violation
 
 ### A. File or class with multiple unrelated responsibilities — semantic
+
 A module whose responsibility you can't name in one sentence without "and",
 or whose methods cluster into two or more unrelated groups. Example:
-`UserService` that both handles auth flow *and* renders email templates.
+`UserService` that both handles auth flow _and_ renders email templates.
 
 When checking this, compare the file's apparent responsibility against
 the **package's** Responsibility (AGENTS.md `## Package Layout`):
+
 - If the file does something its package isn't supposed to own, that's a
   responsibility-misplacement finding — flag it.
 - If the file does two things and both fit the package's responsibility,
@@ -25,6 +27,7 @@ the **package's** Responsibility (AGENTS.md `## Package Layout`):
 Risk: high. Splitting a misnamed module touches many call sites.
 
 ### B. Boolean flag parameters — mechanical
+
 Functions exposing two or more `boolean` parameters, or call sites passing
 adjacent boolean literals (`process(x, true, false, true)`). Almost always
 a sign of conflated responsibilities; usually fixed by splitting the
@@ -33,12 +36,14 @@ function or accepting an options object with named fields.
 Risk: medium.
 
 ### C. Optional parameter with no caller — mechanical
+
 An exported function declares an optional parameter (`(x: T, opts?: O)`)
 that no current caller passes. Speculative API surface — YAGNI.
 
 Risk: low.
 
 ### D. Single-call-site export — mechanical (Rule of Three)
+
 An exported symbol from a package is imported from exactly **one** site
 outside the package. This is a YAGNI / Rule-of-Three candidate: the
 abstraction isn't proven yet. Two call sites = note for review. Three+ =
@@ -57,11 +62,11 @@ table in `AGENTS.md` (see references/discover.md). Substitute before running.
 **Preferred (with fallow seed):** narrow the LLM-driven walk to files
 flagged as complexity hotspots.
 
-1. From `.audit-fallow-seed.json`, take `health.findings[]` and collect
-   unique `path` values. Every entry already exceeded a configured
-   complexity or unit-size threshold. Use `health.targets[]` from the same
-   combined envelope to prioritize high-confidence refactoring targets when
-   this set is large.
+1. From `.audit-fallow-seed.json`, collect candidate paths:
+   - Every `health.findings[].path` (functions already over threshold).
+   - When that set is large or empty, rank `health.file_scores[]` by
+     `total_cyclomatic` then `total_cognitive` and take the top paths.
+   Prefer `file_scores` rows with `crap_above_threshold > 0` when present.
 
 2. For each file in that set, summarize its responsibility in one
    sentence. Compare to the owning package's Responsibility column in
@@ -114,9 +119,9 @@ candidates with Fallow's trace envelope (`kind: "trace"`).
 #          --include="*.ts" --include="*.tsx" \
 #          | rg "\b<symbol>\b" | wc -l
 #   3. For a symbol with exactly one external call site, confirm with:
-#        "$FALLOW_BIN" dead-code --trace <path>:<symbol> \
-#          --format json --quiet 2>/dev/null || true
-#      Parse only a `kind: "trace"` envelope.
+#        node scripts/fallow-contract.mjs run --root <repo> \
+#          --id dead-code-trace --trace <path>:<export>
+#      Stdout is the validated `kind: "trace"` envelope.
 #   4. Confirmed symbols with exactly one external call site → flag.
 #      Symbols with zero external call sites → already covered by
 #      `imports.md` #5 (over-broad index).

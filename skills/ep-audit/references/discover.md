@@ -27,10 +27,12 @@ string to pattern-match.
 
 ## Fallow seed
 
-Read `principles/fallow-seed.md` once. Fallow is required. Cache JSON in
-memory or write `.audit-fallow-seed.json` at the repo root and delete it
-at the end of Phase 1. If Fallow is missing or the envelope is invalid,
-**stop** before writing findings.
+Read `principles/fallow-seed.md` once. Fallow is required. Run
+`scripts/fallow-contract.mjs` to resolve the binary and validate every
+envelope before writing findings. Cache JSON in memory or write
+`.audit-fallow-seed.json` at the repo root and delete it at the end of
+Phase 1. If Fallow is missing, out of the supported range, or the
+envelope fails the contract, **stop** before writing findings.
 
 The seed never modifies source.
 

@@ -7,8 +7,8 @@ or LLM to read the cited code and decide on the right shape; mark
 `requires_decision: true` by default unless the duplication is exact and
 trivial to extract.
 
-Scope note: `dry` covers duplicated *behaviour* (logic, functions, code
-blocks). Duplicated *facts* (constants, schemas, config values) belong
+Scope note: `dry` covers duplicated _behaviour_ (logic, functions, code
+blocks). Duplicated _facts_ (constants, schemas, config values) belong
 in `ssot` — see `principles/ssot.md`. The two failure modes differ:
 `dry` violations cause churn (the same change made twice); `ssot`
 violations cause drift (one copy updated, the other lags silently).
@@ -19,12 +19,14 @@ with one invocation. The grep heuristic below seeds the semantic pass for B.
 ## What counts as a violation
 
 ### A. Exact or near-exact duplication — mechanical-leaning
+
 Two or more blocks of ≥ 8 lines that are byte-identical or differ only in
 identifier names. Classic copy-paste.
 
 Risk: low-to-medium. Often safe to extract.
 
 ### B. Structurally similar code — semantic
+
 Two or more functions / modules that solve the same problem with different
 identifiers and surface details — same control flow, same shape, same
 domain concept. Example: `formatUserAddress`, `formatBillingAddress`,
@@ -34,6 +36,7 @@ Risk: medium. The "missing abstraction" may genuinely have three legitimate
 shapes; abstracting prematurely is worse than the duplication.
 
 ### C. Wide-diff smell — process-level (not source-detectable)
+
 CLAUDE.md treats a change that touches 6+ unrelated files for one logical
 change as a missing-abstraction signal. This is a **commit-level** check,
 not a code-state check. Surface it as a single advisory action item that
@@ -56,12 +59,14 @@ If `.audit-fallow-seed.json` exists from Discover, parse `dupes.clone_groups[]`:
   renamed-literal clones the default mild mode misses):
 
   ```bash
-  "$FALLOW_BIN" dupes --mode semantic --format json --quiet \
-    > .audit-fallow-dupes-semantic.json 2>/dev/null || true
+  node scripts/fallow-contract.mjs run \
+    --root <repo> \
+    --id dupes-semantic \
+    --out <repo>/.audit-fallow-dupes-semantic.json
   ```
 
-  Parse only a `kind: "dupes"`, `schema_version: 7` envelope; an
-  `error: true` envelope stops the audit. Each `clone_groups[]` entry from
+  Parse only a `kind: "dupes"`, `schema_version: 7` envelope; a contract
+  failure stops the audit. Each `clone_groups[]` entry from
   this run that is **not** also present in the mild-mode output is a B-style
   finding. Match groups by `fingerprint`. Confirm by reading the bodies
   before flagging — semantic mode has more false positives than mild. Delete
@@ -116,17 +121,17 @@ the message describes one logical change.
   - Sites in multiple packages → extract to whichever package the call
     sites can both reach per the dependency direction (typically the
     shared / types package nominated in AGENTS.md `## Package Layout`).
-  Replace each site with a call. Run `<typecheck>` and `<test>`.
+    Replace each site with a call. Run `<typecheck>` and `<test>`.
 
 - **B** — propose the abstraction with:
   1. The proposed signature.
   2. The proposed location (which package, justified by call-site reach).
   3. How each existing site maps to the new abstraction.
   4. Anything that doesn't fit (so the reader can decide whether the fit
-     is actually clean enough — three sites *are* what the Rule of Three
+     is actually clean enough — three sites _are_ what the Rule of Three
      prescribes; one or two is too soon).
-  Mark `requires_decision: true` unless mapping #3 is 1-to-1 with no
-  divergent paths.
+     Mark `requires_decision: true` unless mapping #3 is 1-to-1 with no
+     divergent paths.
 
 - **C** — describe the pattern (recent commit X touched files A, B, C, D…
   for change Y; a missing abstraction is likely). Do not propose a fix —

@@ -1,0 +1,1 @@
+{"kind":"combined","schema_version":7,"version":"3.14.0","check":{"unused_exports":[],"unused_dependencies":[],"unresolved_imports":[],"circular_dependencies":[],"boundary_violations":[],"entry_points":{"total":1}},"dupes":{"clone_groups":[]},"health":{"findings":[],"file_scores":[{"path":"src/index.ts","total_cyclomatic":1,"total_cognitive":1,"crap_above_threshold":0}]}}

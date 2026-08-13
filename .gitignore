@@ -7,3 +7,4 @@ coverage/
 *.log
 .ep-skills-backup/
 evals/results/
+.fallow/

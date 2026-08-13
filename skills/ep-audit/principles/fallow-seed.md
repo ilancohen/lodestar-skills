@@ -15,43 +15,37 @@ Run the seed **once** at the start of Discover, after
 package-set resolution and before iterating categories. Cache the JSON in memory; each category sub-doc consumes the
 relevant slice.
 
-```bash
-# Resolve a pinned local install first, then a global install.
-FALLOW_BIN="$(node scripts/resolve-bin.mjs fallow --root <repo> --print-path)"
-# Exits 2 if missing. Stop immediately:
-#   fallow is required for this audit.
-#   Install the latest fallow as a root devDependency.
-#   Then re-run.
+Supported Fallow range and schema live in
+`scripts/fallow-contract.json`. Resolve the binary, run the combined seed,
+and validate the envelope **before** any findings are written. Do not use
+`|| true` — exit 0/1 are success; exit 2 and contract failures stop the
+audit.
 
-# Run dead-code + duplication + health in one pass. Exit 1 means findings;
-# exit 2 writes an ErrorOutput JSON envelope that validation catches.
-"$FALLOW_BIN" --format json --quiet > .audit-fallow-seed.json 2>/dev/null || true
+```bash
+# Scripts live under the installed ep-audit skill. --out must be under <repo>.
+node scripts/fallow-contract.mjs resolve-bin --root <repo>
+node scripts/fallow-contract.mjs run \
+  --root <repo> \
+  --id combined \
+  --out <repo>/.audit-fallow-seed.json
 ```
 
 ```powershell
-$FALLOW_BIN = (node scripts/resolve-bin.mjs fallow --root <repo> --print-path).Trim()
-if ($LASTEXITCODE -ne 0) { throw "fallow is required for this audit" }
-& $FALLOW_BIN --format json --quiet | node -e "require('node:fs').writeFileSync('.audit-fallow-seed.json', require('node:fs').readFileSync(0))"
+node scripts/fallow-contract.mjs resolve-bin --root <repo>
+if ($LASTEXITCODE -ne 0) { throw "fallow contract failed" }
+node scripts/fallow-contract.mjs run --root <repo> --id combined --out <repo>/.audit-fallow-seed.json
+if ($LASTEXITCODE -ne 0) { throw "fallow contract failed" }
 ```
 
-```bash
-# Fallow v3 JSON is a typed envelope. Fail on runtime errors, an unexpected
-# command shape, or a breaking output-schema version.
-node -e '
-  const d = JSON.parse(require("node:fs").readFileSync(".audit-fallow-seed.json", "utf8"));
-  if (d.error === true) throw new Error(d.message);
-  if (d.kind !== "combined") throw new Error(`Expected kind=combined, got ${d.kind}`);
-  if (d.schema_version !== 7) throw new Error(`Expected schema_version=7, got ${d.schema_version}`);
-'
-```
+On failure the script prints one remediation message with the installed
+version, supported range, received schema/kind, and the exact
+`npm install --save-dev fallow@<current>` command. Stop and report that
+message — do not create or change findings.
 
 `.audit-fallow-seed.json` is a temporary working file. Delete it after
 Phase 1 completes; never commit it. (The audit skill is read-only outside
 `docs/audit/`, but the seed is allowed in the repo root because it's
 ephemeral and reproducible.)
-
-If validation fails, or `check.entry_points.total` is zero, stop and report
-the error to the user — do not proceed without a successful seed run.
 
 ---
 
@@ -67,8 +61,8 @@ the error to the user — do not proceed without a successful seed run.
 | `check.unresolved_imports[]`                        | `imports`          | `unresolved-import`       | Fallow-only subtype. Almost always a typo or missing dependency.                                                                                                                       |
 | `dupes.clone_groups[]`                              | `dry`              | `exact-duplication`       | Primary detector for `dry.A`. Each `instances[]` item provides `file`, `start_line`, and `end_line`.                                                                                   |
 | `dupes.clone_groups[]` (run with `--mode semantic`) | `dry`              | `structural-duplication`  | Seeds `dry.B`. Catches renamed-variable and renamed-literal clones the mild mode misses. Confirm with eyes-on-code before flagging — semantic mode has more false positives than mild. |
-| `health.findings[]`                                 | `soc-yagni`        | `responsibility-overload` | Every entry exceeded a configured complexity or unit-size threshold. Limit the semantic file walk to these parent files.                                                               |
-| `health.targets[]`                                  | `soc-yagni`        | `responsibility-overload` | Ranked refactoring targets included in the combined seed. Prefer high-confidence targets when the findings set is large.                                                               |
+| `health.findings[]`                                 | `soc-yagni`        | `responsibility-overload` | Function-level complexity / size hits. Each entry has at least `path`. Limit the semantic file walk to those parent files.                                                              |
+| `health.file_scores[]`                              | `soc-yagni`        | `responsibility-overload` | File-level ranking when findings are sparse. Sort by `total_cyclomatic` then `total_cognitive`; prefer rows with `crap_above_threshold > 0`.                                           |
 
 Fields not listed above are not consumed. The harness does not act on
 `unused-types`, `unused-enum-members`, or `unused-class-members` because
@@ -102,12 +96,13 @@ case, `imports.md` #6 falls back to its grep heuristic.
 To verify the boundary config matches what the audit expects, run:
 
 ```bash
-"$FALLOW_BIN" list --boundaries --format json --quiet 2>/dev/null || true
+node scripts/fallow-contract.mjs run --root <repo> --id list-boundaries --out <repo>/.audit-fallow-boundaries.json
 ```
 
 The output should list one zone per row in the Package Layout table, with
 file counts > 0 for every zone the repo actually has. A zone reporting
-zero files almost always means the path glob is wrong.
+zero files almost always means the path glob is wrong. Delete the temp
+JSON after reading it.
 
 ---
 

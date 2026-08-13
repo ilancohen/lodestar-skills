@@ -7,7 +7,7 @@ description: >-
   testability, or styling violations. Discovery only; never modifies
   application source. Restartable from findings.md.
 license: MIT
-compatibility: Requires git, a POSIX-compatible shell, Node.js, and Fallow installed in the target project or available on PATH. Designed for JavaScript/TypeScript repositories.
+compatibility: Requires git, a POSIX-compatible shell, Node.js, and Fallow 3.10.0–3.14.0 (schema 7) installed in the target project or available on PATH. Designed for JavaScript/TypeScript repositories.
 metadata:
   author: Ilan Cohen
   version: "0.1.0"
@@ -83,17 +83,17 @@ Read `.agents/skills/README.md` for project-specific principles. Read
 Read the category sub-doc before scanning that category. Read
 `principles/fallow-seed.md` once before Discover.
 
-| Category | Sub-doc | Risk | Detection style |
-|---|---|---|---|
-| `imports` | `principles/imports.md` | low | mechanical (Fallow preferred) |
-| `types` | `principles/types.md` | low | mechanical |
-| `boundaries` | `principles/boundaries.md` | medium–high | mechanical |
-| `errors` | `principles/errors.md` | high | mechanical |
-| `testability` | `principles/testability.md` | high | mechanical |
-| `soc-yagni` | `principles/soc-yagni.md` | low–high | mixed |
-| `dry` | `principles/dry.md` | low–medium | mixed |
-| `ssot` | `principles/ssot.md` | low–medium | mechanical |
-| `styling` | `principles/styling.md` | low–medium | mechanical |
+| Category      | Sub-doc                     | Risk        | Detection style               |
+| ------------- | --------------------------- | ----------- | ----------------------------- |
+| `imports`     | `principles/imports.md`     | low         | mechanical (Fallow preferred) |
+| `types`       | `principles/types.md`       | low         | mechanical                    |
+| `boundaries`  | `principles/boundaries.md`  | medium–high | mechanical                    |
+| `errors`      | `principles/errors.md`      | high        | mechanical                    |
+| `testability` | `principles/testability.md` | high        | mechanical                    |
+| `soc-yagni`   | `principles/soc-yagni.md`   | low–high    | mixed                         |
+| `dry`         | `principles/dry.md`         | low–medium  | mixed                         |
+| `ssot`        | `principles/ssot.md`        | low–medium  | mechanical                    |
+| `styling`     | `principles/styling.md`     | low–medium  | mechanical                    |
 
 Known blind spots (copy into `INDEX.md`): coverage floor unless `<test>`
 emits coverage; wide-diff DRY as `dry.C` advisory only; Rule of Three
@@ -134,7 +134,7 @@ Follow [references/discover.md](references/discover.md). Summary:
 3. Mechanical pass in category order, then semantic pass.
 4. Merge with `node scripts/audit-state.mjs merge-findings`.
 5. Validate with `node scripts/audit-state.mjs validate-output --path
-   docs/audit/<RUN_ID>/findings.md`.
+docs/audit/<RUN_ID>/findings.md`.
 6. Checkpoint a category as complete only after it is finished for every
    package, including the semantic pass for `soc-yagni` and `dry`. During
    a package loop use `checkpoint --status partial --package <name>`.
@@ -150,7 +150,7 @@ are `docs/audit/<RUN_ID>/` and the transient `.audit-fallow-seed.json`
 Follow [references/plan.md](references/plan.md). Summary:
 
 1. Recover with `node scripts/audit-state.mjs recover --run-dir
-   docs/audit/<RUN_ID>`.
+docs/audit/<RUN_ID>`.
 2. Group findings by `scope_unit`. Write
    `docs/audit/<RUN_ID>/<NNN>-<category>-<slug>.md` from
    `templates/action-item.md`. Skip files that already exist.
@@ -158,7 +158,7 @@ Follow [references/plan.md](references/plan.md). Summary:
 4. Write `INDEX.md` from `templates/index.md`.
 5. Align category order with `ep-fix`:
    `imports → types → ssot → soc-yagni → boundaries → errors →
-   testability → dry → styling`.
+testability → dry → styling`.
 
 ---
 

@@ -149,16 +149,16 @@ generated action-item title cleaner.
   (usually the shared/types package), or invert the dependency so the
   importer becomes the imported. Often `requires_decision: true`.
 - #7 — delete the file. Before deleting, run
-  `"$FALLOW_BIN" dead-code --trace-file <path> --format json --quiet
-2>/dev/null || true` to confirm fallow
+  `node scripts/fallow-contract.mjs run --root <repo> --id dead-code-trace-file --file <path>`
+  (stdout is the validated `kind: "trace"` envelope) to confirm fallow
   sees no inbound edges (sometimes dynamic imports, framework conventions,
   or build-only scripts reach the file in ways the static graph misses —
   if a plugin or convention is responsible, configure it in
   `.fallowrc.json` rather than deleting).
 - #8 — remove the entry from `package.json` `dependencies` /
   `devDependencies`. Before removing, run
-  `"$FALLOW_BIN" dead-code --trace-dependency <package> --format json --quiet
-2>/dev/null || true` to confirm.
+  `node scripts/fallow-contract.mjs run --root <repo> --id dead-code-trace-dependency --dependency <package>`
+  (stdout is the validated envelope) to confirm.
   If the dependency is used only by a script in `package.json` or a CI
   config, it's a fallow false positive — leave it.
 - #9 — fix the import: correct the typo, install the missing dependency,
@@ -178,7 +178,7 @@ generated action-item title cleaner.
 
 - `<typecheck>` passes.
 - `pnpm check:deps` passes (if configured).
-- `"$FALLOW_BIN" dead-code --format json --quiet 2>/dev/null || true` reports
+- `node scripts/fallow-contract.mjs run --root <repo> --id combined` reports
   no occurrence of the named
   finding for this action item.
 - No other diff than the lines named in the action item.

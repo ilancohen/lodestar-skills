@@ -185,16 +185,19 @@ heuristic grep for direction violations.
 
 Decide whether to write it:
 
-1. Prefer the version pinned in the project, then check `PATH`:
+1. Prefer the version pinned in the project, then check `PATH`, via the
+   ep-audit contract script (absolute path to
+   `ep-audit/scripts/fallow-contract.mjs`):
    ```bash
-   node scripts/resolve-bin.mjs fallow --root <repo>
+   node <ep-audit-skill>/scripts/fallow-contract.mjs resolve-bin --root <repo>
    ```
    ```powershell
-   node scripts/resolve-bin.mjs fallow --root <repo>
+   node <ep-audit-skill>/scripts/fallow-contract.mjs resolve-bin --root <repo>
    ```
-2. If fallow is not found, tell the user: "fallow is required for ep-audit.
-   Install the latest version as a devDependency at the workspace root.
-   Write `.fallowrc.json` anyway so it's ready when fallow is installed?"
+2. If fallow is not found or outside the supported range, tell the user:
+   "fallow 3.10.0–3.14.0 (schema 7) is required for ep-audit. Install with
+   `npm install --save-dev fallow@3.14.0`. Write `.fallowrc.json` anyway so
+   it's ready when fallow is installed?"
 3. If `.fallowrc.json` already exists, ask: "merge boundary section / leave
    alone / overwrite?"
 
@@ -218,15 +221,19 @@ the project's `.gitignore` if it exists and doesn't already cover them
 (`.audit-fallow-seed.json` is the audit's transient seed cache; `.fallow/`
 is fallow's own cache directory).
 
-After writing, recommend the user verify with:
+After writing, verify with the ep-audit contract script (absolute path to
+the installed `ep-audit/scripts/fallow-contract.mjs`):
 
 ```bash
-node_modules/.bin/fallow list --boundaries --format json --quiet 2>/dev/null || true
+node <ep-audit-skill>/scripts/fallow-contract.mjs run \
+  --root <repo> \
+  --id list-boundaries \
+  --out <repo>/.audit-fallow-boundaries.json
 ```
 
-Parse only a `kind: "list-boundaries"` envelope. Every zone should report
-`file_count > 0`. An `error: true` envelope or a zero-file zone means the
-config or Package Layout glob must be fixed before continuing.
+Every zone should report `file_count > 0`. A contract failure or a
+zero-file zone means the config or Package Layout glob must be fixed
+before continuing. Delete the temp JSON after reading it.
 
 ## Step 4.6 — (Optional) Linting rules for higher-accuracy audit findings
 

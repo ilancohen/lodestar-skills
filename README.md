@@ -20,7 +20,10 @@ and improving software architecture:
 - A POSIX-compatible shell for remaining skill command recipes.
   PowerShell equivalents exist for suite validation scripts; skills do
   not claim Windows support until the CI matrix is green.
-- [Fallow](https://docs.fallow.tools) in the target repository for `ep-audit`.
+- [Fallow](https://docs.fallow.tools) **3.10.0–3.14.0** (schema 7) in the
+  target repository for `ep-audit`. Pin with
+  `npm install --save-dev fallow@3.14.0`. Fallow 3.15+ emits schema 10 and
+  is outside the tested contract.
 
 ## Install
 
