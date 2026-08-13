@@ -115,8 +115,6 @@ pnpm test
 pnpm dlx skills add . --list
 ```
 
-Or `scripts/smoke.ps1`.
-
 ## Status
 
 Initial standalone extraction: `0.1.0`.

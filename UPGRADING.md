@@ -13,9 +13,7 @@ pnpm dlx github:ilancohen/engineering-principles-skills
 ```
 
 Enter accepts detected agents and all four skills. That is the normal
-install path. Copying or symlinking `skills/` into a repository is a
-legacy path; use `node scripts/migrate_vendored.mjs` instead of copying
-again.
+install path.
 
 Scripts that must not prompt:
 
@@ -53,22 +51,3 @@ pnpm dlx skills add ilancohen/engineering-principles-skills@v0.1.0 --skill '*' -
 
 Confirm installed metadata reports the rolled-back version in each
 `SKILL.md` `metadata.version` field.
-
-## Legacy vendored copies
-
-If a repository already copied these skills into `.agents/skills/`,
-`.claude/skills/`, or `.cursor/skills/`:
-
-```bash
-node scripts/migrate_vendored.mjs --target /path/to/repo
-node scripts/migrate_vendored.mjs --target /path/to/repo --check
-node scripts/migrate_vendored.mjs --target /path/to/repo --apply
-```
-
-`--apply` is required to write. Local checksum changes are never
-overwritten unless you also pass `--force`. Extra files in a copy are
-never deleted; remove them yourself, then re-run `--check`. A backup is
-written under `.ep-skills-backup/` first. The marker records
-`source_version` and the source git tag from `git describe` (override
-with `--tag`). Reruns are idempotent when the copy already matches this
-package version.

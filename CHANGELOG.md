@@ -9,9 +9,8 @@ All notable changes to this project will be documented here.
 - Standalone package for `ep-setup`, `ep-audit`, `ep-fix`, and
   `ep-review-architecture`.
 - Portable Agent Plugin and Claude, Codex, and Gemini package manifests.
-- Implementation roadmap, package validation, CI, and starter eval sets.
-- Canonical `VERSION` source, install/upgrade docs, and a dry-run-first
-  migration tool for legacy vendored copies.
+- Implementation roadmap, package validation, and CI.
+- Canonical `VERSION` source and install/upgrade docs.
 - Installer TUI (`@clack/prompts`) pre-selects detected agents and all
   four skills; Enter accepts the defaults. `pnpm dlx github:ilancohen/engineering-principles-skills`.
 
