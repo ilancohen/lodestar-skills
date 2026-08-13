@@ -66,33 +66,8 @@ export function which(name, root = process.cwd()) {
   return null;
 }
 
-export function atomicWrite(filePath, contents) {
-  const dir = path.dirname(filePath);
-  fs.mkdirSync(dir, { recursive: true });
-  const temp = path.join(
-    dir,
-    `.${path.basename(filePath)}.${process.pid}.${Date.now()}.tmp`,
-  );
-  fs.writeFileSync(temp, contents, { encoding: "utf8" });
-  try {
-    fs.renameSync(temp, filePath);
-  } catch (error) {
-    if (process.platform === "win32" && fs.existsSync(filePath)) {
-      fs.rmSync(filePath);
-      fs.renameSync(temp, filePath);
-    } else {
-      fs.rmSync(temp, { force: true });
-      throw error;
-    }
-  }
-}
-
 export function tempDir(prefix = "ep-skills") {
   return fs.mkdtempSync(path.join(os.tmpdir(), `${prefix}-`));
-}
-
-export function utcDate(now = new Date()) {
-  return now.toISOString().slice(0, 10);
 }
 
 export function printJson(value) {

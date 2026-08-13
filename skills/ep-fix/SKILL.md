@@ -27,6 +27,12 @@ This skill is the executive counterpart to the rest of the harness:
 | `ep-review-architecture`| Advisory-global — one report on the layout     | No (writes `docs/architecture-review/`) |
 | `ep-fix` (this)         | Executive — applies the audit's fixes          | **Yes** |
 
+Scripts live beside this `SKILL.md` under `scripts/`. Keep the process
+cwd as the target repository. Invoke scripts with an absolute path to
+that file (or `node <skill-dir>/scripts/<name>.mjs`). `--file` and
+`--run-dir` are paths in the target repository. Use them for status
+writes and file moves instead of POSIX `mv`.
+
 ---
 
 ## Inputs
@@ -190,9 +196,12 @@ what was asked.
 
 Then **move** the file into the `done/` subfolder:
 
+```bash
+node scripts/action-state.mjs move-done --file docs/audit/<RUN_ID>/<NNN>-<category>-<slug>.md --run-dir docs/audit/<RUN_ID>
 ```
-mv docs/audit/<RUN_ID>/<NNN>-<category>-<slug>.md \
-   docs/audit/<RUN_ID>/done/<NNN>-<category>-<slug>.md
+
+```powershell
+node scripts/action-state.mjs move-done --file docs/audit/<RUN_ID>/<NNN>-<category>-<slug>.md --run-dir docs/audit/<RUN_ID>
 ```
 
 Create `docs/audit/<RUN_ID>/done/` if it does not yet exist. This
@@ -266,8 +275,12 @@ After printing the report, check whether the run root
 (only `INDEX.md`, the `done/` subfolder, and possibly other
 non-action-item files). If so, the run is fully resolved:
 
+```bash
+node scripts/action-state.mjs archive-run --run-dir docs/audit/<RUN_ID>
 ```
-mv docs/audit/<RUN_ID>/ docs/audit/done/<RUN_ID>/
+
+```powershell
+node scripts/action-state.mjs archive-run --run-dir docs/audit/<RUN_ID>
 ```
 
 Create `docs/audit/done/` if it does not exist. Print:

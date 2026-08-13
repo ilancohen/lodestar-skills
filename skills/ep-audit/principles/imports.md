@@ -82,15 +82,13 @@ re-exported; they're outside this category's scope.
 ### Fallback: greps
 
 ```bash
-# 1 — cross-package /src/ imports (always grep — not a fallow concept)
-grep -rn "from '<alias_prefix>[^']*\/src\/" <all_pkg_roots> --include="*.ts" --include="*.tsx"
+# 1 — cross-package /src/ imports (always scan — not a fallow concept)
+node scripts/source-scan.mjs --recipe cross-package-src --alias-prefix '<alias_prefix>' --root <pkg_root>
+# Repeat --root for each package path. Do not split paths on spaces.
 #   <alias_prefix> = the common prefix of every alias (e.g. '@repo/').
-#   If the repo doesn't use a single prefix, run one grep per alias.
 
-# 4 — barrel re-exports (always grep — not a fallow concept)
-#   For each <pkg_root>, look at index.ts files immediately under it
-#   (e.g. <pkg_root>/index.ts).
-grep -rn "^export \* from" <all_pkg_roots> --include="index.ts" 2>/dev/null
+# 4 — barrel re-exports (always scan — not a fallow concept)
+node scripts/source-scan.mjs --recipe barrel-reexport --root <pkg_root>
 
 # 5 — exports with no external consumer (per package P) — grep fallback
 #   List symbols in <pkg_root>/index.ts; grep every other root for each symbol.

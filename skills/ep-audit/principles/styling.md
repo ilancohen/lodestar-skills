@@ -72,7 +72,7 @@ domain packages.
 #   - All properties literal strings/numbers → A finding (static inline).
 #   - Mix of dynamic + static properties → A finding for the static ones only.
 #   - All properties computed from variables → no finding (genuinely dynamic).
-grep -rEn "style=\{\{" <pkg_root> --include="*.tsx" --include="*.jsx"
+node scripts/source-scan.mjs --recipe inline-style --root <pkg_root>
 ```
 
 False positives to drop:

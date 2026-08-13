@@ -36,14 +36,20 @@ linter already catches definitively.
 
 ```bash
 # Detect which linter is configured (check devDependencies / config files)
-# If ESLint: cache output for #1 and #3
-<lint> --format json --max-warnings=999 2>/dev/null > /tmp/.audit-lint-types.json
+# Cache JSON in the platform temp directory (Node os.tmpdir()).
+LINT_DIR="$(node -e "process.stdout.write(require('node:os').tmpdir())")"
+<lint> --format json --max-warnings=999 > "$LINT_DIR/.audit-lint-types.json"
 
 # If Biome: use its JSON reporter instead
-# biome check --reporter=json 2>/dev/null > /tmp/.audit-lint-types.json
+# biome check --reporter=json > "$LINT_DIR/.audit-lint-types.json"
 ```
 
-Delete `/tmp/.audit-lint-types.json` at the end of Phase 1. This is a
+```powershell
+$LINT_DIR = node -e "process.stdout.write(require('node:os').tmpdir())"
+<lint> --format json --max-warnings=999 | node -e "require('node:fs').writeFileSync(process.argv[1], require('node:fs').readFileSync(0))" "$LINT_DIR/.audit-lint-types.json"
+```
+
+Delete the cached lint file at the end of Phase 1. This is a
 read-only probe — do not install linter packages or modify config.
 
 From the cached output, extract violations for:
@@ -66,9 +72,7 @@ grep -rEn "^(export )?(interface|type) [A-Z]" <all_pkg_roots> --include="*.ts"
 #   Look for interfaces with field overlap. Often surfaces during step 1.
 
 # 3 — unguarded any (skip if linter probe already found these)
-grep -rEn ": any\b|as any\b|<any>" <all_pkg_roots> \
-  --include="*.ts" --include="*.tsx" \
-  | grep -v "\.spec\.\|\.test\.\|eslint-disable"
+node scripts/source-scan.mjs --recipe explicit-any --root <pkg_root>
 ```
 
 To identify the "shared types home" for the purpose of #1: look at

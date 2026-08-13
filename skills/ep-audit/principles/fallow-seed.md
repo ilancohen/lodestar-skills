@@ -17,14 +17,8 @@ relevant slice.
 
 ```bash
 # Resolve a pinned local install first, then a global install.
-FALLOW_BIN=""
-if [ -x node_modules/.bin/fallow ]; then
-  FALLOW_BIN="node_modules/.bin/fallow"
-elif command -v fallow >/dev/null 2>&1; then
-  FALLOW_BIN="$(command -v fallow)"
-fi
-
-# If FALLOW_BIN is empty, stop immediately:
+FALLOW_BIN="$(node scripts/resolve-bin.mjs fallow --root <repo> --print-path)"
+# Exits 2 if missing. Stop immediately:
 #   fallow is required for this audit.
 #   Install the latest fallow as a root devDependency.
 #   Then re-run.
@@ -32,7 +26,15 @@ fi
 # Run dead-code + duplication + health in one pass. Exit 1 means findings;
 # exit 2 writes an ErrorOutput JSON envelope that validation catches.
 "$FALLOW_BIN" --format json --quiet > .audit-fallow-seed.json 2>/dev/null || true
+```
 
+```powershell
+$FALLOW_BIN = (node scripts/resolve-bin.mjs fallow --root <repo> --print-path).Trim()
+if ($LASTEXITCODE -ne 0) { throw "fallow is required for this audit" }
+& $FALLOW_BIN --format json --quiet | node -e "require('node:fs').writeFileSync('.audit-fallow-seed.json', require('node:fs').readFileSync(0))"
+```
+
+```bash
 # Fallow v3 JSON is a typed envelope. Fail on runtime errors, an unexpected
 # command shape, or a breaking output-schema version.
 node -e '

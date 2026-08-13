@@ -35,14 +35,20 @@ Before running the greps below, check whether a linter with structured
 JSON output is available.
 
 ```bash
-# If ESLint:
-<lint> --format json --max-warnings=999 2>/dev/null > /tmp/.audit-lint-errors.json
+# If ESLint: write JSON into the platform temp directory, not /tmp.
+LINT_DIR="$(node -e "process.stdout.write(require('node:os').tmpdir())")"
+<lint> --format json --max-warnings=999 > "$LINT_DIR/.audit-lint-errors.json"
 
 # If Biome:
-# biome check --reporter=json 2>/dev/null > /tmp/.audit-lint-errors.json
+# biome check --reporter=json > "$LINT_DIR/.audit-lint-errors.json"
 ```
 
-Delete `/tmp/.audit-lint-errors.json` at the end of Phase 1. Do not
+```powershell
+$LINT_DIR = node -e "process.stdout.write(require('node:os').tmpdir())"
+<lint> --format json --max-warnings=999 | node -e "require('node:fs').writeFileSync(process.argv[1], require('node:fs').readFileSync(0))" "$LINT_DIR/.audit-lint-errors.json"
+```
+
+Delete the cached lint file at the end of Phase 1. Do not
 install linter packages or modify config — read-only probe only.
 
 From the cached output, extract violations for:

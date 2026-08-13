@@ -43,7 +43,9 @@ UI-bearing packages only).
 For each category:
 
 1. Open the category sub-doc.
-2. Run every Detection command. Iterate `<pkg_root>` per package row.
+2. Run every Detection command. Prefer `node scripts/source-scan.mjs`
+   recipes over POSIX `grep` pipelines. Iterate `<pkg_root>` per
+   package row with repeated `--root` flags (paths may contain spaces).
 3. Drop false positives in tests (`*.spec.ts`, `*.test.ts`) unless the
    sub-doc says otherwise, generated code, `*.d.ts`, and
    `eslint-disable`-guarded `any`.

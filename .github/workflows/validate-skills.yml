@@ -8,7 +8,14 @@ on:
 
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
 
@@ -24,11 +31,19 @@ jobs:
       - name: Unit tests
         run: node --test tests/*.test.mjs
 
+      - name: Representative skill scripts
+        run: |
+          node skills/ep-audit/scripts/audit-state.mjs validate-input --root tests/fixtures/repos/valid
+          node skills/ep-audit/scripts/source-scan.mjs --recipe explicit-any --root tests/fixtures/repos/valid
+          node skills/ep-fix/scripts/action-state.mjs list --run-dir evals/fixtures/repos/fix-ready/docs/audit/2026-08-10
+          node skills/ep-setup/scripts/resolve-bin.mjs node
+
       - name: Validate Agent Skills
         run: |
-          for skill in skills/ep-*; do
-            uvx --from skills-ref agentskills validate "$skill"
-          done
+          uvx --from skills-ref agentskills validate skills/ep-setup
+          uvx --from skills-ref agentskills validate skills/ep-audit
+          uvx --from skills-ref agentskills validate skills/ep-fix
+          uvx --from skills-ref agentskills validate skills/ep-review-architecture
 
       - name: Verify installer discovery
         run: npx --yes skills add . --list

@@ -185,7 +185,10 @@ Decide whether to write it:
 
 1. Prefer the version pinned in the project, then check `PATH`:
    ```bash
-   test -x node_modules/.bin/fallow || command -v fallow >/dev/null 2>&1
+   node scripts/resolve-bin.mjs fallow --root <repo>
+   ```
+   ```powershell
+   node scripts/resolve-bin.mjs fallow --root <repo>
    ```
 2. If fallow is not found, tell the user: "fallow is required for ep-audit.
    Install the latest version as a devDependency at the workspace root.

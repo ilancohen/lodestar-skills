@@ -17,7 +17,9 @@ and improving software architecture:
 - A skills-compatible coding agent.
 - Git.
 - Node.js 22 or later for package checks and bundled skill scripts.
-- A POSIX-compatible shell for current skill command recipes.
+- A POSIX-compatible shell for remaining skill command recipes.
+  PowerShell equivalents exist for suite validation scripts; skills do
+  not claim Windows support until the CI matrix is green.
 - [Fallow](https://docs.fallow.tools) in the target repository for `ep-audit`.
 
 ## Install
@@ -82,6 +84,18 @@ uvx --from skills-ref agentskills validate skills/ep-fix
 uvx --from skills-ref agentskills validate skills/ep-review-architecture
 npx skills add . --list
 ```
+
+```powershell
+node scripts/check_package.mjs
+node --test tests/*.test.mjs
+uvx --from skills-ref agentskills validate skills/ep-setup
+uvx --from skills-ref agentskills validate skills/ep-audit
+uvx --from skills-ref agentskills validate skills/ep-fix
+uvx --from skills-ref agentskills validate skills/ep-review-architecture
+npx --yes skills add . --list
+```
+
+Or `scripts/smoke.ps1`.
 
 ## Status
 
