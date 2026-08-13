@@ -21,22 +21,40 @@ const SCRIPT = path.join(ROOT, "skills/ep-audit/scripts/audit-state.mjs");
 const VALID = path.join(ROOT, "tests/fixtures/repos/valid");
 const PLACEHOLDER = path.join(ROOT, "tests/fixtures/repos/placeholder");
 const CLEAN = path.join(ROOT, "tests/fixtures/audit-runs/clean/findings.md");
-const HEAVY = path.join(ROOT, "tests/fixtures/audit-runs/finding-heavy/findings.md");
-const MALFORMED = path.join(ROOT, "tests/fixtures/audit-runs/malformed/findings.md");
-const INTERRUPTED = path.join(ROOT, "tests/fixtures/audit-runs/interrupted/findings.md");
+const HEAVY = path.join(
+  ROOT,
+  "tests/fixtures/audit-runs/finding-heavy/findings.md",
+);
+const MALFORMED = path.join(
+  ROOT,
+  "tests/fixtures/audit-runs/malformed/findings.md",
+);
+const INTERRUPTED = path.join(
+  ROOT,
+  "tests/fixtures/audit-runs/interrupted/findings.md",
+);
 
 function run(args, cwd = ROOT) {
-  return spawnSync(process.execPath, [SCRIPT, ...args], { cwd, encoding: "utf8" });
+  return spawnSync(process.execPath, [SCRIPT, ...args], {
+    cwd,
+    encoding: "utf8",
+  });
 }
 
 function sha(filePath) {
-  return crypto.createHash("sha256").update(fs.readFileSync(filePath)).digest("hex");
+  return crypto
+    .createHash("sha256")
+    .update(fs.readFileSync(filePath))
+    .digest("hex");
 }
 
 test("nextRunId skips taken dates", () => {
   assert.equal(nextRunId([], "2026-08-10"), "2026-08-10");
   assert.equal(nextRunId(["2026-08-10"], "2026-08-10"), "2026-08-10-002");
-  assert.equal(nextRunId(["2026-08-10", "2026-08-10-002"], "2026-08-10"), "2026-08-10-003");
+  assert.equal(
+    nextRunId(["2026-08-10", "2026-08-10-002"], "2026-08-10"),
+    "2026-08-10-003",
+  );
 });
 
 test("validate-input accepts a real layout and does not touch source", () => {
@@ -47,6 +65,8 @@ test("validate-input accepts a real layout and does not touch source", () => {
   const payload = JSON.parse(result.stdout);
   assert.equal(payload.packages.length, 2);
   assert.equal(payload.packages[0].name, "core");
+  assert.equal(payload.pkgManager, null);
+  assert.equal(payload.pkgManagerAmbiguous, true);
   assert.equal(sha(source), before);
 });
 
@@ -64,7 +84,9 @@ test("clean findings validate", () => {
 test("finding-heavy fixture round-trips through merge with stable ids", () => {
   const parsed = parseFindings(fs.readFileSync(HEAVY, "utf8"));
   assert.equal(parsed.findings.length, 2);
-  const merged = assignIds(dedupeFindings(sortFindings(parsed.findings.concat(parsed.findings))));
+  const merged = assignIds(
+    dedupeFindings(sortFindings(parsed.findings.concat(parsed.findings))),
+  );
   assert.equal(merged.length, 2);
   assert.equal(merged[0].id, "F0001");
   assert.equal(merged[1].id, "F0002");
@@ -185,6 +207,8 @@ test("partial checkpoint keeps recover in discover after all categories are mark
 });
 
 test("parsePackageLayout is used by validate-input", () => {
-  const rows = parsePackageLayout(fs.readFileSync(path.join(VALID, "AGENTS.md"), "utf8"));
+  const rows = parsePackageLayout(
+    fs.readFileSync(path.join(VALID, "AGENTS.md"), "utf8"),
+  );
   assert.equal(rows[1].alias, "@repo/api");
 });

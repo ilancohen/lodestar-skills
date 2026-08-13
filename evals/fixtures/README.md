@@ -7,7 +7,6 @@ never in canonical skill logic.
 | -------------------------------------- | ------------------------------------------------- | --------------------------------- |
 | `tests/fixtures/repos/valid`           | TypeScript monorepo with Package Layout           | setup, audit, architecture        |
 | `tests/fixtures/repos/placeholder`     | TODO responsibilities, no Dependency Direction    | audit/architecture stop cases     |
-| `evals/fixtures/repos/python-app`      | Python layout; audit stops without Fallow         | setup/architecture e2e; audit stop |
 | `evals/fixtures/repos/fix-ready`       | Audit run with INDEX + action items + source      | ep-fix batch / decision           |
 | `evals/fixtures/repos/fix-interrupted` | `001` is `in_progress` with a partial source diff | ep-fix resume                     |
 | `evals/fixtures/repos/fix-no-index`    | Audit dir without INDEX.md                        | ep-fix stop                       |

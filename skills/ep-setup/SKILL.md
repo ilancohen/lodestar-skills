@@ -6,7 +6,7 @@ description: >-
   when repository structure changes. May also configure Fallow, gitignore
   entries, and existing linter rules with user consent.
 license: MIT
-compatibility: Requires filesystem write access and a POSIX-compatible shell for optional Fallow setup. Supports npm, pnpm, yarn, and Bun repositories.
+compatibility: Requires filesystem write access and a POSIX-compatible shell for optional Fallow setup. Supports npm, pnpm, and yarn repositories.
 metadata:
   author: Ilan Cohen
   version: "0.1.0"
@@ -37,8 +37,11 @@ repository, not locations of this installed skill.
 
 Read only what's needed to fill in the template placeholders:
 
-- **Package manager** — check for `pnpm-workspace.yaml`, `yarn.lock`,
-  `package-lock.json`, `bun.lockb`. This sets the command prefix.
+- **Package manager** — check for exactly one of `pnpm-lock.yaml`
+  (pnpm), `yarn.lock` (yarn), or `package-lock.json` (npm). That sets
+  the command prefix (`pnpm`, `yarn`, or `npm` / `npx`). If none or
+  more than one is present, **ask the user** which of npm, yarn, or
+  pnpm to use. Do not guess. Do not default to npm.
 - **Build scripts** — read the root `package.json` `scripts` field.
   Identify the build, typecheck, lint, and test commands.
 - **Package layout** — list every package or top-level source directory
@@ -70,12 +73,17 @@ the table you write is keyed by the repo's own package names.
 
 Present a single short summary:
 
+- The package manager you detected (or that you could not tell).
 - The commands you found.
 - The dependency direction you'll record (using the repo's actual
   package names, e.g. `web → server → core → shared`).
 - The Package Layout table you intend to write — one row per package,
   with name, path, alias, and the one-sentence responsibility you've
   drafted.
+
+If the package manager is unclear, ask which of npm, yarn, or pnpm to
+use as part of this same confirmation. Do not proceed with install or
+script prefixes until that is answered.
 
 Ask the user to correct anything wrong. One round of feedback only.
 Do not ask separate questions about coverage, branded types, or violations,
@@ -196,8 +204,12 @@ Decide whether to write it:
    ```
 2. If fallow is not found or outside the supported range, tell the user:
    "fallow 3.15.0 (combined schema 10) is required for ep-audit. Install with
-   `npm install --save-dev fallow@3.15.0`. Write `.fallowrc.json` anyway so
+   `<pm add -D fallow@3.15.0>` using this repo's package manager (pnpm:
+   `pnpm add -D fallow@3.15.0`; npm: `npm install --save-dev fallow@3.15.0`;
+   yarn: `yarn add -D fallow@3.15.0`). Write `.fallowrc.json` anyway so
    it's ready when fallow is installed?"
+   Use the command for the manager already confirmed in Step 2. If that
+   manager is still unknown, ask before quoting an install command.
 3. If `.fallowrc.json` already exists, ask: "merge boundary section / leave
    alone / overwrite?"
 

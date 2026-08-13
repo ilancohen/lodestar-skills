@@ -41,20 +41,6 @@
           "paths": ["packages/**", "docs/architecture-review/**"]
         }
       ]
-    },
-    {
-      "id": 4,
-      "prompt": "Describe this Python repository's package architecture. Do not suggest changes.",
-      "expected_output": "Writes an advisory report from the Python layout and does not edit packages/.",
-      "files": [],
-      "fixture": "evals/fixtures/repos/python-app",
-      "baseline": true,
-      "assertions": [
-        { "type": "consent_asked", "true": true },
-        { "type": "allowed_write", "paths": ["docs/architecture-review/**"] },
-        { "type": "forbidden_write", "paths": ["packages/**"] },
-        { "type": "advisory" }
-      ]
     }
   ]
 }

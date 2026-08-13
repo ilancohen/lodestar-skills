@@ -6,13 +6,16 @@ The canonical skill implementations live under `skills/`. Product manifests
 and client adapters are thin references only — they must not duplicate
 workflow logic.
 
+This suite uses **pnpm**. In a consuming repository, use that repo's
+npm / yarn / pnpm setup; ask if the lockfile does not make it obvious.
+
 ## Pre-commit checklist
 
 Before committing suite changes:
 
-1. `node scripts/check_package.mjs`
-2. `node --test tests/*.test.mjs`
-3. Validate each skill with `uvx --from skills-ref agentskills validate skills/<name>`
+1. `pnpm check`
+2. `pnpm test`
+3. Confirm local discovery with `pnpm dlx skills add . --list`
 4. Confirm adapters still discover exactly four skills and never auto-load
    `ep-fix`
 

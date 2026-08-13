@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
 import test from "node:test";
 import {
   KIRO_BLOCKED,
@@ -11,6 +10,7 @@ import {
   SKILLS,
 } from "../scripts/lib.mjs";
 import { checkPackage } from "../scripts/check_package.mjs";
+import { runSkillsCli } from "../scripts/skills-cli.mjs";
 
 test("adapters and manifests discover exactly four canonical skills", () => {
   const result = checkPackage(ROOT);
@@ -65,11 +65,7 @@ test("contributor guidance is not a root CLAUDE.md runtime file", () => {
 });
 
 test("skills CLI lists exactly four skills from this package", () => {
-  const result = spawnSync("npx", ["--yes", "skills", "add", ".", "--list"], {
-    cwd: ROOT,
-    encoding: "utf8",
-    shell: process.platform === "win32",
-  });
+  const result = runSkillsCli(["add", ".", "--list"], ROOT);
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const out = `${result.stdout}\n${result.stderr}`;
   for (const skill of SKILLS) {

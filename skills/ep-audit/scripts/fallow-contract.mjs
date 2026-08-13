@@ -6,6 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { detectPkgManager, installFallowCommand } from "./pkg-manager.mjs";
 import { fail, isMain, parseArgs, printJson, which } from "./runtime.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -42,9 +43,10 @@ export function remediation(contract, details, extras = {}) {
   const installed = extras.installed || "unknown";
   const schema = extras.schema === undefined ? "n/a" : String(extras.schema);
   const kind = extras.kind || "n/a";
-  const install =
-    contract.install_current ||
-    `npm install --save-dev fallow@${contract.tool_version_current}`;
+  const install = installFallowCommand(
+    contract.tool_version_current,
+    extras.manager,
+  );
   return [
     details,
     `Installed Fallow: ${installed}.`,
@@ -177,11 +179,13 @@ export function detectVersion(bin) {
 }
 
 export function resolveFallow(root, contract = loadContract()) {
+  const manager = detectPkgManager(root).pkgManager;
   const bin = which("fallow", root);
   if (!bin) {
     throw new Error(
       remediation(contract, "fallow is required for this audit.", {
         installed: "none",
+        manager,
       }),
     );
   }
@@ -193,10 +197,11 @@ export function resolveFallow(root, contract = loadContract()) {
     throw new Error(
       remediation(contract, `unsupported Fallow installed ${version}.`, {
         installed: version,
+        manager,
       }),
     );
   }
-  return { bin, version, contract };
+  return { bin, version, contract, manager };
 }
 
 export function runFallow(bin, argv, { cwd } = {}) {
@@ -268,6 +273,7 @@ function cmdValidate(flags, contract) {
         installed,
         schema,
         kind: receivedKind,
+        manager: flags.root ? detectPkgManager(flags.root).pkgManager : null,
       }),
       2,
     );
@@ -315,6 +321,7 @@ function cmdRun(flags, contract) {
     fail(
       remediation(contract, error.message, {
         installed: resolved.version,
+        manager: resolved.manager,
       }),
       2,
     );
@@ -326,6 +333,7 @@ function cmdRun(flags, contract) {
     fail(
       remediation(contract, error.message, {
         installed: resolved.version,
+        manager: resolved.manager,
       }),
       2,
     );
@@ -355,6 +363,7 @@ function cmdRun(flags, contract) {
         installed: resolved.version || envelope.version || "unknown",
         schema: envelope.schema_version,
         kind: envelope.kind,
+        manager: resolved.manager,
       }),
       2,
     );

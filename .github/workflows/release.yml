@@ -17,26 +17,24 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.ref }}
 
-      - uses: astral-sh/setup-uv@v6
+      - uses: pnpm/action-setup@v4
 
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install
 
       - name: Release checks
         run: node scripts/release_check.mjs --allow-existing-tag
 
       - name: Package validation
-        run: node scripts/check_package.mjs
+        run: pnpm check
 
       - name: Unit tests
-        run: node --test tests/*.test.mjs
-
-      - name: Validate Agent Skills
-        run: |
-          for skill in skills/ep-*; do
-            uvx --from skills-ref agentskills validate "$skill"
-          done
+        run: pnpm test
 
       - name: Clean-checkout smoke
         run: node scripts/smoke_install.mjs

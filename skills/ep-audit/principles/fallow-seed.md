@@ -38,8 +38,10 @@ if ($LASTEXITCODE -ne 0) { throw "fallow contract failed" }
 ```
 
 On failure the script prints one remediation message with the installed
-version, supported range, received schema/kind, and the exact
-`npm install --save-dev fallow@<current>` command. Stop and report that
+version, supported range, received schema/kind, and the install command
+for this repo's package manager (`pnpm add -D fallow@<current>`, or the
+npm / yarn equivalent). If the manager cannot be detected, the message
+lists all three and you must ask which to use. Stop and report that
 message — do not create or change findings.
 
 `.audit-fallow-seed.json` is a temporary working file. Delete it after
@@ -61,7 +63,7 @@ ephemeral and reproducible.)
 | `check.unresolved_imports[]`                        | `imports`          | `unresolved-import`       | Fallow-only subtype. Almost always a typo or missing dependency.                                                                                                                       |
 | `dupes.clone_groups[]`                              | `dry`              | `exact-duplication`       | Primary detector for `dry.A`. Each `instances[]` item provides `file`, `start_line`, and `end_line`.                                                                                   |
 | `dupes.clone_groups[]` (run with `--mode semantic`) | `dry`              | `structural-duplication`  | Seeds `dry.B`. Catches renamed-variable and renamed-literal clones the mild mode misses. Confirm with eyes-on-code before flagging — semantic mode has more false positives than mild. |
-| `health.findings[]`                                 | `soc-yagni`        | `responsibility-overload` | Function-level complexity / size hits. Each entry has at least `path`. Limit the semantic file walk to those parent files.                                                              |
+| `health.findings[]`                                 | `soc-yagni`        | `responsibility-overload` | Function-level complexity / size hits. Each entry has at least `path`. Limit the semantic file walk to those parent files.                                                             |
 | `health.file_scores[]`                              | `soc-yagni`        | `responsibility-overload` | File-level ranking when findings are sparse. Sort by `total_cyclomatic` then `total_cognitive`; prefer rows with `crap_above_threshold > 0`.                                           |
 
 Fields not listed above are not consumed. The harness does not act on

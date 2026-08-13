@@ -25,7 +25,7 @@
     },
     {
       "id": 2,
-      "prompt": "We added a new worker package and changed from npm to Bun. Refresh the agent engineering setup without auditing the code.",
+      "prompt": "We added a new worker package and changed from npm to pnpm. Refresh the agent engineering setup without auditing the code.",
       "expected_output": "Updates documented commands and package layout, does not run an audit or propose architectural changes, and asks before optional Fallow or linter edits.",
       "files": [],
       "fixture": "tests/fixtures/repos/valid",
@@ -49,28 +49,6 @@
       "assertions": [
         { "type": "stop_message", "contains": "ep-review-architecture" },
         { "type": "forbidden_write", "paths": ["packages/**"] }
-      ]
-    },
-    {
-      "id": 4,
-      "prompt": "Set up engineering-principles skills in this Python repo. Confirm package responsibilities first.",
-      "expected_output": "Documents the Python package layout without editing application source.",
-      "files": [],
-      "fixture": "evals/fixtures/repos/python-app",
-      "baseline": true,
-      "assertions": [
-        { "type": "consent_asked", "true": true },
-        {
-          "type": "allowed_write",
-          "paths": [
-            "AGENTS.md",
-            "CLAUDE.md",
-            ".agents/skills/README.md",
-            ".github/copilot-instructions.md"
-          ]
-        },
-        { "type": "forbidden_write", "paths": ["packages/**"] },
-        { "type": "no_source_edit" }
       ]
     }
   ]

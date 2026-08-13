@@ -1,1 +1,0 @@
-Skills for this fixture.

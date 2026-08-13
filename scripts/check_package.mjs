@@ -50,7 +50,10 @@ function walkMarkdown(dir, files = []) {
 }
 
 function validateManifestShape(relative, manifest, errors) {
-  if (typeof manifest.description !== "string" || !manifest.description.trim()) {
+  if (
+    typeof manifest.description !== "string" ||
+    !manifest.description.trim()
+  ) {
     errors.push(`${relative}: description is required`);
   }
   if (
@@ -100,10 +103,7 @@ function validateKiroAdapters(root, errors) {
       );
     }
     const canonical = `skills/${skill}/SKILL.md`;
-    if (
-      !text.includes(`#[[file:${canonical}]]`) &&
-      !text.includes(canonical)
-    ) {
+    if (!text.includes(`#[[file:${canonical}]]`) && !text.includes(canonical)) {
       errors.push(`${relative}: must reference canonical ${canonical}`);
     }
     if (text.split(/\r?\n/).length > 40) {
@@ -159,6 +159,27 @@ function validateContributorGuidance(root, errors) {
   }
   if (!fs.existsSync(path.join(root, "CONTRIBUTING.md"))) {
     errors.push("CONTRIBUTING.md: missing contributor guidance");
+  }
+}
+
+function validateLocalPackageManager(root, errors) {
+  const pkgPath = path.join(root, "package.json");
+  if (!fs.existsSync(pkgPath)) {
+    errors.push("package.json: missing; this suite defaults to pnpm");
+    return;
+  }
+  let pkg;
+  try {
+    pkg = readJson(pkgPath);
+  } catch (error) {
+    errors.push(error.message);
+    return;
+  }
+  if (
+    typeof pkg.packageManager !== "string" ||
+    !pkg.packageManager.startsWith("pnpm@")
+  ) {
+    errors.push("package.json: packageManager must pin pnpm");
   }
 }
 
@@ -224,6 +245,7 @@ export function checkPackage(root = ROOT) {
   validateKiroAdapters(root, errors);
   validateNoDuplicatedSkillBodies(root, errors);
   validateContributorGuidance(root, errors);
+  validateLocalPackageManager(root, errors);
   validateSourceMutatingLoadPolicy(root, errors);
 
   for (const skill of SKILLS) {

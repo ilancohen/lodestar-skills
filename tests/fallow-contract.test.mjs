@@ -103,6 +103,7 @@ test("negative fixtures fail closed with remediation", () => {
     assert.equal(result.status, 2, name);
     assert.match(result.stderr, pattern, name);
     assert.match(result.stderr, /Supported range: 3\.15\.0–3\.15\.0/);
+    assert.match(result.stderr, /pnpm add -D fallow@3\.15\.0/);
     assert.match(result.stderr, /npm install --save-dev fallow@3\.15\.0/);
   }
 });
@@ -144,11 +145,13 @@ test("remediation names installed version, range, schema/kind, and install comma
     installed: "3.14.0",
     schema: 99,
     kind: "combined",
+    manager: "npm",
   });
   assert.match(message, /Installed Fallow: 3\.14\.0/);
   assert.match(message, /Supported range: 3\.15\.0–3\.15\.0 \(schema 10\)/);
   assert.match(message, /Received schema\/kind: 99\/combined/);
   assert.match(message, /npm install --save-dev fallow@3\.15\.0/);
+  assert.doesNotMatch(message, /ask which package manager/);
 });
 
 test("live fallow matrix validates every consumed command when enabled", async (t) => {

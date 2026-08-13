@@ -5,33 +5,35 @@ changing this skill package.
 
 ## Project
 
-Portable Agent Skills for setting up engineering principles, auditing a
-repository, applying audit fixes, and reviewing package architecture.
+Portable Agent Skills for documenting, auditing, reviewing, and
+improving software architecture.
+
+This suite itself uses **pnpm**. When a skill runs in a target
+repository, use that repo's package manager (npm, yarn, or pnpm) from
+its lockfile. If none or more than one lockfile is present, ask which
+to use — do not guess.
 
 ## Layout
 
-| Path | Responsibility |
-|---|---|
-| `skills/ep-setup/` | Repository context and principles setup |
-| `skills/ep-audit/` | Read-only violation discovery and action-item planning |
-| `skills/ep-fix/` | Scoped execution of audit action items |
-| `skills/ep-review-architecture/` | Advisory package-layout review |
-| `scripts/` | Deterministic package-development validation |
-| `plugin.json` | Portable Agent Plugins manifest |
-| `.claude-plugin/` | Claude Code packaging adapter |
-| `.codex-plugin/` | Codex packaging adapter |
-| `gemini-extension.json` | Gemini CLI packaging adapter |
+| Path                             | Responsibility                                         |
+| -------------------------------- | ------------------------------------------------------ |
+| `skills/ep-setup/`               | Repository context and principles setup                |
+| `skills/ep-audit/`               | Read-only violation discovery and action-item planning |
+| `skills/ep-fix/`                 | Scoped execution of audit action items                 |
+| `skills/ep-review-architecture/` | Advisory package-layout review                         |
+| `scripts/`                       | Deterministic package-development validation           |
+| `package.json`                   | pnpm pin and suite scripts (`pnpm check`, `pnpm test`) |
+| `plugin.json`                    | Portable Agent Plugins manifest                        |
+| `.claude-plugin/`                | Claude Code packaging adapter                          |
+| `.codex-plugin/`                 | Codex packaging adapter                                |
+| `gemini-extension.json`          | Gemini CLI packaging adapter                           |
 
 ## Commands
 
 ```bash
-node scripts/check_package.mjs
-node --test tests/*.test.mjs
-uvx --from skills-ref agentskills validate skills/ep-setup
-uvx --from skills-ref agentskills validate skills/ep-audit
-uvx --from skills-ref agentskills validate skills/ep-fix
-uvx --from skills-ref agentskills validate skills/ep-review-architecture
-npx skills add . --list
+pnpm check
+pnpm test
+pnpm dlx skills add . --list
 ```
 
 ## Rules

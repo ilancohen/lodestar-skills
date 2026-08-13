@@ -20,10 +20,10 @@
       "prompt": "We added a billing package. Refresh AGENTS.md and the skill README without auditing."
     },
     {
-      "id": "pos-bun",
+      "id": "pos-pm",
       "label": "package manager change",
       "should_trigger": true,
-      "prompt": "We switched from npm to Bun. Update the engineering-principles setup files."
+      "prompt": "We switched from npm to pnpm. Update the engineering-principles setup files."
     },
     {
       "id": "pos-confirm",

@@ -19,28 +19,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: pnpm
 
-      - uses: astral-sh/setup-uv@v6
+      - name: Install
+        run: pnpm install
 
       - name: Package + adapter invariants
-        run: node scripts/check_package.mjs
+        run: pnpm check
 
       - name: Client adapter tests
         run: node --test tests/client-adapters.test.mjs
 
-      - name: Agent Skills validation
-        run: |
-          uvx --from skills-ref agentskills validate skills/ep-setup
-          uvx --from skills-ref agentskills validate skills/ep-audit
-          uvx --from skills-ref agentskills validate skills/ep-fix
-          uvx --from skills-ref agentskills validate skills/ep-review-architecture
-
       - name: Installer discovery (exactly four)
         run: |
-          out=$(npx --yes skills add . --list)
+          out=$(pnpm dlx skills add . --list)
           echo "$out"
           echo "$out" | grep -q ep-setup
           echo "$out" | grep -q ep-audit

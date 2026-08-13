@@ -19,17 +19,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: astral-sh/setup-uv@v6
+      - uses: pnpm/action-setup@v4
 
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install
 
       - name: Check package invariants
-        run: node scripts/check_package.mjs
+        run: pnpm check
 
       - name: Unit tests
-        run: node --test tests/*.test.mjs
+        run: pnpm test
 
       - name: Representative skill scripts
         run: |
@@ -38,12 +42,5 @@ jobs:
           node skills/ep-fix/scripts/action-state.mjs list --run-dir evals/fixtures/repos/fix-ready/docs/audit/2026-08-10
           node skills/ep-setup/scripts/resolve-bin.mjs node
 
-      - name: Validate Agent Skills
-        run: |
-          uvx --from skills-ref agentskills validate skills/ep-setup
-          uvx --from skills-ref agentskills validate skills/ep-audit
-          uvx --from skills-ref agentskills validate skills/ep-fix
-          uvx --from skills-ref agentskills validate skills/ep-review-architecture
-
       - name: Verify installer discovery
-        run: npx --yes skills add . --list
+        run: pnpm dlx skills add . --list

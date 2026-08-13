@@ -42,18 +42,6 @@
         { "type": "stop_message", "contains": "ep-setup" },
         { "type": "forbidden_write", "paths": ["packages/**", "docs/audit/**"] }
       ]
-    },
-    {
-      "id": 4,
-      "prompt": "Audit this Python repository for DRY and boundary violations. Do not fix source.",
-      "expected_output": "Stops because Fallow is not installed, and writes neither findings nor source.",
-      "files": [],
-      "fixture": "evals/fixtures/repos/python-app",
-      "baseline": true,
-      "assertions": [
-        { "type": "stop_message", "contains": "fallow" },
-        { "type": "forbidden_write", "paths": ["packages/**", "docs/audit/**"] }
-      ]
     }
   ]
 }

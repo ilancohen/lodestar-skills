@@ -7,19 +7,24 @@ Load this file before running detectors. Keep the read-only rule from
 
 Use `node scripts/audit-state.mjs validate-input --root <repo>`. It
 returns `packages`, `direction`, `commands`, `pkgManager`, `run`,
-`allPkgRoots`, and `aliasPrefix`.
+`pkgManagerAmbiguous`, `pkgManagerLockfiles`, `allPkgRoots`, and
+`aliasPrefix`.
+
+If `pkgManager` is `null` / `pkgManagerAmbiguous` is true, **ask the
+user** which of npm, yarn, or pnpm to use before running any install or
+`dlx`/`npx` command. Do not default to npm.
 
 Substitute placeholders literally before any detector command:
 
-| Placeholder                       | Resolved to                  |
-| --------------------------------- | ---------------------------- |
-| `<typecheck>`, `<lint>`, `<test>` | Commands from AGENTS.md      |
-| `<pkg_root>`                      | Current row `path`           |
-| `<pkg_alias>`                     | Current row `alias`          |
-| `<pkg_responsibility>`            | Current row `responsibility` |
-| `<all_pkg_roots>`                 | Space-separated paths        |
-| `<alias_prefix>`                  | Longest common alias prefix  |
-| `<pkg_manager>`, `<run>`          | From lockfiles               |
+| Placeholder                       | Resolved to                    |
+| --------------------------------- | ------------------------------ |
+| `<typecheck>`, `<lint>`, `<test>` | Commands from AGENTS.md        |
+| `<pkg_root>`                      | Current row `path`             |
+| `<pkg_alias>`                     | Current row `alias`            |
+| `<pkg_responsibility>`            | Current row `responsibility`   |
+| `<all_pkg_roots>`                 | Space-separated paths          |
+| `<alias_prefix>`                  | Longest common alias prefix    |
+| `<pkg_manager>`, `<run>`          | From lockfiles; ask if unclear |
 
 Never run a command that still contains `<placeholder>` text. The
 Responsibility column is advisory context for judgment detectors, not a

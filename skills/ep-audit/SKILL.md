@@ -73,6 +73,9 @@ missing Package Layout and placeholder Responsibilities (shorter than 20
 characters, `TODO`/`TBD`/`???`/`one sentence`, or a bare noun like
 `core`).
 
+If `pkgManager` is null, ask which of npm, yarn, or pnpm this repository
+uses before any install or `dlx`/`npx` command. Do not guess.
+
 Read `.agents/skills/README.md` for project-specific principles. Read
 `AGENTS.md` for commands, direction, and the layout table.
 

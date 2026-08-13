@@ -12,5 +12,5 @@ inclusion modes.** Therefore `ep-fix` is intentionally **not** shipped as
 Kiro steering — it would otherwise enter context without invocation.
 
 Invoke `ep-fix` through a skills-compatible client that keeps source-
-mutating skills on-demand (Agent Plugins / `npx skills add`, Claude,
+mutating skills on-demand (Agent Plugins / `pnpm dlx skills add`, Claude,
 Codex, or Gemini), not via Kiro steering.

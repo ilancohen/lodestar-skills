@@ -7,7 +7,17 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { atomicWrite, fail, isMain, parseArgs, printJson, utcDate } from "./runtime.mjs";
+import { detectPkgManager } from "./pkg-manager.mjs";
+import {
+  atomicWrite,
+  fail,
+  isMain,
+  parseArgs,
+  printJson,
+  utcDate,
+} from "./runtime.mjs";
+
+export { detectPkgManager } from "./pkg-manager.mjs";
 
 export const CATEGORIES = [
   "imports",
@@ -25,13 +35,6 @@ export const PLACEHOLDER_RE =
   /<(typecheck|lint|test|pkg_root|pkg_alias|pkg_responsibility|all_pkg_roots|alias_prefix|pkg_manager|run|RUN_ID)>/;
 
 export const FINDING_RE = /^### (F\d{4})\s*$/m;
-
-const LOCK_FILES = [
-  ["pnpm-lock.yaml", "pnpm", "pnpm dlx"],
-  ["yarn.lock", "yarn", "yarn dlx"],
-  ["bun.lockb", "bun", "bunx"],
-  ["package-lock.json", "npm", "npx"],
-];
 
 function usage() {
   process.stderr.write(`Usage: audit-state <command> [options]
@@ -95,7 +98,10 @@ export function parsePackageLayout(agentsText) {
   const rows = [];
   for (const line of section.split(/\r?\n/)) {
     if (!line.startsWith("|")) continue;
-    const cells = line.split("|").slice(1, -1).map((cell) => cell.trim());
+    const cells = line
+      .split("|")
+      .slice(1, -1)
+      .map((cell) => cell.trim());
     if (cells.length < 4) continue;
     if (/^-+$/.test(cells[0].replace(/:/g, "-"))) continue;
     if (/^package$/i.test(cells[0]) || /^name$/i.test(cells[0])) continue;
@@ -154,17 +160,10 @@ export function parseDirection(agentsText) {
   return chain[1].split(/\s*→\s*/).map((part) => part.trim());
 }
 
-export function detectPkgManager(root) {
-  for (const [file, manager, run] of LOCK_FILES) {
-    if (fs.existsSync(path.join(root, file))) {
-      return { pkgManager: manager, run };
-    }
-  }
-  return { pkgManager: "npm", run: "npx" };
-}
-
 export function aliasPrefix(packages) {
-  const aliases = packages.map((row) => row.alias).filter((alias) => alias && alias !== "n/a");
+  const aliases = packages
+    .map((row) => row.alias)
+    .filter((alias) => alias && alias !== "n/a");
   if (aliases.length < 2) return aliases[0] || "";
   let prefix = aliases[0];
   for (const alias of aliases.slice(1)) {
@@ -203,7 +202,9 @@ export function parseFindingBlock(block) {
       : field("evidence"),
     scope_unit: field("scope_unit"),
     requires_decision: field("requires_decision") === "true",
-    notes: notesMatch ? notesMatch[1].replace(/^    /gm, "").trimEnd() : field("notes"),
+    notes: notesMatch
+      ? notesMatch[1].replace(/^    /gm, "").trimEnd()
+      : field("notes"),
   };
 }
 
@@ -219,13 +220,17 @@ export function parseFindings(text) {
   }
   for (const category of CATEGORIES) {
     const marker = text.match(
-      new RegExp(`^## category: ${category} — complete(?: \\((\\d+) findings\\))?\\s*$`, "m"),
+      new RegExp(
+        `^## category: ${category} — complete(?: \\((\\d+) findings\\))?\\s*$`,
+        "m",
+      ),
     );
     if (marker) {
       complete.push({
         category,
         count: Number(
-          marker[1] || findings.filter((item) => item.category === category).length,
+          marker[1] ||
+            findings.filter((item) => item.category === category).length,
         ),
       });
     } else {
@@ -290,7 +295,9 @@ export function renderFindings(runId, findings, complete = []) {
     }
     byCategory.get(finding.category).push(finding);
   }
-  const completeMap = new Map(complete.map((item) => [item.category, item.count]));
+  const completeMap = new Map(
+    complete.map((item) => [item.category, item.count]),
+  );
   for (const category of CATEGORIES) {
     const items = byCategory.get(category);
     if (completeMap.has(category)) {
@@ -313,7 +320,9 @@ export function renderFindings(runId, findings, complete = []) {
         lines.push(`    ${line}`);
       }
       lines.push(`- scope_unit: ${finding.scope_unit}`);
-      lines.push(`- requires_decision: ${finding.requires_decision ? "true" : "false"}`);
+      lines.push(
+        `- requires_decision: ${finding.requires_decision ? "true" : "false"}`,
+      );
       lines.push("- notes: |");
       for (const line of String(finding.notes || "").split("\n")) {
         lines.push(`    ${line}`);
@@ -363,7 +372,8 @@ function cmdResolveRun(flags) {
   const existing = listRunIds(auditRoot);
   const resumeCandidates = inProgressRuns(auditRoot, date);
   if (flags.resume) {
-    const runId = flags.resume === true ? resumeCandidates.at(-1) : flags.resume;
+    const runId =
+      flags.resume === true ? resumeCandidates.at(-1) : flags.resume;
     if (!runId) fail("no in-progress run to resume", 2);
     const runDir = path.join(auditRoot, runId);
     printJson({
@@ -391,7 +401,10 @@ function cmdValidateInput(flags) {
   if (!fs.existsSync(agentsPath)) {
     fail("AGENTS.md is missing. Run ep-setup first.", 2);
   }
-  for (const required of ["CLAUDE.md", path.join(".agents", "skills", "README.md")]) {
+  for (const required of [
+    "CLAUDE.md",
+    path.join(".agents", "skills", "README.md"),
+  ]) {
     if (!fs.existsSync(path.join(root, required))) {
       fail(`${required} is missing. Run ep-setup first.`, 2);
     }
@@ -405,13 +418,15 @@ function cmdValidateInput(flags) {
   }
   const commands = parseCommands(agentsText);
   const direction = parseDirection(agentsText);
-  const { pkgManager, run } = detectPkgManager(root);
+  const detected = detectPkgManager(root);
   printJson({
     packages,
     direction,
     commands,
-    pkgManager,
-    run,
+    pkgManager: detected.pkgManager,
+    run: detected.run,
+    pkgManagerAmbiguous: detected.ambiguous,
+    pkgManagerLockfiles: detected.lockfiles,
     allPkgRoots: packages.map((row) => row.path).join(" "),
     aliasPrefix: aliasPrefix(packages),
   });
@@ -437,7 +452,9 @@ function cmdMergeFindings(flags) {
   const runId = flags["run-id"] || "merged";
   const complete = [];
   if (flags.out && fs.existsSync(flags.out)) {
-    complete.push(...parseFindings(fs.readFileSync(flags.out, "utf8")).complete);
+    complete.push(
+      ...parseFindings(fs.readFileSync(flags.out, "utf8")).complete,
+    );
   }
   for (const file of files) {
     if (!file.endsWith(".json") && fs.existsSync(file)) {
@@ -478,12 +495,20 @@ function cmdValidateOutput(flags) {
   parsed.findings.forEach((finding, index) => {
     const expected = padFindingId(index + 1);
     if (finding.id !== expected) {
-      errors.push(`finding ids must be sequential; expected ${expected}, got ${finding.id}`);
+      errors.push(
+        `finding ids must be sequential; expected ${expected}, got ${finding.id}`,
+      );
     }
-    errors.push(...validateFinding(finding).map((msg) => `${finding.id}: ${msg}`));
+    errors.push(
+      ...validateFinding(finding).map((msg) => `${finding.id}: ${msg}`),
+    );
   });
   if (errors.length) fail(errors.join("\n"), 2);
-  printJson({ ok: true, findings: parsed.findings.length, complete: parsed.complete });
+  printJson({
+    ok: true,
+    findings: parsed.findings.length,
+    complete: parsed.complete,
+  });
 }
 
 function cmdCheckpoint(flags) {
@@ -491,13 +516,15 @@ function cmdCheckpoint(flags) {
   const category = flags.category;
   const status = flags.status || "complete";
   const count = Number(flags.count || 0);
-  if (!runDir || !category) fail("checkpoint requires --run-dir and --category", 2);
+  if (!runDir || !category)
+    fail("checkpoint requires --run-dir and --category", 2);
   if (!CATEGORIES.includes(category)) fail(`unknown category ${category}`, 2);
   fs.mkdirSync(runDir, { recursive: true });
   const findingsPath = path.join(runDir, "findings.md");
   const markerPath = path.join(runDir, ".checkpoint.json");
   let existing = "";
-  if (fs.existsSync(findingsPath)) existing = fs.readFileSync(findingsPath, "utf8");
+  if (fs.existsSync(findingsPath))
+    existing = fs.readFileSync(findingsPath, "utf8");
   if (status === "complete") {
     const line = `## category: ${category} — complete (${count} findings)\n`;
     if (!existing.includes(`## category: ${category} — complete`)) {
@@ -552,9 +579,15 @@ function cmdRecover(flags) {
     }
   }
   const discoverDone =
-    parsed.incompleteCategories.length === 0 && checkpoint?.status !== "partial";
+    parsed.incompleteCategories.length === 0 &&
+    checkpoint?.status !== "partial";
   printJson({
-    action: indexExists && discoverDone ? "done" : discoverDone ? "plan" : "resume-discover",
+    action:
+      indexExists && discoverDone
+        ? "done"
+        : discoverDone
+          ? "plan"
+          : "resume-discover",
     lastComplete,
     incompleteCategories: parsed.incompleteCategories,
     findings: merged,
