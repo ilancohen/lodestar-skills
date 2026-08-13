@@ -16,6 +16,7 @@ to the styling fix recipe rather than scattered across `dry` / `ssot` /
 ## What counts as a violation
 
 ### A. Inline `style={{...}}` for static properties — mechanical
+
 A React `style={{ ... }}` prop whose value is a literal object (or a
 constant module-level object) — i.e. every property is fixed at write
 time, none is computed per render from state. Belongs in a class / CSS
@@ -25,11 +26,12 @@ Risk: low.
 
 **Exception — genuinely dynamic styles.** A `style` whose values are
 computed per render from props or state (e.g. `style={{ transform:
-`translateX(${offset}px)` }}`) is fine, *but* only the dynamic
+`translateX(${offset}px)` }}`) is fine, _but_ only the dynamic
 properties belong inline. Static siblings in the same object (e.g.
 `color: '#333'` next to that `transform`) are still violations.
 
 ### B. Hard-coded design-token literals in JSX or stylesheets — mechanical
+
 A colour (`#xxxxxx`, `rgb(...)`, `rgba(...)`, `hsl(...)`), spacing
 (`Npx`, `Nrem`, `Nem` where N is a literal), border-radius, font-size,
 or z-index that appears in two or more places without going through a
@@ -40,10 +42,11 @@ The principle: the same literal should never appear in two files. Two
 copies of `#7c5cff` is a drift bug waiting to happen — when the brand
 colour shifts, one site updates and the other lags silently.
 
-Risk: low-to-medium (one literal in one file is *not* a finding — wait
+Risk: low-to-medium (one literal in one file is _not_ a finding — wait
 for the second occurrence; that's the SSOT cutoff).
 
 ### C. Duplicated CSS class body — mechanical seed, semantic confirm
+
 Two or more class selectors with identical or near-identical rule sets
 (same properties, same values, same order). Classic copy-pasted styling.
 
@@ -51,8 +54,9 @@ Risk: medium. The extraction is usually a shared class, a CSS
 `@extend`-style composition (where available), or a utility token.
 
 ### D. Magic literal in CSS where a token would do — mechanical
-A CSS rule that uses a raw colour or spacing literal *inside a
-stylesheet that already imports / sees the token file*. The repo has a
+
+A CSS rule that uses a raw colour or spacing literal _inside a
+stylesheet that already imports / sees the token file_. The repo has a
 custom-property home for the value; the rule should reference it.
 
 Risk: low.
@@ -164,7 +168,7 @@ grep -rln ":root" <pkg_root> --include="*.css" --include="*.scss"
     `className={styles.foo}`, **or**
   - the package's global stylesheet under a named class, **or**
   - a design-system primitive that already covers the case.
-  Keep only genuinely dynamic properties inline, on the same element.
+    Keep only genuinely dynamic properties inline, on the same element.
 
 - **B** — choose a name for the token (use the repo's existing token
   vocabulary if it has one — read `tokens.css` / `global.css` /
@@ -178,7 +182,7 @@ grep -rln ":root" <pkg_root> --include="*.css" --include="*.scss"
   - a private module in the same package (single-package duplication),
     **or**
   - the shared / global stylesheet if used from multiple packages.
-  Replace both call sites with `className` references.
+    Replace both call sites with `className` references.
 
 - **D** — replace the raw literal with `var(--token-name)` in CSS, or
   `tokens.foo` in TS-driven styles. Run `<typecheck>` and `<test>`.
@@ -193,7 +197,7 @@ grep -rln ":root" <pkg_root> --include="*.css" --include="*.scss"
   canonical home is whichever package they both can reach per the
   dependency direction in `AGENTS.md`.
 - For C: extraction must preserve every property in the shared class
-  body. If the two bodies are similar but not identical, this is *not*
+  body. If the two bodies are similar but not identical, this is _not_
   a C finding — record it under `dry.B` for semantic review.
 - Update every cited site in the same commit. No leaving sites behind
   on the raw literal.

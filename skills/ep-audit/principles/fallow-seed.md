@@ -57,18 +57,18 @@ the error to the user — do not proceed without a successful seed run.
 
 ## What the seed feeds where
 
-| Fallow JSON field | Consuming category | Subtype | Notes |
-|---|---|---|---|
-| `check.boundary_violations[]` | `imports` | `wrong-direction` | Replaces `imports.md` #6 grep when `.fallowrc.json` is configured. Each entry already names `from_path`, `to_path`, `from_zone`, `to_zone`, `import_specifier`, `line`. |
-| `check.circular_dependencies[]` | `imports` | `circular-import` | Replaces `imports.md` #3 detection. Graph-walked, exhaustive across re-export chains. |
-| `check.unused_files[]` | `imports` | `unused-file` | Fallow-only subtype — see `imports.md` #7. |
-| `check.unused_exports[]` | `imports` | `over-broad-index` | Replaces `imports.md` #5 per-symbol loop. Cross-reference with each row's `<pkg_root>/index.ts` to flag only the over-export subset. |
-| `check.unused_dependencies[]` | `imports` | `unused-dependency` | Fallow-only subtype — see `imports.md` #8. |
-| `check.unresolved_imports[]` | `imports` | `unresolved-import` | Fallow-only subtype. Almost always a typo or missing dependency. |
-| `dupes.clone_groups[]` | `dry` | `exact-duplication` | Primary detector for `dry.A`. Each `instances[]` item provides `file`, `start_line`, and `end_line`. |
-| `dupes.clone_groups[]` (run with `--mode semantic`) | `dry` | `structural-duplication` | Seeds `dry.B`. Catches renamed-variable and renamed-literal clones the mild mode misses. Confirm with eyes-on-code before flagging — semantic mode has more false positives than mild. |
-| `health.findings[]` | `soc-yagni` | `responsibility-overload` | Every entry exceeded a configured complexity or unit-size threshold. Limit the semantic file walk to these parent files. |
-| `health.targets[]` | `soc-yagni` | `responsibility-overload` | Ranked refactoring targets included in the combined seed. Prefer high-confidence targets when the findings set is large. |
+| Fallow JSON field                                   | Consuming category | Subtype                   | Notes                                                                                                                                                                                  |
+| --------------------------------------------------- | ------------------ | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `check.boundary_violations[]`                       | `imports`          | `wrong-direction`         | Replaces `imports.md` #6 grep when `.fallowrc.json` is configured. Each entry already names `from_path`, `to_path`, `from_zone`, `to_zone`, `import_specifier`, `line`.                |
+| `check.circular_dependencies[]`                     | `imports`          | `circular-import`         | Replaces `imports.md` #3 detection. Graph-walked, exhaustive across re-export chains.                                                                                                  |
+| `check.unused_files[]`                              | `imports`          | `unused-file`             | Fallow-only subtype — see `imports.md` #7.                                                                                                                                             |
+| `check.unused_exports[]`                            | `imports`          | `over-broad-index`        | Replaces `imports.md` #5 per-symbol loop. Cross-reference with each row's `<pkg_root>/index.ts` to flag only the over-export subset.                                                   |
+| `check.unused_dependencies[]`                       | `imports`          | `unused-dependency`       | Fallow-only subtype — see `imports.md` #8.                                                                                                                                             |
+| `check.unresolved_imports[]`                        | `imports`          | `unresolved-import`       | Fallow-only subtype. Almost always a typo or missing dependency.                                                                                                                       |
+| `dupes.clone_groups[]`                              | `dry`              | `exact-duplication`       | Primary detector for `dry.A`. Each `instances[]` item provides `file`, `start_line`, and `end_line`.                                                                                   |
+| `dupes.clone_groups[]` (run with `--mode semantic`) | `dry`              | `structural-duplication`  | Seeds `dry.B`. Catches renamed-variable and renamed-literal clones the mild mode misses. Confirm with eyes-on-code before flagging — semantic mode has more false positives than mild. |
+| `health.findings[]`                                 | `soc-yagni`        | `responsibility-overload` | Every entry exceeded a configured complexity or unit-size threshold. Limit the semantic file walk to these parent files.                                                               |
+| `health.targets[]`                                  | `soc-yagni`        | `responsibility-overload` | Ranked refactoring targets included in the combined seed. Prefer high-confidence targets when the findings set is large.                                                               |
 
 Fields not listed above are not consumed. The harness does not act on
 `unused-types`, `unused-enum-members`, or `unused-class-members` because

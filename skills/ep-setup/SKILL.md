@@ -91,10 +91,10 @@ three files never drift.
 
 Read `principles.md` once and produce a substituted copy in memory:
 
-| Placeholder | Replace with |
-|---|---|
+| Placeholder   | Replace with                                                    |
+| ------------- | --------------------------------------------------------------- |
 | `[typecheck]` | The exact typecheck command from `AGENTS.md` Build & Test table |
-| `[lint]` | The exact lint command from `AGENTS.md` Build & Test table |
+| `[lint]`      | The exact lint command from `AGENTS.md` Build & Test table      |
 
 `principles.md` no longer references specific role names — every principle
 is stated abstractly and points back at AGENTS.md `## Package Layout`
@@ -120,6 +120,7 @@ Announce each file before writing it.
 ### AGENTS.md
 
 Start from `agents-md.md`. Fill in:
+
 - One-sentence project description.
 - The exact commands in the Build & Test table.
 - The dependency direction, using the repo's own package names.
@@ -139,6 +140,7 @@ Write to `AGENTS.md`.
 ### .agents/skills/README.md
 
 Start from `skills-readme.md`. Fill in:
+
 - The dependency direction (in `## Package Dependency Direction`), using
   the same package names as AGENTS.md.
 

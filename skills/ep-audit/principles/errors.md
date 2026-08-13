@@ -6,7 +6,9 @@ failures to `Result` types. **High risk** — changes calling contracts.
 ## What counts as a violation
 
 ### A. Swallowed errors
+
 A `catch` block that:
+
 - Is empty.
 - Only logs (`console.log`, `console.warn`) without taking action.
 - Returns `undefined` / `null` implicitly without converting to a typed failure.
@@ -17,7 +19,9 @@ catches the obvious cases but produces false positives whenever a
 shutdown hook). **Default `requires_decision: true` for every A finding.**
 
 ### B. Expected failure thrown
+
 Code that `throw`s for an outcome the caller is expected to handle:
+
 - `throw new Error('not found')` / `throw new NotFoundError()`
 - `throw` inside a catch wrapping a network or DB call
 - Functions whose callers always wrap in try/catch
@@ -52,6 +56,7 @@ Delete the cached lint file at the end of Phase 1. Do not
 install linter packages or modify config — read-only probe only.
 
 From the cached output, extract violations for:
+
 - **A** (`no-floating-promises` / biome `noFloatingPromises`) → flag as swallowed-async
 - **B** (`no-throw-literal`, `prefer-promise-reject-errors` / biome equivalents) → flag as expected-failure-thrown
 
@@ -89,9 +94,7 @@ grep -rEn "throw new (Error|NotFound|Validation|Unauthorized)" \
 - **B** — define `Result<T, E>` once in the shared types package (per
   AGENTS.md `## Package Layout`) if not yet present:
   ```ts
-  type Result<T, E = string> =
-    | { ok: true; value: T }
-    | { ok: false; error: E };
+  type Result<T, E = string> = { ok: true; value: T } | { ok: false; error: E };
   ```
   Change the function's return type to
   `Promise<Result<T, 'not-found' | '…'>>`, replace `throw` with

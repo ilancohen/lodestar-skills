@@ -8,7 +8,7 @@ elimination. **Low risk.** No logic changes, ever.
 1. **Misplaced type** — an `interface` or `type` defined in package `P` but
    imported from a different package. Should live in whichever package is
    nominated as the shared / types package in AGENTS.md `## Package
-   Layout`. If no such package exists, this is a layout question — emit
+Layout`. If no such package exists, this is a layout question — emit
    the finding anyway, mark `requires_decision: true`, and point the
    reader at `ep-review-architecture` in the notes.
 
@@ -53,6 +53,7 @@ Delete the cached lint file at the end of Phase 1. This is a
 read-only probe — do not install linter packages or modify config.
 
 From the cached output, extract violations for:
+
 - **#1** (`consistent-type-imports` / biome `useImportType`) → flag as misplaced-type
 - **#3** (`no-explicit-any` / biome `noExplicitAny`) → flag as unguarded-any
 

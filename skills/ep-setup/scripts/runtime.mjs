@@ -32,7 +32,11 @@ export function parseArgs(argv) {
   return { flags, positionals };
 }
 
-export function localBin(name, root = process.cwd(), platform = process.platform) {
+export function localBin(
+  name,
+  root = process.cwd(),
+  platform = process.platform,
+) {
   const local = path.join(root, "node_modules", ".bin", name);
   if (platform === "win32") {
     for (const ext of [".cmd", ".exe", ".bat"]) {

@@ -9,7 +9,9 @@ function main() {
   for (const warning of warnings) process.stdout.write(`WARNING: ${warning}\n`);
   for (const error of errors) process.stderr.write(`ERROR: ${error}\n`);
   if (errors.length) process.exit(1);
-  process.stdout.write(`Package checks passed for ${skillCount} skills at version ${version}.\n`);
+  process.stdout.write(
+    `Package checks passed for ${skillCount} skills at version ${version}.\n`,
+  );
 }
 
 if (isMain(import.meta.url)) main();

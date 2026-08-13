@@ -11,15 +11,15 @@ returns `packages`, `direction`, `commands`, `pkgManager`, `run`,
 
 Substitute placeholders literally before any detector command:
 
-| Placeholder | Resolved to |
-|---|---|
-| `<typecheck>`, `<lint>`, `<test>` | Commands from AGENTS.md |
-| `<pkg_root>` | Current row `path` |
-| `<pkg_alias>` | Current row `alias` |
-| `<pkg_responsibility>` | Current row `responsibility` |
-| `<all_pkg_roots>` | Space-separated paths |
-| `<alias_prefix>` | Longest common alias prefix |
-| `<pkg_manager>`, `<run>` | From lockfiles |
+| Placeholder                       | Resolved to                  |
+| --------------------------------- | ---------------------------- |
+| `<typecheck>`, `<lint>`, `<test>` | Commands from AGENTS.md      |
+| `<pkg_root>`                      | Current row `path`           |
+| `<pkg_alias>`                     | Current row `alias`          |
+| `<pkg_responsibility>`            | Current row `responsibility` |
+| `<all_pkg_roots>`                 | Space-separated paths        |
+| `<alias_prefix>`                  | Longest common alias prefix  |
+| `<pkg_manager>`, `<run>`          | From lockfiles               |
 
 Never run a command that still contains `<placeholder>` text. The
 Responsibility column is advisory context for judgment detectors, not a

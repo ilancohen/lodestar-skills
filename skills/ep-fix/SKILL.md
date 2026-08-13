@@ -20,12 +20,12 @@ application source code.
 
 This skill is the executive counterpart to the rest of the harness:
 
-| Skill                   | Shape                                          | Modifies source? |
-| ----------------------- | ---------------------------------------------- | ---------------- |
-| `ep-setup`              | Descriptive — documents the layout             | No (writes config files) |
-| `ep-audit`              | Prescriptive-local — one fix per finding       | No (writes `docs/audit/`) |
-| `ep-review-architecture`| Advisory-global — one report on the layout     | No (writes `docs/architecture-review/`) |
-| `ep-fix` (this)         | Executive — applies the audit's fixes          | **Yes** |
+| Skill                    | Shape                                      | Modifies source?                        |
+| ------------------------ | ------------------------------------------ | --------------------------------------- |
+| `ep-setup`               | Descriptive — documents the layout         | No (writes config files)                |
+| `ep-audit`               | Prescriptive-local — one fix per finding   | No (writes `docs/audit/`)               |
+| `ep-review-architecture` | Advisory-global — one report on the layout | No (writes `docs/architecture-review/`) |
+| `ep-fix` (this)          | Executive — applies the audit's fixes      | **Yes**                                 |
 
 Scripts live beside this `SKILL.md` under `scripts/`. Keep the process
 cwd as the target repository. Invoke scripts with an absolute path to
@@ -234,7 +234,7 @@ spawn prompt):
 - No edits to files outside any item's `files:` list.
 - No spawning further sub-agents — flat fan-out only.
 - Return a JSON array of `{item_id, status, files_modified, commit_sha,
-  notes}` records.
+notes}` records.
 
 The orchestrator:
 

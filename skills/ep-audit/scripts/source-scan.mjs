@@ -26,10 +26,15 @@ export function walk(root, include, excludeTests, files = []) {
       continue;
     }
     const ext = path.extname(entry.name);
-    if (include.length && !include.includes(ext) && !include.includes(entry.name)) {
+    if (
+      include.length &&
+      !include.includes(ext) &&
+      !include.includes(entry.name)
+    ) {
       continue;
     }
-    if (excludeTests && (TEST_RE.test(entry.name) || DTS_RE.test(entry.name))) continue;
+    if (excludeTests && (TEST_RE.test(entry.name) || DTS_RE.test(entry.name)))
+      continue;
     files.push(full);
   }
   return files;
@@ -39,7 +44,8 @@ export function matchLines(filePath, regex) {
   const text = fs.readFileSync(filePath, "utf8");
   const hits = [];
   text.split(/\r?\n/).forEach((line, index) => {
-    if (regex.test(line)) hits.push({ file: filePath, line: index + 1, text: line });
+    if (regex.test(line))
+      hits.push({ file: filePath, line: index + 1, text: line });
   });
   return hits;
 }
@@ -96,7 +102,9 @@ export function scan(argv = []) {
   const include = flags.include
     ? String(flags.include)
         .split(",")
-        .map((item) => (item.startsWith(".") ? item : `.${item.replace(/^\*\./, "")}`))
+        .map((item) =>
+          item.startsWith(".") ? item : `.${item.replace(/^\*\./, "")}`,
+        )
     : DEFAULT_INCLUDE;
   const excludeTests = flags["include-tests"] ? false : true;
   let regex;

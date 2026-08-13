@@ -61,7 +61,8 @@ function summarize(runDir) {
     });
   }
   items.sort((a, b) => {
-    const cat = CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category);
+    const cat =
+      CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category);
     if (cat !== 0) return cat;
     return a.id.localeCompare(b.id);
   });
@@ -86,7 +87,9 @@ function moveAtomic(from, to) {
 function cmdList(flags) {
   const runDir = flags["run-dir"];
   if (!runDir) fail("list requires --run-dir");
-  process.stdout.write(`${JSON.stringify({ items: summarize(runDir) }, null, 2)}\n`);
+  process.stdout.write(
+    `${JSON.stringify({ items: summarize(runDir) }, null, 2)}\n`,
+  );
 }
 
 function cmdSetStatus(flags) {
@@ -94,14 +97,18 @@ function cmdSetStatus(flags) {
   const status = flags.status;
   if (!file || !status) fail("set-status requires --file and --status");
   const allowed = ["in_progress", "done", "skipped", "deferred"];
-  if (!allowed.includes(status)) fail(`status must be one of ${allowed.join(", ")}`);
+  if (!allowed.includes(status))
+    fail(`status must be one of ${allowed.join(", ")}`);
   const current = fs.readFileSync(file, "utf8");
   let next = setField(current, "status", status);
   if (flags.note) next = setField(next, "note", flags.note);
-  if (flags["completed-at"]) next = setField(next, "completed_at", flags["completed-at"]);
+  if (flags["completed-at"])
+    next = setField(next, "completed_at", flags["completed-at"]);
   if (flags.commit) next = setField(next, "commit", flags.commit);
   atomicWrite(file, next);
-  process.stdout.write(`${JSON.stringify({ ok: true, file, status }, null, 2)}\n`);
+  process.stdout.write(
+    `${JSON.stringify({ ok: true, file, status }, null, 2)}\n`,
+  );
 }
 
 function cmdMoveDone(flags) {
@@ -110,7 +117,9 @@ function cmdMoveDone(flags) {
   if (!file || !runDir) fail("move-done requires --file and --run-dir");
   const dest = path.join(runDir, "done", path.basename(file));
   moveAtomic(file, dest);
-  process.stdout.write(`${JSON.stringify({ ok: true, from: file, to: dest }, null, 2)}\n`);
+  process.stdout.write(
+    `${JSON.stringify({ ok: true, from: file, to: dest }, null, 2)}\n`,
+  );
 }
 
 function cmdArchiveRun(flags) {
@@ -118,7 +127,10 @@ function cmdArchiveRun(flags) {
   if (!runDir) fail("archive-run requires --run-dir");
   const remaining = listItems(runDir);
   if (remaining.length) {
-    fail(`cannot archive: ${remaining.length} action items remain in the run root`, 2);
+    fail(
+      `cannot archive: ${remaining.length} action items remain in the run root`,
+      2,
+    );
   }
   const dest = path.join(path.dirname(runDir), "done", path.basename(runDir));
   moveAtomic(runDir, dest);
@@ -136,7 +148,8 @@ function main(argv = process.argv.slice(2)) {
   const { flags, positionals } = parseArgs(argv);
   const command = positionals[0];
   const handler = COMMANDS[command];
-  if (!handler) fail("Usage: action-state list|set-status|move-done|archive-run");
+  if (!handler)
+    fail("Usage: action-state list|set-status|move-done|archive-run");
   handler(flags);
 }
 

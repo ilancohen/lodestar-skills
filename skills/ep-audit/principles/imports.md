@@ -62,14 +62,14 @@ real path globs and import aliases before running.
 If `.audit-fallow-seed.json` exists from Discover, parse it once and
 emit findings from these slices (no shell grep needed):
 
-| JSON field | Subtype |
-|---|---|
-| `check.boundary_violations[]` | #6 `wrong-direction` (only when `.fallowrc.json` was written by setup) |
-| `check.circular_dependencies[]` | #3 `circular-import` |
-| `check.unused_exports[]` (cross-referenced against `<pkg_root>/index.ts`) | #5 `over-broad-index` |
-| `check.unused_files[]` | #7 `unused-file` |
-| `check.unused_dependencies[]` | #8 `unused-dependency` |
-| `check.unresolved_imports[]` | #9 `unresolved-import` |
+| JSON field                                                                | Subtype                                                                |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `check.boundary_violations[]`                                             | #6 `wrong-direction` (only when `.fallowrc.json` was written by setup) |
+| `check.circular_dependencies[]`                                           | #3 `circular-import`                                                   |
+| `check.unused_exports[]` (cross-referenced against `<pkg_root>/index.ts`) | #5 `over-broad-index`                                                  |
+| `check.unused_files[]`                                                    | #7 `unused-file`                                                       |
+| `check.unused_dependencies[]`                                             | #8 `unused-dependency`                                                 |
+| `check.unresolved_imports[]`                                              | #9 `unresolved-import`                                                 |
 
 Subtype #1 (`cross-package-src`) is not a fallow concept — it's a coding-
 style rule. Always run the grep below for it. Subtype #4 (`export *`
@@ -150,7 +150,7 @@ generated action-item title cleaner.
   importer becomes the imported. Often `requires_decision: true`.
 - #7 — delete the file. Before deleting, run
   `"$FALLOW_BIN" dead-code --trace-file <path> --format json --quiet
-  2>/dev/null || true` to confirm fallow
+2>/dev/null || true` to confirm fallow
   sees no inbound edges (sometimes dynamic imports, framework conventions,
   or build-only scripts reach the file in ways the static graph misses —
   if a plugin or convention is responsible, configure it in
@@ -158,7 +158,7 @@ generated action-item title cleaner.
 - #8 — remove the entry from `package.json` `dependencies` /
   `devDependencies`. Before removing, run
   `"$FALLOW_BIN" dead-code --trace-dependency <package> --format json --quiet
-  2>/dev/null || true` to confirm.
+2>/dev/null || true` to confirm.
   If the dependency is used only by a script in `package.json` or a CI
   config, it's a fallow false positive — leave it.
 - #9 — fix the import: correct the typo, install the missing dependency,
