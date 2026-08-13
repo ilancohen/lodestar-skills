@@ -215,7 +215,7 @@ Before marking any task complete:
   a ticket reference; don't silently compromise.
 - Existing file already violates these rules → don't make it worse; flag it
   next time the audit skill is run; don't fix it unless that's the task.
-- Architecture itself feels wrong → run `ep-review-architecture` for a
+- Architecture itself feels wrong → run `lodestar-architecture` for a
   structured second opinion. That skill is advisory only and never modifies
   source.
 
@@ -248,15 +248,15 @@ alias → responsibility mapping the audit skill uses.
 
 | Skill | File | When to use |
 |---|---|---|
-| Setup | `.agents/skills/ep-setup/SKILL.md` | Re-scaffold or refresh this config |
-| Audit | `.agents/skills/ep-audit/SKILL.md` | Scan the codebase and emit action-item files into `docs/audit/<run-id>/` |
-| Review architecture | `.agents/skills/ep-review-architecture/SKILL.md` | Advisory layout review; can propose an alternative architecture on request |
+| Setup | `.agents/skills/lodestar-setup/SKILL.md` | Re-scaffold or refresh this config |
+| Audit | `.agents/skills/lodestar-audit/SKILL.md` | Scan the codebase and emit action-item files into `docs/audit/<run-id>/` |
+| Review architecture | `.agents/skills/lodestar-architecture/SKILL.md` | Advisory layout review; can propose an alternative architecture on request |
 
 The audit skill is **discovery only** — it produces one self-contained
 markdown file per violation. Each file is designed to be handed
 independently to a human or LLM as a fix task.
 
-The ep-review-architecture skill is **advisory only** — it never modifies
+The lodestar-architecture skill is **advisory only** — it never modifies
 source and never writes audit-style action items. It produces a single
 report comparing the documented layout to recognised architectural
 patterns and, on request, a candidate alternative layout to discuss with

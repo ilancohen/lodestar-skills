@@ -9,14 +9,14 @@ checks between stages, until the plan is fully landed and moved to
 `docs/plans/done/`.
 
 This skill is the executive counterpart for the plans workflow, mirroring
-what `ep-fix` is for audits:
+what `lodestar-fix` is for audits:
 
 | Skill              | Input shape                              | Modifies source? |
 | ------------------ | ---------------------------------------- | ---------------- |
-| `ep-fix`           | One `docs/audit/<RUN_ID>/` directory     | **Yes** |
+| `lodestar-fix`           | One `docs/audit/<RUN_ID>/` directory     | **Yes** |
 | `implement-plan`   | One `docs/plans/<plan>` file or folder   | **Yes** |
 
-Both also rewrite their own index — `ep-fix` moves items into `done/`
+Both also rewrite their own index — `lodestar-fix` moves items into `done/`
 and promotes finished runs; `implement-plan` moves the plan into
 `docs/plans/done/` and updates `docs/plans/README.md`.
 
@@ -30,7 +30,7 @@ Required:
   containing `README.md` plus numbered sub-plan files.
 - `AGENTS.md` — read it to capture `<typecheck>`, `<lint>`, `<test>`
   commands and the dependency direction. If those are missing, stop
-  and tell the user to run `ep-setup` first.
+  and tell the user to run `lodestar-setup` first.
 - `CONTRIBUTING.md` — read the pre-commit checklist. Every commit this skill
   produces must satisfy it.
 - `docs/plans/README.md` — the ledger. It will be updated when the
