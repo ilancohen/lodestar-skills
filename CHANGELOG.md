@@ -16,6 +16,10 @@ All notable changes to this project will be documented here.
   | `ep-fix`                 | `lodestar-fix`          |
   | `ep-review-architecture` | `lodestar-architecture` |
 
+- Dry-run-first `scripts/migrate_vendored.mjs` for legacy vendored `ep-*`
+  copies under `.agents/skills`, `.claude/skills`, and `.cursor/skills`
+  (refuses local checksum edits without `--force`).
+
 ### Added
 
 - Standalone package for `lodestar-setup`, `lodestar-audit`, `lodestar-fix`, and

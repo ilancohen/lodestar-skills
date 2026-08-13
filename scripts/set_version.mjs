@@ -8,10 +8,13 @@ import { MANIFESTS, ROOT, SKILLS, isMain, readJson } from "./lib.mjs";
 function replaceMetadataVersion(text, version, relativePath) {
   let count = 0;
   const updated = text.replace(
-    /^metadata:\s*\n(?:^[ \t]+.*\n)*?^[ \t]+version:\s*["']?[^"'\n]+/m,
+    /^metadata:\s*\n(?:^[ \t]+.*\n)*?^[ \t]+version:\s*["']?[^"'\n]+["']?/m,
     (block) => {
       count += 1;
-      return block.replace(/version:\s*["']?[^"'\n]+/, `version: "${version}"`);
+      return block.replace(
+        /version:\s*["']?[^"'\n]+["']?/,
+        `version: "${version}"`,
+      );
     },
   );
   if (count !== 1) {

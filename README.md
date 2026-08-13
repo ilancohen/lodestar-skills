@@ -37,9 +37,12 @@ The installer detects which coding agents you use, pre-selects them plus all
 four skills, and installs. Enter accepts those defaults; space toggles.
 
 ```bash
-pnpm dlx github:ilancohen/lodestar-skills
+pnpm dlx skills add ilancohen/lodestar-skills
 ```
 
+Per-agent: `pnpm dlx skills add ilancohen/lodestar-skills --skill '*' -a cursor`.
+
+Or via the Clack installer: `pnpm dlx github:ilancohen/lodestar-skills`.
 npm: `npx github:ilancohen/lodestar-skills`. Yarn:
 `yarn dlx github:ilancohen/lodestar-skills`. Use the
 target repository's package manager; ask if more than one lockfile is
