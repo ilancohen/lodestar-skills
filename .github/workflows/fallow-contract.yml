@@ -11,10 +11,6 @@ on:
 
 jobs:
   contract:
-    strategy:
-      fail-fast: false
-      matrix:
-        fallow: ["3.15.0"]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -34,7 +30,7 @@ jobs:
 
       - name: Install pinned Fallow in fixture repo
         working-directory: tests/fixtures/repos/fallow-contract
-        run: npm install --save-dev fallow@${{ matrix.fallow }}
+        run: npm install --save-dev fallow@3.15.0
 
       - name: Unit + fixture contract tests
         run: node --test tests/fallow-contract.test.mjs
@@ -42,7 +38,7 @@ jobs:
       - name: Live command matrix
         env:
           FALLOW_CONTRACT_LIVE: "1"
-          FALLOW_CONTRACT_VERSION: ${{ matrix.fallow }}
+          FALLOW_CONTRACT_VERSION: "3.15.0"
         run: node --test tests/fallow-contract.test.mjs
 
   latest-probe:
@@ -56,8 +52,8 @@ jobs:
       - name: Report latest fallow without expanding support
         run: |
           latest=$(npm view fallow version)
-          current=$(node -e "console.log(JSON.parse(require('fs').readFileSync('skills/ep-audit/scripts/fallow-contract.json','utf8')).tool_version_current)")
+          current=$(node -e "console.log(JSON.parse(require('fs').readFileSync('skills/ep-audit/scripts/fallow-contract.json','utf8')).tool_version)")
           echo "latest=$latest current=$current"
           if [ "$latest" != "$current" ]; then
-            echo "::warning::Newest fallow $latest differs from tested current $current. Do not expand the contract without regenerating fixtures and human review."
+            echo "::warning::Newest fallow $latest differs from pinned $current. Do not expand the contract without regenerating fixtures and human review."
           fi

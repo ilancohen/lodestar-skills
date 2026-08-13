@@ -16,43 +16,20 @@ export function loadContract(filePath = CONTRACT_PATH) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
-export function compareVersions(a, b) {
-  const pa = String(a)
-    .split(".")
-    .map((part) => Number(part) || 0);
-  const pb = String(b)
-    .split(".")
-    .map((part) => Number(part) || 0);
-  const len = Math.max(pa.length, pb.length);
-  for (let i = 0; i < len; i += 1) {
-    const da = pa[i] || 0;
-    const db = pb[i] || 0;
-    if (da > db) return 1;
-    if (da < db) return -1;
-  }
-  return 0;
-}
-
-export function inRange(version, min, max) {
-  return (
-    compareVersions(version, min) >= 0 && compareVersions(version, max) <= 0
-  );
-}
-
 export function remediation(contract, details, extras = {}) {
   const installed = extras.installed || "unknown";
   const schema = extras.schema === undefined ? "n/a" : String(extras.schema);
   const kind = extras.kind || "n/a";
   const install = installFallowCommand(
-    contract.tool_version_current,
+    contract.tool_version,
     extras.manager,
   );
   return [
     details,
     `Installed Fallow: ${installed}.`,
-    `Supported range: ${contract.tool_version_min}–${contract.tool_version_current} (schema ${contract.schema_version}).`,
+    `Supported version: ${contract.tool_version} (schema ${contract.schema_version}).`,
     `Received schema/kind: ${schema}/${kind}.`,
-    `Install the supported current version with: ${install}`,
+    `Install the supported version with: ${install}`,
   ].join(" ");
 }
 
@@ -108,17 +85,9 @@ export function validateEnvelope(envelope, spec, contract) {
   if (spec.kind && envelope.kind !== spec.kind) {
     throw new Error(`expected kind=${spec.kind}, got ${envelope.kind}`);
   }
-  if (
-    envelope.version &&
-    contract.status === "tested" &&
-    !inRange(
-      envelope.version,
-      contract.tool_version_min,
-      contract.tool_version_current,
-    )
-  ) {
+  if (envelope.version && envelope.version !== contract.tool_version) {
     throw new Error(
-      `unsupported Fallow ${envelope.version}; supported ${contract.tool_version_min}–${contract.tool_version_current}`,
+      `unsupported Fallow ${envelope.version}; supported ${contract.tool_version}`,
     );
   }
   for (const field of spec.required_fields || []) {
@@ -190,10 +159,7 @@ export function resolveFallow(root, contract = loadContract()) {
     );
   }
   const version = detectVersion(bin);
-  if (
-    contract.status === "tested" &&
-    !inRange(version, contract.tool_version_min, contract.tool_version_current)
-  ) {
+  if (version !== contract.tool_version) {
     throw new Error(
       remediation(contract, `unsupported Fallow installed ${version}.`, {
         installed: version,

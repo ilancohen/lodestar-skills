@@ -6,7 +6,6 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import {
   hasPath,
-  inRange,
   loadContract,
   parseEnvelope,
   remediation,
@@ -29,20 +28,11 @@ function spec(id) {
   return CONTRACT.commands.find((item) => item.id === id);
 }
 
-test("contract pins tested Fallow 3.15.0", () => {
+test("contract pins Fallow 3.15.0", () => {
   assert.equal(CONTRACT.schema_version, 10);
-  assert.equal(CONTRACT.status, "tested");
-  assert.equal(CONTRACT.tool_version_min, "3.15.0");
-  assert.equal(CONTRACT.tool_version_current, "3.15.0");
+  assert.equal(CONTRACT.tool_version, "3.15.0");
   assert.equal(spec("combined").schema_version, 10);
   assert.equal(spec("dupes-semantic").schema_version, 8);
-  assert.ok(
-    inRange("3.15.0", CONTRACT.tool_version_min, CONTRACT.tool_version_current),
-  );
-  assert.equal(
-    inRange("3.14.0", CONTRACT.tool_version_min, CONTRACT.tool_version_current),
-    false,
-  );
 });
 
 test("current fixtures satisfy every command contract", () => {
@@ -87,7 +77,7 @@ test("negative fixtures fail closed with remediation", () => {
     [
       "unsupported-version.json",
       "combined",
-      /unsupported Fallow|Supported range/i,
+      /unsupported Fallow|Supported version/i,
     ],
     ["missing-field.json", "combined", /missing required field/i],
     ["zero-entry-points.json", "combined", /entry_points\.total is 0/i],
@@ -102,7 +92,7 @@ test("negative fixtures fail closed with remediation", () => {
     ]);
     assert.equal(result.status, 2, name);
     assert.match(result.stderr, pattern, name);
-    assert.match(result.stderr, /Supported range: 3\.15\.0–3\.15\.0/);
+    assert.match(result.stderr, /Supported version: 3\.15\.0/);
     assert.match(result.stderr, /pnpm add -D fallow@3\.15\.0/);
     assert.match(result.stderr, /npm install --save-dev fallow@3\.15\.0/);
   }
@@ -119,16 +109,6 @@ test("empty successful combined envelope validates", () => {
   assert.equal(result.status, 0, result.stderr);
 });
 
-test("below-min retained fixture is rejected by version gate", () => {
-  const envelope = parseEnvelope(
-    fs.readFileSync(path.join(FIX, "v3.14.0", "combined.json"), "utf8"),
-  );
-  assert.throws(
-    () => validateEnvelope(envelope, spec("combined"), CONTRACT),
-    /unsupported Fallow 3\.14\.0|unsupported schema 7/,
-  );
-});
-
 test("combined fixtures expose contracted file_score fields", () => {
   const envelope = parseEnvelope(
     fs.readFileSync(path.join(FIX, "v3.15.0", "combined.json"), "utf8"),
@@ -140,7 +120,7 @@ test("combined fixtures expose contracted file_score fields", () => {
   }
 });
 
-test("remediation names installed version, range, schema/kind, and install command", () => {
+test("remediation names installed version, pin, schema/kind, and install command", () => {
   const message = remediation(CONTRACT, "unsupported schema 99.", {
     installed: "3.14.0",
     schema: 99,
@@ -148,7 +128,7 @@ test("remediation names installed version, range, schema/kind, and install comma
     manager: "npm",
   });
   assert.match(message, /Installed Fallow: 3\.14\.0/);
-  assert.match(message, /Supported range: 3\.15\.0–3\.15\.0 \(schema 10\)/);
+  assert.match(message, /Supported version: 3\.15\.0 \(schema 10\)/);
   assert.match(message, /Received schema\/kind: 99\/combined/);
   assert.match(message, /npm install --save-dev fallow@3\.15\.0/);
   assert.doesNotMatch(message, /ask which package manager/);
@@ -162,7 +142,7 @@ test("live fallow matrix validates every consumed command when enabled", async (
     return;
   }
   const fixture = path.join(ROOT, "tests/fixtures/repos/fallow-contract");
-  const version = process.env.FALLOW_CONTRACT_VERSION;
+  const version = process.env.FALLOW_CONTRACT_VERSION || CONTRACT.tool_version;
   assert.ok(version, "FALLOW_CONTRACT_VERSION is required for live runs");
   for (const command of CONTRACT.commands) {
     const args = ["run", "--root", fixture, "--id", command.id];

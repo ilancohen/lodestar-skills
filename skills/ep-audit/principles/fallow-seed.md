@@ -15,7 +15,7 @@ Run the seed **once** at the start of Discover, after
 package-set resolution and before iterating categories. Cache the JSON in memory; each category sub-doc consumes the
 relevant slice.
 
-Supported Fallow range and schema live in
+Supported Fallow version and schema live in
 `scripts/fallow-contract.json`. Resolve the binary, run the combined seed,
 and validate the envelope **before** any findings are written. Do not use
 `|| true` — exit 0/1 are success; exit 2 and contract failures stop the
@@ -38,7 +38,7 @@ if ($LASTEXITCODE -ne 0) { throw "fallow contract failed" }
 ```
 
 On failure the script prints one remediation message with the installed
-version, supported range, received schema/kind, and the install command
+version, supported version, received schema/kind, and the install command
 for this repo's package manager (`pnpm add -D fallow@<current>`, or the
 npm / yarn equivalent). If the manager cannot be detected, the message
 lists all three and you must ask which to use. Stop and report that
