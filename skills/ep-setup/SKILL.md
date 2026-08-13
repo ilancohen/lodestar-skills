@@ -195,8 +195,8 @@ Decide whether to write it:
    node <ep-audit-skill>/scripts/fallow-contract.mjs resolve-bin --root <repo>
    ```
 2. If fallow is not found or outside the supported range, tell the user:
-   "fallow 3.10.0–3.14.0 (schema 7) is required for ep-audit. Install with
-   `npm install --save-dev fallow@3.14.0`. Write `.fallowrc.json` anyway so
+   "fallow 3.15.0 (combined schema 10) is required for ep-audit. Install with
+   `npm install --save-dev fallow@3.15.0`. Write `.fallowrc.json` anyway so
    it's ready when fallow is installed?"
 3. If `.fallowrc.json` already exists, ask: "merge boundary section / leave
    alone / overwrite?"

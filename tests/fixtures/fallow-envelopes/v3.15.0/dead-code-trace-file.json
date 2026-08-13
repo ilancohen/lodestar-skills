@@ -1,0 +1,1 @@
+{"kind":"trace","file":"src/orphan.ts","is_reachable":false,"is_entry_point":false,"exports":[{"name":"orphan","is_type_only":false,"reference_count":0,"referenced_by":[]}],"imports_from":[],"imported_by":[],"re_exports":[],"_meta":{"telemetry":{"analysis_run_id":"run_0bb141c0b345e8b6"}}}

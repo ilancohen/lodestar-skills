@@ -92,11 +92,14 @@ function commandSpec(contract, kindOrId) {
 }
 
 export function validateEnvelope(envelope, spec, contract) {
-  const requireSchema = spec.require_schema !== false;
-  if (requireSchema || "schema_version" in envelope) {
-    if (envelope.schema_version !== contract.schema_version) {
+  if (spec.require_schema) {
+    const expectedSchema =
+      spec.schema_version !== undefined
+        ? spec.schema_version
+        : contract.schema_version;
+    if (envelope.schema_version !== expectedSchema) {
       throw new Error(
-        `unsupported schema ${envelope.schema_version}; expected ${contract.schema_version}`,
+        `unsupported schema ${envelope.schema_version}; expected ${expectedSchema}`,
       );
     }
   }

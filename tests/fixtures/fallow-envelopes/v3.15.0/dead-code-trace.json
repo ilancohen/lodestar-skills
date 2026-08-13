@@ -1,0 +1,1 @@
+{"kind":"trace","file":"src/index.ts","export_name":"unusedExport","file_reachable":true,"is_entry_point":true,"is_used":false,"direct_references":[],"re_export_chains":[],"reason":"No internal references, but file is an entry point (export is externally accessible)","_meta":{"telemetry":{"analysis_run_id":"run_c430adca037a595c"}}}

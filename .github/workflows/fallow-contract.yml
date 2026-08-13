@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        fallow: ["3.10.0", "3.14.0"]
+        fallow: ["3.15.0"]
     runs-on: ubuntu-latest
     defaults:
       run:

@@ -1,21 +1,22 @@
 {
-  "schema_version": 7,
-  "tool_version_min": "3.10.0",
-  "tool_version_current": "3.14.0",
+  "schema_version": 10,
+  "tool_version_min": "3.15.0",
+  "tool_version_current": "3.15.0",
   "status": "tested",
-  "install_current": "npm install --save-dev fallow@3.14.0",
-  "notes": "Range selected from evidence: schema_version 7 holds through 3.14.0; 3.10.0 is the first release that stamps kind on trace envelopes; 3.15.0 emits schema 10 and is out of range until a follow-up expands the contract.",
+  "install_current": "npm install --save-dev fallow@3.15.0",
+  "notes": "Pinned to current Fallow 3.15.0. Combined envelopes use schema_version 10; dupes envelopes use schema_version 8. Earlier 3.10–3.14 (schema 7) releases are out of range.",
   "fixture_repo": "tests/fixtures/repos/fallow-contract",
   "envelope_fixtures": {
-    "min": "tests/fixtures/fallow-envelopes/v3.10.0",
-    "current": "tests/fixtures/fallow-envelopes/v3.14.0",
-    "below_min": "tests/fixtures/fallow-envelopes/v3.9.1"
+    "min": "tests/fixtures/fallow-envelopes/v3.15.0",
+    "current": "tests/fixtures/fallow-envelopes/v3.15.0",
+    "below_min": "tests/fixtures/fallow-envelopes/v3.14.0"
   },
   "commands": [
     {
       "id": "combined",
       "argv": ["--format", "json", "--quiet"],
       "kind": "combined",
+      "schema_version": 10,
       "require_schema": true,
       "required_fields": [
         "kind",
@@ -58,6 +59,7 @@
       "id": "dupes-semantic",
       "argv": ["dupes", "--mode", "semantic", "--format", "json", "--quiet"],
       "kind": "dupes",
+      "schema_version": 8,
       "require_schema": true,
       "required_fields": ["kind", "schema_version", "clone_groups[]"],
       "instance_fields": ["file", "start_line", "end_line"],
