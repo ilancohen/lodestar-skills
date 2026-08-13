@@ -1,6 +1,6 @@
 # Contributing
 
-Read `AGENTS.md` and `ROADMAP.md` before changing this skill suite.
+Read `AGENTS.md` before changing this skill suite.
 
 The canonical skill implementations live under `skills/`. Product manifests
 and client adapters are thin references only — they must not duplicate

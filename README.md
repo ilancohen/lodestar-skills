@@ -100,7 +100,7 @@ skill from the client's skills UI.
 
 ## Development
 
-Read [ROADMAP.md](ROADMAP.md), [AGENTS.md](AGENTS.md), and
+Read [AGENTS.md](AGENTS.md) and
 [CONTRIBUTING.md](CONTRIBUTING.md) before changing the suite. Run:
 
 ```bash

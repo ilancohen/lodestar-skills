@@ -1,7 +1,7 @@
 # AGENTS.md
 
-Suite contributors: also read `CONTRIBUTING.md` and `ROADMAP.md` before
-changing this skill package.
+Suite contributors: also read `CONTRIBUTING.md` and
+`docs/plans/README.md` before changing this skill package.
 
 ## Project
 
@@ -54,7 +54,8 @@ pnpm dlx skills add . --list
 
 This repository develops the reusable suite itself. Do not encode assumptions
 from one consuming repository into canonical skill logic. Capture examples in
-eval fixtures or documentation instead.
+documentation or test fixtures instead.
 
-Read `ROADMAP.md` and `CONTRIBUTING.md` for the remaining implementation work and acceptance
-criteria.
+Read `CONTRIBUTING.md` for the pre-commit checklist. In-flight work is in
+`docs/plans/README.md`; delivered roadmap evidence is in
+`docs/plans/done/2026-08-13-roadmap-delivery/`.
