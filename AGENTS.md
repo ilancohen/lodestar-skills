@@ -1,5 +1,8 @@
 # AGENTS.md
 
+Suite contributors: also read `CONTRIBUTING.md` and `ROADMAP.md` before
+changing this skill package.
+
 ## Project
 
 Portable Agent Skills for setting up engineering principles, auditing a
@@ -51,5 +54,5 @@ This repository develops the reusable suite itself. Do not encode assumptions
 from one consuming repository into canonical skill logic. Capture examples in
 eval fixtures or documentation instead.
 
-Read `ROADMAP.md` for the remaining implementation work and acceptance
+Read `ROADMAP.md` and `CONTRIBUTING.md` for the remaining implementation work and acceptance
 criteria.

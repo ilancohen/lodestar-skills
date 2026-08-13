@@ -4,11 +4,15 @@
 import fs from "node:fs";
 import path from "node:path";
 import {
+  ADAPTER_DIRS,
   HOMEPAGE_URL,
+  KIRO_BLOCKED,
+  KIRO_STEERING,
   MANIFESTS,
   REPO_URL,
   ROOT,
   SKILLS,
+  SOURCE_MUTATING_SKILLS,
   frontmatter,
   isMain,
   metadataVersion,
@@ -43,6 +47,130 @@ function walkMarkdown(dir, files = []) {
     else if (entry.name.endsWith(".md")) files.push(full);
   }
   return files;
+}
+
+function validateManifestShape(relative, manifest, errors) {
+  if (typeof manifest.description !== "string" || !manifest.description.trim()) {
+    errors.push(`${relative}: description is required`);
+  }
+  if (
+    relative === "plugin.json" &&
+    manifest.$schema !==
+      "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
+  ) {
+    errors.push(
+      `${relative}: $schema must be the Agent Plugins 1.0 schema URL`,
+    );
+  }
+  if (relative === ".codex-plugin/plugin.json") {
+    if (manifest.skills !== "./skills/") {
+      errors.push(`${relative}: skills must be ./skills/`);
+    }
+  }
+}
+
+function validateKiroAdapters(root, errors) {
+  const steeringDir = path.join(root, ".kiro", "steering");
+  if (!fs.existsSync(steeringDir)) {
+    errors.push(".kiro/steering/: missing Kiro adapter directory");
+    return;
+  }
+  const found = fs
+    .readdirSync(steeringDir)
+    .filter((name) => name.endsWith(".md") && name !== "README.md")
+    .map((name) => name.replace(/\.md$/, ""))
+    .sort();
+  const expected = [...KIRO_STEERING].sort();
+  if (found.join(",") !== expected.join(",")) {
+    errors.push(
+      `.kiro/steering/: expected ${JSON.stringify(expected)}, found ${JSON.stringify(found)}`,
+    );
+  }
+  for (const skill of KIRO_STEERING) {
+    const relative = `.kiro/steering/${skill}.md`;
+    const text = fs.readFileSync(path.join(root, relative), "utf8");
+    const yaml = frontmatter(text, relative);
+    const inclusion = scalar(yaml, "inclusion");
+    if (inclusion !== "manual") {
+      errors.push(`${relative}: inclusion must be manual (got ${inclusion})`);
+    }
+    if (/inclusion:\s*(always|auto|fileMatch)/.test(text)) {
+      errors.push(
+        `${relative}: must not declare always/auto/fileMatch inclusion`,
+      );
+    }
+    const canonical = `skills/${skill}/SKILL.md`;
+    if (
+      !text.includes(`#[[file:${canonical}]]`) &&
+      !text.includes(canonical)
+    ) {
+      errors.push(`${relative}: must reference canonical ${canonical}`);
+    }
+    if (text.split(/\r?\n/).length > 40) {
+      errors.push(
+        `${relative}: adapter is too long; keep a thin reference only`,
+      );
+    }
+  }
+  for (const skill of KIRO_BLOCKED) {
+    const blocked = path.join(steeringDir, `${skill}.md`);
+    if (fs.existsSync(blocked)) {
+      errors.push(
+        `.kiro/steering/${skill}.md: must not ship; Kiro CLI loads all steering files and ignores inclusion modes`,
+      );
+    }
+  }
+  const kiroSkills = path.join(root, ".kiro", "skills");
+  if (fs.existsSync(kiroSkills)) {
+    errors.push(
+      ".kiro/skills/: do not ship Kiro Agent Skills copies; use manual steering references only",
+    );
+  }
+}
+
+function validateNoDuplicatedSkillBodies(root, errors) {
+  for (const dir of ADAPTER_DIRS) {
+    const base = path.join(root, dir);
+    if (!fs.existsSync(base)) continue;
+    const stack = [base];
+    while (stack.length) {
+      const current = stack.pop();
+      for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
+        const full = path.join(current, entry.name);
+        if (entry.isDirectory()) {
+          stack.push(full);
+          continue;
+        }
+        if (entry.name === "SKILL.md") {
+          errors.push(
+            `${path.relative(root, full)}: adapters must not contain SKILL.md copies`,
+          );
+        }
+      }
+    }
+  }
+}
+
+function validateContributorGuidance(root, errors) {
+  if (fs.existsSync(path.join(root, "CLAUDE.md"))) {
+    errors.push(
+      "CLAUDE.md: contributor guidance must live in CONTRIBUTING.md so it is not Claude plugin runtime context",
+    );
+  }
+  if (!fs.existsSync(path.join(root, "CONTRIBUTING.md"))) {
+    errors.push("CONTRIBUTING.md: missing contributor guidance");
+  }
+}
+
+function validateSourceMutatingLoadPolicy(root, errors) {
+  for (const skill of SOURCE_MUTATING_SKILLS) {
+    const steering = path.join(root, ".kiro", "steering", `${skill}.md`);
+    if (fs.existsSync(steering)) {
+      errors.push(
+        `.kiro/steering/${skill}.md: source-mutating skill must not ship as Kiro steering (CLI auto-loads all steering files)`,
+      );
+    }
+  }
 }
 
 export function checkPackage(root = ROOT) {
@@ -90,7 +218,13 @@ export function checkPackage(root = ROOT) {
         errors.push(`${relative}: repository must be ${REPO_URL}`);
       }
     }
+    validateManifestShape(relative, manifest, errors);
   }
+
+  validateKiroAdapters(root, errors);
+  validateNoDuplicatedSkillBodies(root, errors);
+  validateContributorGuidance(root, errors);
+  validateSourceMutatingLoadPolicy(root, errors);
 
   for (const skill of SKILLS) {
     const skillDir = path.join(root, "skills", skill);

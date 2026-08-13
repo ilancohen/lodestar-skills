@@ -12,7 +12,14 @@ function copyRepo() {
   const walk = (from, to) => {
     fs.mkdirSync(to, { recursive: true });
     for (const entry of fs.readdirSync(from, { withFileTypes: true })) {
-      if (entry.name === ".git" || entry.name === "node_modules") continue;
+      if (
+        entry.name === ".git" ||
+        entry.name === "node_modules" ||
+        entry.name === ".cursor" ||
+        entry.name === ".agents"
+      ) {
+        continue;
+      }
       const src = path.join(from, entry.name);
       const out = path.join(to, entry.name);
       if (entry.isDirectory()) walk(src, out);

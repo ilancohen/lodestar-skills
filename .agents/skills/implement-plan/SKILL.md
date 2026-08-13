@@ -31,7 +31,7 @@ Required:
 - `AGENTS.md` — read it to capture `<typecheck>`, `<lint>`, `<test>`
   commands and the dependency direction. If those are missing, stop
   and tell the user to run `ep-setup` first.
-- `CLAUDE.md` — read the pre-commit checklist. Every commit this skill
+- `CONTRIBUTING.md` — read the pre-commit checklist. Every commit this skill
   produces must satisfy it.
 - `docs/plans/README.md` — the ledger. It will be updated when the
   plan completes.
@@ -143,7 +143,7 @@ rules as stop conditions:
   scope, stop and ask. Either the scope is wrong (update the plan first)
   or the plan needs splitting.
 
-Walk through the pre-commit checklist in `CLAUDE.md` as you go — every
+Walk through the pre-commit checklist in `CONTRIBUTING.md` as you go — every
 item that applies (SoC, DRY, SSOT, YAGNI, Tell Don't Ask, CQS, branded
 types, no `any`, no module-load side effects, `Result<T, E>` for
 expected failures, ubiquitous language, no inline static styles, LLM
@@ -179,7 +179,7 @@ Do not commit until all three pass.
 **Trivial-stage carve-out.** If the stage's diff is *purely mechanical* —
 a rename, file move, hoist/extract with no behavior change, or a
 comment/dead-code removal — and the diff is under ~80 lines of real code
-change, skip the subagent. Instead, walk the `CLAUDE.md` pre-commit
+change, skip the subagent. Instead, walk the `CONTRIBUTING.md` pre-commit
 checklist inline and proceed to Step 3.6. The end-of-plan state will
 still be reviewed when the user inspects the final ledger update, and
 typecheck + scoped tests already caught the structural breakage classes
@@ -194,7 +194,7 @@ Otherwise, spawn a `code-reviewer` subagent with:
   to happen).
 - The git diff for the stage (`git diff` on unstaged or staged
   changes — whichever applies).
-- The `CLAUDE.md` pre-commit checklist as the review rubric (in
+- The `CONTRIBUTING.md` pre-commit checklist as the review rubric (in
   addition to the reviewer's own rubric).
 
 The reviewer returns a structured report. Filter to issues at

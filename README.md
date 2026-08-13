@@ -55,6 +55,10 @@ This repository also contains:
 - `.claude-plugin/plugin.json` — Claude Code plugin adapter.
 - `.codex-plugin/plugin.json` — Codex plugin adapter.
 - `gemini-extension.json` — Gemini CLI extension adapter.
+- `.kiro/steering/` — Kiro manual steering for `ep-setup`, `ep-audit`, and
+  `ep-review-architecture`. `ep-fix` is **not** shipped there: Kiro CLI
+  loads all steering files and ignores inclusion modes (see
+  `.kiro/steering/README.md`).
 
 All adapters load the same canonical `skills/` directories. They do not copy
 skill logic.
@@ -75,8 +79,8 @@ skill from the client's skills UI.
 
 ## Development
 
-Read [ROADMAP.md](ROADMAP.md) and [AGENTS.md](AGENTS.md) before changing the
-suite. Run:
+Read [ROADMAP.md](ROADMAP.md), [AGENTS.md](AGENTS.md), and
+[CONTRIBUTING.md](CONTRIBUTING.md) before changing the suite. Run:
 
 ```bash
 node scripts/check_package.mjs
