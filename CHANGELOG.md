@@ -12,6 +12,8 @@ All notable changes to this project will be documented here.
 - Implementation roadmap, package validation, CI, and starter eval sets.
 - Canonical `VERSION` source, install/upgrade docs, and a dry-run-first
   migration tool for legacy vendored copies.
+- Install docs follow the skills CLI per-agent flow: omit `-a` so
+  detection is the default selection.
 
 ### Fixed
 

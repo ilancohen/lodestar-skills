@@ -17,28 +17,51 @@ and improving software architecture:
 - A skills-compatible coding agent.
 - Git.
 - Node.js 22 or later for package checks and bundled skill scripts.
+- pnpm 11 for this suite's own commands. Target repositories may use
+  pnpm, npm, or yarn — skills detect the lockfile and ask if it is
+  unclear.
 - A POSIX-compatible shell for remaining skill command recipes.
   PowerShell equivalents exist for suite validation scripts; skills do
   not claim Windows support until the CI matrix is green.
 - [Fallow](https://docs.fallow.tools) **3.15.0** (combined schema 10) in the
-  target repository for `ep-audit`. Pin with
-  `npm install --save-dev fallow@3.15.0`.
+  target repository for `ep-audit`. Pin with that repo's package manager,
+  e.g. `pnpm add -D fallow@3.15.0` (or `npm install --save-dev` /
+  `yarn add -D`).
 
 ## Install
 
 Project scope is the default. The skills write project-specific configuration
 and audit output.
 
+The [skills CLI](https://github.com/vercel-labs/skills) discovers this suite,
+detects the coding agents you have installed, and prompts for which to
+install to. Omit `-a` so detection is the default selection.
+
 ```bash
-npx skills add ilancohen/engineering-principles-skills \
-  --skill ep-setup ep-audit ep-fix ep-review-architecture
+pnpm dlx skills add ilancohen/engineering-principles-skills
 ```
+
+npm: `npx skills add …`. Yarn: `yarn dlx skills add …`. Use the
+target repository's package manager; ask if more than one lockfile is
+present, or none is.
 
 From this directory during development:
 
 ```bash
-npx skills add . --skill ep-setup ep-audit ep-fix ep-review-architecture
+pnpm dlx skills add .
 ```
+
+| Intent | Command |
+| --- | --- |
+| Full suite, skip skill picker | `pnpm dlx skills add ilancohen/engineering-principles-skills --skill '*'` |
+| One agent | `pnpm dlx skills add ilancohen/engineering-principles-skills --skill '*' -a cursor` |
+| Several agents | `pnpm dlx skills add ilancohen/engineering-principles-skills --skill '*' -a cursor -a claude-code` |
+| Non-interactive (CI / scripts) | same plus `-y` (and `--copy` when a smoke test needs copies) |
+
+Agent ids for clients this suite ships adapters for: `cursor`, `claude-code`,
+`codex`, `gemini-cli`, `github-copilot`, `kiro-cli`. See the
+[skills CLI supported agents](https://github.com/vercel-labs/skills#supported-agents)
+for the full list.
 
 See [UPGRADING.md](UPGRADING.md) for updates, version pinning, rollback, and
 migration of legacy copied skills.
@@ -46,17 +69,17 @@ migration of legacy copied skills.
 Copying or symlinking `skills/` by hand is a legacy path, not the normal
 install method.
 
-### Product packages
+### Native plugins
 
-This repository also contains:
+Prefer a native plugin only when you do not want the skills CLI:
 
-- `plugin.json` — Agent Plugins 1.0 manifest, currently supported by Cursor.
-- `.claude-plugin/plugin.json` — Claude Code plugin adapter.
-- `.codex-plugin/plugin.json` — Codex plugin adapter.
-- `gemini-extension.json` — Gemini CLI extension adapter.
-- `.kiro/steering/` — Kiro manual steering for `ep-setup`, `ep-audit`, and
-  `ep-review-architecture`. `ep-fix` is **not** shipped there: Kiro CLI
-  loads all steering files and ignores inclusion modes (see
+- Cursor — `plugin.json` (Agent Plugins 1.0)
+- Claude Code — `.claude-plugin/plugin.json`
+- Codex — `.codex-plugin/plugin.json`
+- Gemini CLI — `gemini-extension.json`
+- Kiro — `.kiro/steering/` for `ep-setup`, `ep-audit`, and
+  `ep-review-architecture` (manual). `ep-fix` is **not** shipped there:
+  Kiro CLI loads all steering files and ignores inclusion modes (see
   `.kiro/steering/README.md`).
 
 All adapters load the same canonical `skills/` directories. They do not copy
@@ -82,23 +105,15 @@ Read [ROADMAP.md](ROADMAP.md), [AGENTS.md](AGENTS.md), and
 [CONTRIBUTING.md](CONTRIBUTING.md) before changing the suite. Run:
 
 ```bash
-node scripts/check_package.mjs
-node --test tests/*.test.mjs
-uvx --from skills-ref agentskills validate skills/ep-setup
-uvx --from skills-ref agentskills validate skills/ep-audit
-uvx --from skills-ref agentskills validate skills/ep-fix
-uvx --from skills-ref agentskills validate skills/ep-review-architecture
-npx skills add . --list
+pnpm check
+pnpm test
+pnpm dlx skills add . --list
 ```
 
 ```powershell
-node scripts/check_package.mjs
-node --test tests/*.test.mjs
-uvx --from skills-ref agentskills validate skills/ep-setup
-uvx --from skills-ref agentskills validate skills/ep-audit
-uvx --from skills-ref agentskills validate skills/ep-fix
-uvx --from skills-ref agentskills validate skills/ep-review-architecture
-npx --yes skills add . --list
+pnpm check
+pnpm test
+pnpm dlx skills add . --list
 ```
 
 Or `scripts/smoke.ps1`.

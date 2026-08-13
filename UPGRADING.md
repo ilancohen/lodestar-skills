@@ -3,31 +3,45 @@
 Default to **project scope**. These skills write repository-specific config
 and `docs/audit/` output.
 
+Use the consuming repository's package manager (`pnpm dlx`, `npx`, or
+`yarn dlx`). Examples below use pnpm.
+
 ## Install
 
 ```bash
-npx skills add ilancohen/engineering-principles-skills \
-  --skill ep-setup ep-audit ep-fix ep-review-architecture
+pnpm dlx skills add ilancohen/engineering-principles-skills
 ```
 
-That is the normal install and update path. Copying or symlinking `skills/`
-into a repository is a legacy path; use `node scripts/migrate_vendored.mjs`
-instead of copying again.
+Omit `-a` so the skills CLI detects installed agents and uses those as the
+default selection. That is the normal install and update path. Copying or
+symlinking `skills/` into a repository is a legacy path; use
+`node scripts/migrate_vendored.mjs` instead of copying again.
+
+Scripts that must not prompt should pin the full suite with `--skill '*'`
+and `-y`:
+
+```bash
+pnpm dlx skills add ilancohen/engineering-principles-skills --skill '*' -y
+```
 
 ## Update
 
 From the consuming repository:
 
 ```bash
-npx skills add ilancohen/engineering-principles-skills \
-  --skill ep-setup ep-audit ep-fix ep-review-architecture
+pnpm dlx skills add ilancohen/engineering-principles-skills
+```
+
+Non-interactive:
+
+```bash
+pnpm dlx skills add ilancohen/engineering-principles-skills --skill '*' -y
 ```
 
 Pin to a release:
 
 ```bash
-npx skills add ilancohen/engineering-principles-skills@v0.1.0 \
-  --skill ep-setup ep-audit ep-fix ep-review-architecture
+pnpm dlx skills add ilancohen/engineering-principles-skills@v0.1.0 --skill '*' -y
 ```
 
 ## Rollback
@@ -35,8 +49,7 @@ npx skills add ilancohen/engineering-principles-skills@v0.1.0 \
 Re-run the install command against a prior tag:
 
 ```bash
-npx skills add ilancohen/engineering-principles-skills@v0.1.0 \
-  --skill ep-setup ep-audit ep-fix ep-review-architecture
+pnpm dlx skills add ilancohen/engineering-principles-skills@v0.1.0 --skill '*' -y
 ```
 
 Confirm installed metadata reports the rolled-back version in each
