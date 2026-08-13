@@ -83,7 +83,7 @@ file whose path strongly suggests it owns the entry boundary (e.g.
 ## Detection
 
 All commands below use placeholders resolved from the `## Package Layout`
-table in `AGENTS.md` (see SKILL.md Step 1.0). Substitute before running.
+table in `AGENTS.md` (see references/discover.md). Substitute before running.
 Where `<pkg_root>` appears, iterate over every row.
 
 ```bash

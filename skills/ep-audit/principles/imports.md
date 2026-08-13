@@ -54,12 +54,12 @@ to the grep heuristic below.
 ## Detection
 
 All commands below use placeholders resolved per row of the `## Package
-Layout` table in `AGENTS.md` (see SKILL.md Step 1.0). Substitute the
+Layout` table in `AGENTS.md` (see references/discover.md). Substitute the
 real path globs and import aliases before running.
 
 ### Preferred: fallow seed
 
-If `.audit-fallow-seed.json` exists from Step 1.1a, parse it once and
+If `.audit-fallow-seed.json` exists from Discover, parse it once and
 emit findings from these slices (no shell grep needed):
 
 | JSON field | Subtype |

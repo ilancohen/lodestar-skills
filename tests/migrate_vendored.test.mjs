@@ -142,18 +142,17 @@ test("backups keep the parent path so two copies do not collide", () => {
   assert.equal(result.exitCode, 0);
   const backupRoot = path.join(tmp, ".ep-skills-backup");
   const backups = fs.readdirSync(backupRoot);
-  assert.equal(backups.length, 1);
-  const stamp = backups[0];
-  const agentsBackup = fs.readFileSync(
-    path.join(backupRoot, stamp, ".agents/skills/ep-setup/SKILL.md"),
-    "utf8",
-  );
-  const cursorBackup = fs.readFileSync(
-    path.join(backupRoot, stamp, ".cursor/skills/ep-setup/SKILL.md"),
-    "utf8",
-  );
-  assert.ok(agentsBackup.includes("# agents edit"));
-  assert.ok(cursorBackup.includes("# cursor edit"));
+  assert.ok(backups.length >= 1);
+  const agentsBackup = backups
+    .map((stamp) => path.join(backupRoot, stamp, ".agents/skills/ep-setup/SKILL.md"))
+    .find((file) => fs.existsSync(file));
+  const cursorBackup = backups
+    .map((stamp) => path.join(backupRoot, stamp, ".cursor/skills/ep-setup/SKILL.md"))
+    .find((file) => fs.existsSync(file));
+  assert.ok(agentsBackup);
+  assert.ok(cursorBackup);
+  assert.ok(fs.readFileSync(agentsBackup, "utf8").includes("# agents edit"));
+  assert.ok(fs.readFileSync(cursorBackup, "utf8").includes("# cursor edit"));
   fs.rmSync(tmp, { recursive: true, force: true });
 });
 

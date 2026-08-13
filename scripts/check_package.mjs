@@ -126,9 +126,17 @@ export function checkPackage(root = ROOT) {
     const lines = text.split(/\r?\n/);
     if (lines.at(-1) === "") lines.pop();
     const lineCount = lines.length;
-    if (lineCount > 500) {
+    const tokens = text.split(/\s+/).filter(Boolean).length;
+    if (lineCount > 499) {
+      errors.push(
+        `${relativeSkill}: ${lineCount} lines; limit is 499`,
+      );
+    }
+    if (tokens > 8000) {
+      errors.push(`${relativeSkill}: ~${tokens} tokens; hard limit is 8000`);
+    } else if (tokens > 5000) {
       warnings.push(
-        `${relativeSkill}: ${lineCount} lines; open-spec guidance recommends fewer than 500`,
+        `${relativeSkill}: ~${tokens} tokens; target is about 5000`,
       );
     }
   }

@@ -51,7 +51,7 @@ loading paths may legitimately differ between runtime targets.
 ## Detection
 
 All commands below use placeholders resolved from the `## Package Layout`
-table in `AGENTS.md` (see SKILL.md Step 1.0). Substitute before running.
+table in `AGENTS.md` (see references/discover.md). Substitute before running.
 
 These detectors produce candidate clusters. The executor must read the
 code at every cited site and confirm the literal genuinely means the

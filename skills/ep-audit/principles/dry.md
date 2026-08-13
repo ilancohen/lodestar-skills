@@ -44,11 +44,11 @@ Risk: low (advisory only).
 ## Detection
 
 All commands below use placeholders resolved from the `## Package Layout`
-table in `AGENTS.md` (see SKILL.md Step 1.0). Substitute before running.
+table in `AGENTS.md` (see references/discover.md). Substitute before running.
 
 ### Preferred: fallow seed
 
-If `.audit-fallow-seed.json` exists from Step 1.1a, parse `dupes.clone_groups[]`:
+If `.audit-fallow-seed.json` exists from Discover, parse `dupes.clone_groups[]`:
 
 - Each entry is one clone family. Every `instances[]` item provides `file`,
   `start_line`, and `end_line`. Emit one finding per clone family for **A**.

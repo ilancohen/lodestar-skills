@@ -60,7 +60,7 @@ Risk: low.
 ## Detection
 
 All commands below use placeholders resolved per row of the `## Package
-Layout` table in `AGENTS.md` (see SKILL.md Step 1.0). Substitute the
+Layout` table in `AGENTS.md` (see references/discover.md). Substitute the
 real path globs before running. Only packages whose path glob contains
 UI source (TSX, JSX, CSS, SCSS) are scanned — skip pure type / DB /
 domain packages.

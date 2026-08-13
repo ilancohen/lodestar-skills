@@ -11,9 +11,8 @@ categories degrades significantly without it.
 
 ## When to use this seed
 
-Run the seed **once** at the start of Phase 1 mechanical pass, after the
-package-set resolution step (Step 1.0) and before iterating categories
-(Step 1.2). Cache the JSON in memory; each category sub-doc consumes the
+Run the seed **once** at the start of Discover, after
+package-set resolution and before iterating categories. Cache the JSON in memory; each category sub-doc consumes the
 relevant slice.
 
 ```bash

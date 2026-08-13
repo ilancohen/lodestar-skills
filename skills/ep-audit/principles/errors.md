@@ -27,7 +27,7 @@ These should return `Result<T, E>`.
 ## Detection
 
 All commands below use placeholders resolved from the `## Package Layout`
-table in `AGENTS.md` (see SKILL.md Step 1.0). Substitute before running.
+table in `AGENTS.md` (see references/discover.md). Substitute before running.
 
 ### Linter probe (best-effort, run once before greps)
 
