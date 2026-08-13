@@ -2,7 +2,6 @@
 /** Reject a release that is dirty, mismatched, or missing evidence. */
 
 import { spawnSync } from "node:child_process";
-import fs from "node:fs";
 import path from "node:path";
 import { ROOT, isMain, readVersion } from "./lib.mjs";
 
@@ -28,15 +27,6 @@ export function releaseCheck(options = {}) {
   if (pack.status !== 0) errors.push("package checks failed");
   if (output.includes("WARNING:")) errors.push("package checks emitted warnings");
 
-  if (!options.allowMissingEvals) {
-    const evalRoot = path.join(ROOT, "evals/results", version);
-    for (const name of ["summary.json", "triggers.json", "review-status.json"]) {
-      const filePath = path.join(evalRoot, name);
-      if (!fs.existsSync(filePath)) {
-        errors.push(`missing eval artifact ${path.relative(ROOT, filePath)}`);
-      }
-    }
-  }
   return { errors, tag, version };
 }
 
@@ -44,13 +34,11 @@ function parseArgs(argv) {
   const flags = {
     tag: null,
     allowDirty: false,
-    allowMissingEvals: false,
     allowExistingTag: false,
   };
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === "--tag") flags.tag = argv[++i];
     else if (argv[i] === "--allow-dirty") flags.allowDirty = true;
-    else if (argv[i] === "--allow-missing-evals") flags.allowMissingEvals = true;
     else if (argv[i] === "--allow-existing-tag") flags.allowExistingTag = true;
   }
   return flags;

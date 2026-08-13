@@ -20,8 +20,6 @@ import {
   readVersion,
   scalar,
 } from "./lib.mjs";
-import { validateEvals, validateTriggers } from "../evals/validate.mjs";
-
 function checkLinks(filePath, errors) {
   const text = fs.readFileSync(filePath, "utf8");
   const relative = path.relative(ROOT, filePath);
@@ -268,30 +266,6 @@ export function checkPackage(root = ROOT) {
     }
     if (metadataVersion(yaml) !== version) {
       errors.push(`${relativeSkill}: metadata.version must be ${version}`);
-    }
-    const evalPath = path.join(skillDir, "evals", "evals.json");
-    const triggerPath = path.join(skillDir, "evals", "triggers.json");
-    const relativeEval = path.relative(root, evalPath);
-    const relativeTrigger = path.relative(root, triggerPath);
-    if (!fs.existsSync(evalPath)) {
-      errors.push(`${path.relative(root, skillDir)}: missing evals/evals.json`);
-    } else {
-      try {
-        validateEvals(skill, readJson(evalPath), errors, relativeEval, root);
-      } catch (error) {
-        errors.push(error.message);
-      }
-    }
-    if (!fs.existsSync(triggerPath)) {
-      errors.push(
-        `${path.relative(root, skillDir)}: missing evals/triggers.json`,
-      );
-    } else {
-      try {
-        validateTriggers(skill, readJson(triggerPath), errors, relativeTrigger);
-      } catch (error) {
-        errors.push(error.message);
-      }
     }
     const lines = text.split(/\r?\n/);
     if (lines.at(-1) === "") lines.pop();

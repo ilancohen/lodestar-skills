@@ -3,5 +3,4 @@ node_modules/
 coverage/
 *.log
 .ep-skills-backup/
-evals/results/
 .fallow/

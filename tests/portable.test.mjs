@@ -17,7 +17,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ACTION = path.join(ROOT, "skills/ep-fix/scripts/action-state.mjs");
 const FIX_READY = path.join(
   ROOT,
-  "evals/fixtures/repos/fix-ready/docs/audit/2026-08-10",
+  "tests/fixtures/audit-runs/fix-ready",
 );
 
 function run(script, args, cwd = ROOT) {

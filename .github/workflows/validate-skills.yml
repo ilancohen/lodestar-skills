@@ -39,7 +39,7 @@ jobs:
         run: |
           node skills/ep-audit/scripts/audit-state.mjs validate-input --root tests/fixtures/repos/valid
           node skills/ep-audit/scripts/source-scan.mjs --recipe explicit-any --root tests/fixtures/repos/valid
-          node skills/ep-fix/scripts/action-state.mjs list --run-dir evals/fixtures/repos/fix-ready/docs/audit/2026-08-10
+          node skills/ep-fix/scripts/action-state.mjs list --run-dir tests/fixtures/audit-runs/fix-ready
           node skills/ep-setup/scripts/resolve-bin.mjs node
 
       - name: Verify installer discovery

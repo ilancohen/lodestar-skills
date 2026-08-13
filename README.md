@@ -51,10 +51,10 @@ From this directory during development:
 node scripts/install.mjs
 ```
 
-| Intent | Command |
-| --- | --- |
-| Skip prompts | `node scripts/install.mjs -y` |
-| One agent | `node scripts/install.mjs -a cursor` |
+| Intent       | Command                                                                      |
+| ------------ | ---------------------------------------------------------------------------- |
+| Skip prompts | `node scripts/install.mjs -y`                                                |
+| One agent    | `node scripts/install.mjs -a cursor`                                         |
 | Scripts / CI | `pnpm dlx skills add ilancohen/engineering-principles-skills --skill '*' -y` |
 
 Agent ids: `cursor`, `claude-code`, `codex`, `gemini-cli`, `github-copilot`,
@@ -121,9 +121,9 @@ Or `scripts/smoke.ps1`.
 
 Initial standalone extraction: `0.1.0`.
 
-The skills have extensive real-world use in their source repository. The
-starter eval sets in each skill are scaffolding for repeatable cross-client
-evaluation and have not yet been benchmarked.
+The skills have extensive real-world use in their source repository.
+Trigger phrases and expected outcomes live in [`docs/evals.md`](docs/evals.md)
+as a manual checklist.
 
 ## License
 

@@ -59,6 +59,5 @@ jobs:
             VERSION
             CHANGELOG.md
             UPGRADING.md
-            evals/results/
           if-no-files-found: warn
           retention-days: 90

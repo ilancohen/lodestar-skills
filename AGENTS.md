@@ -47,7 +47,7 @@ pnpm dlx skills add . --list
 - `ep-fix` remains the only skill that modifies application source.
 - Preserve consent gates, scope limits, and restartability.
 - Keep manifest and skill metadata versions synchronized.
-- Add or update evals when behavior or triggering changes.
+- Update `docs/evals.md` when behavior or triggering changes.
 - Validate every skill and local package discovery before release.
 
 ## Scope
