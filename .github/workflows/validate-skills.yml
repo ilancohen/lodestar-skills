@@ -35,6 +35,9 @@ jobs:
       - name: Unit tests
         run: pnpm test
 
+      - name: Client adapter tests
+        run: node --test tests/client-adapters.test.mjs
+
       - name: Representative skill scripts
         run: |
           node skills/ep-audit/scripts/audit-state.mjs validate-input --root tests/fixtures/repos/valid
@@ -42,5 +45,20 @@ jobs:
           node skills/ep-fix/scripts/action-state.mjs list --run-dir tests/fixtures/audit-runs/fix-ready
           node skills/ep-setup/scripts/resolve-bin.mjs node
 
-      - name: Verify installer discovery
-        run: pnpm dlx skills add . --list
+      - name: Verify installer discovery (exactly four)
+        run: |
+          out=$(pnpm dlx skills add . --list)
+          echo "$out"
+          echo "$out" | grep -q ep-setup
+          echo "$out" | grep -q ep-audit
+          echo "$out" | grep -q ep-fix
+          echo "$out" | grep -q ep-review-architecture
+          echo "$out" | grep -q 'Found 4 skills'
+
+      - name: Native Claude plugin validator when available
+        run: |
+          if command -v claude >/dev/null 2>&1; then
+            claude plugin validate .
+          else
+            echo "Skipping native Claude validator (CLI not installed on runner)"
+          fi
