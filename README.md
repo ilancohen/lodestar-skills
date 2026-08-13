@@ -62,8 +62,7 @@ Agent ids: `cursor`, `claude-code`, `codex`, `gemini-cli`, `github-copilot`,
 [skills CLI supported agents](https://github.com/vercel-labs/skills#supported-agents)
 for the full list.
 
-See [UPGRADING.md](UPGRADING.md) for updates, version pinning, rollback, and
-migration of legacy copied skills.
+See [UPGRADING.md](UPGRADING.md) for updates, version pinning, and rollback.
 
 Copying or symlinking `skills/` by hand is a legacy path, not the normal
 install method.
@@ -76,10 +75,6 @@ Prefer a native plugin only when you do not want the skills CLI:
 - Claude Code — `.claude-plugin/plugin.json`
 - Codex — `.codex-plugin/plugin.json`
 - Gemini CLI — `gemini-extension.json`
-- Kiro — `.kiro/steering/` for `ep-setup`, `ep-audit`, and
-  `ep-review-architecture` (manual). `ep-fix` is **not** shipped there:
-  Kiro CLI loads all steering files and ignores inclusion modes (see
-  `.kiro/steering/README.md`).
 
 All adapters load the same canonical `skills/` directories. They do not copy
 skill logic.

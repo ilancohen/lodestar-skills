@@ -296,7 +296,7 @@ Then do **both** of the following in one final commit
 
 1. Remove the plan's row from the **Awaiting Implementation** table.
 2. Add a row to the **Done** table. Match the existing column shape —
-   `| [path](path) | Evidence |`. Evidence should be a 1–3 sentence
+   `| path | Evidence |`. Evidence should be a 1–3 sentence
    summary citing the commits this session produced (short SHAs) and
    any tangible artifacts (e.g. "Module `evaluateAdmissionRubric`
    landed at `shared/dataset/src/corpus/admissionRubric.ts`; rubric

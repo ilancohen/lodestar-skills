@@ -5,7 +5,7 @@ description: Create an implementable plan under docs/plans/ (YYYY-MM-DD-<slug>.m
 
 # Create Plan
 
-Pipeline: **organize → create → implement**. Companions: [organize-plan-docs](../organize-plan-docs/SKILL.md), [implement-plan](../implement-plan/SKILL.md).
+Pipeline: **create → implement**. Companion: [implement-plan](../implement-plan/SKILL.md).
 
 Write a **plan** under `docs/plans/`. Plans are _how_; link `docs/audit/` findings or `docs/spec/` for _what_ / reference. Don't commit unless asked.
 

@@ -5,8 +5,8 @@ description: Implement a plan from docs/plans/ one stage at a time — apply, ac
 
 # Implement Plan
 
-Pipeline: **organize → create → implement**. Companions: [organize-plan-docs](../organize-plan-docs/SKILL.md), [create-plan](../create-plan/SKILL.md).
+Pipeline: **create → implement**. Companion: [create-plan](../create-plan/SKILL.md).
 
-Read [`.agents/skills/implement-plan/SKILL.md`](../../.agents/skills/implement-plan/SKILL.md) and follow it exactly.
+Read [`.agents/implement-plan/SKILL.md`](../../../.agents/implement-plan/SKILL.md) and follow it exactly.
 
 That skill is the SSOT: plans live under `docs/plans/` (not `docs/work/`), stages are folder `NN-*.md` files or single-file `## Pass` / `## Gap` / `## Step` sections, completion moves the plan to `docs/plans/done/` and updates `docs/plans/README.md`.

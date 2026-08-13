@@ -18,18 +18,10 @@ export const MANIFESTS = [
   ".codex-plugin/plugin.json",
   "gemini-extension.json",
 ];
-export const KIRO_STEERING = [
-  "ep-setup",
-  "ep-audit",
-  "ep-review-architecture",
-];
-export const KIRO_BLOCKED = ["ep-fix"];
 export const ADAPTER_DIRS = [
   ".claude-plugin",
   ".codex-plugin",
-  ".kiro",
 ];
-export const SOURCE_MUTATING_SKILLS = ["ep-fix"];
 export const REPO_URL = "https://github.com/ilancohen/engineering-principles-skills";
 export const HOMEPAGE_URL = REPO_URL;
 export const INSTALL_SPEC = "ilancohen/engineering-principles-skills";
