@@ -9,7 +9,7 @@ Use the consuming repository's package manager (`pnpm dlx`, `npx`, or
 ## Install
 
 ```bash
-pnpm dlx github:ilancohen/engineering-principles-skills
+pnpm dlx github:ilancohen/lodestar-skills
 ```
 
 Enter accepts detected agents and all four skills. That is the normal
@@ -18,7 +18,7 @@ install path.
 Scripts that must not prompt:
 
 ```bash
-pnpm dlx skills add ilancohen/engineering-principles-skills --skill '*' -y
+pnpm dlx skills add ilancohen/lodestar-skills --skill '*' -y
 ```
 
 ## Update
@@ -26,19 +26,19 @@ pnpm dlx skills add ilancohen/engineering-principles-skills --skill '*' -y
 From the consuming repository:
 
 ```bash
-pnpm dlx github:ilancohen/engineering-principles-skills
+pnpm dlx github:ilancohen/lodestar-skills
 ```
 
 Non-interactive:
 
 ```bash
-pnpm dlx skills add ilancohen/engineering-principles-skills --skill '*' -y
+pnpm dlx skills add ilancohen/lodestar-skills --skill '*' -y
 ```
 
 Pin to a release:
 
 ```bash
-pnpm dlx skills add ilancohen/engineering-principles-skills@v0.1.0 --skill '*' -y
+pnpm dlx skills add ilancohen/lodestar-skills@v0.1.0 --skill '*' -y
 ```
 
 ## Rollback
@@ -46,7 +46,7 @@ pnpm dlx skills add ilancohen/engineering-principles-skills@v0.1.0 --skill '*' -
 Re-run the install command against a prior tag:
 
 ```bash
-pnpm dlx skills add ilancohen/engineering-principles-skills@v0.1.0 --skill '*' -y
+pnpm dlx skills add ilancohen/lodestar-skills@v0.1.0 --skill '*' -y
 ```
 
 Confirm installed metadata reports the rolled-back version in each

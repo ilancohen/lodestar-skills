@@ -17,6 +17,6 @@ Before committing suite changes:
 2. `pnpm test`
 3. Confirm local discovery with `pnpm dlx skills add . --list`
 4. Confirm adapters still discover exactly four skills and never auto-load
-   `ep-fix`
+   `lodestar-fix`
 
 Keep versions synchronized via `VERSION` / `scripts/set_version.mjs`.

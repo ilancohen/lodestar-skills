@@ -1,15 +1,15 @@
-# Engineering Principles Skills
+# Lodestar
 
 A portable suite of four Agent Skills for documenting, auditing, reviewing,
 and improving software architecture:
 
-- `ep-setup` — document a repository's commands, package responsibilities,
+- `lodestar-setup` — document a repository's commands, package responsibilities,
   dependency direction, and engineering principles.
-- `ep-audit` — discover principle violations and write self-contained action
+- `lodestar-audit` — discover principle violations and write self-contained action
   items without modifying application source.
-- `ep-fix` — triage and apply those action items with explicit scope and
+- `lodestar-fix` — triage and apply those action items with explicit scope and
   verification gates.
-- `ep-review-architecture` — review the package layout itself and optionally
+- `lodestar-architecture` — review the package layout itself and optionally
   propose alternatives.
 
 ## Requirements
@@ -24,7 +24,7 @@ and improving software architecture:
   PowerShell equivalents exist for suite validation scripts; skills do
   not claim Windows support until the CI matrix is green.
 - [Fallow](https://docs.fallow.tools) **3.15.0** (combined schema 10) in the
-  target repository for `ep-audit`. Pin with that repo's package manager,
+  target repository for `lodestar-audit`. Pin with that repo's package manager,
   e.g. `pnpm add -D fallow@3.15.0` (or `npm install --save-dev` /
   `yarn add -D`).
 
@@ -37,11 +37,11 @@ The installer detects which coding agents you use, pre-selects them plus all
 four skills, and installs. Enter accepts those defaults; space toggles.
 
 ```bash
-pnpm dlx github:ilancohen/engineering-principles-skills
+pnpm dlx github:ilancohen/lodestar-skills
 ```
 
-npm: `npx github:ilancohen/engineering-principles-skills`. Yarn:
-`yarn dlx github:ilancohen/engineering-principles-skills`. Use the
+npm: `npx github:ilancohen/lodestar-skills`. Yarn:
+`yarn dlx github:ilancohen/lodestar-skills`. Use the
 target repository's package manager; ask if more than one lockfile is
 present, or none is.
 
@@ -55,7 +55,7 @@ node scripts/install.mjs
 | ------------ | ---------------------------------------------------------------------------- |
 | Skip prompts | `node scripts/install.mjs -y`                                                |
 | One agent    | `node scripts/install.mjs -a cursor`                                         |
-| Scripts / CI | `pnpm dlx skills add ilancohen/engineering-principles-skills --skill '*' -y` |
+| Scripts / CI | `pnpm dlx skills add ilancohen/lodestar-skills --skill '*' -y` |
 
 Agent ids: `cursor`, `claude-code`, `codex`, `gemini-cli`, `github-copilot`,
 `kiro-cli`. See the
@@ -83,14 +83,14 @@ skill logic.
 
 Run the workflow in this order:
 
-1. Invoke `ep-setup` once in the target repository.
-2. Invoke `ep-audit` to produce `docs/audit/<run-id>/`.
+1. Invoke `lodestar-setup` once in the target repository.
+2. Invoke `lodestar-audit` to produce `docs/audit/<run-id>/`.
 3. Review the generated index and decisions.
-4. Invoke `ep-fix` only when you want source changes.
-5. Invoke `ep-review-architecture` separately when the package layout itself
+4. Invoke `lodestar-fix` only when you want source changes.
+5. Invoke `lodestar-architecture` separately when the package layout itself
    needs review.
 
-Invocation syntax varies by client: `/ep-setup`, `$ep-setup`, or selecting the
+Invocation syntax varies by client: `/lodestar-setup`, `$lodestar-setup`, or selecting the
 skill from the client's skills UI.
 
 ## Development
