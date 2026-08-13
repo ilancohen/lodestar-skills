@@ -16,6 +16,7 @@ import {
   readVersion,
   scalar,
 } from "./lib.mjs";
+import { validateEvals, validateTriggers } from "../evals/validate.mjs";
 
 function checkLinks(filePath, errors) {
   const text = fs.readFileSync(filePath, "utf8");
@@ -51,12 +52,18 @@ export function checkPackage(root = ROOT) {
   const skillsDir = path.join(root, "skills");
   const discovered = fs
     .readdirSync(skillsDir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && fs.existsSync(path.join(skillsDir, entry.name, "SKILL.md")))
+    .filter(
+      (entry) =>
+        entry.isDirectory() &&
+        fs.existsSync(path.join(skillsDir, entry.name, "SKILL.md")),
+    )
     .map((entry) => entry.name)
     .sort();
   const expected = [...SKILLS].sort();
   if (discovered.join(",") !== expected.join(",")) {
-    errors.push(`skills/: expected ${JSON.stringify(expected)}, found ${JSON.stringify(discovered)}`);
+    errors.push(
+      `skills/: expected ${JSON.stringify(expected)}, found ${JSON.stringify(discovered)}`,
+    );
   }
 
   for (const relative of MANIFESTS) {
@@ -107,18 +114,25 @@ export function checkPackage(root = ROOT) {
       errors.push(`${relativeSkill}: metadata.version must be ${version}`);
     }
     const evalPath = path.join(skillDir, "evals", "evals.json");
+    const triggerPath = path.join(skillDir, "evals", "triggers.json");
     const relativeEval = path.relative(root, evalPath);
+    const relativeTrigger = path.relative(root, triggerPath);
     if (!fs.existsSync(evalPath)) {
       errors.push(`${path.relative(root, skillDir)}: missing evals/evals.json`);
     } else {
       try {
-        const evalSet = readJson(evalPath);
-        if (evalSet.skill_name !== skill) {
-          errors.push(`${relativeEval}: skill_name must be ${skill}`);
-        }
-        if (!Array.isArray(evalSet.evals) || evalSet.evals.length < 3) {
-          errors.push(`${relativeEval}: expected at least 3 evals`);
-        }
+        validateEvals(skill, readJson(evalPath), errors, relativeEval, root);
+      } catch (error) {
+        errors.push(error.message);
+      }
+    }
+    if (!fs.existsSync(triggerPath)) {
+      errors.push(
+        `${path.relative(root, skillDir)}: missing evals/triggers.json`,
+      );
+    } else {
+      try {
+        validateTriggers(skill, readJson(triggerPath), errors, relativeTrigger);
       } catch (error) {
         errors.push(error.message);
       }
@@ -128,9 +142,7 @@ export function checkPackage(root = ROOT) {
     const lineCount = lines.length;
     const tokens = text.split(/\s+/).filter(Boolean).length;
     if (lineCount > 499) {
-      errors.push(
-        `${relativeSkill}: ${lineCount} lines; limit is 499`,
-      );
+      errors.push(`${relativeSkill}: ${lineCount} lines; limit is 499`);
     }
     if (tokens > 8000) {
       errors.push(`${relativeSkill}: ~${tokens} tokens; hard limit is 8000`);
@@ -141,13 +153,18 @@ export function checkPackage(root = ROOT) {
     }
   }
 
-  const setupText = fs.readFileSync(path.join(root, "skills/ep-setup/SKILL.md"), "utf8");
+  const setupText = fs.readFileSync(
+    path.join(root, "skills/ep-setup/SKILL.md"),
+    "utf8",
+  );
   if (
     /\.agents\/skills\/ep-setup\/(?:principles|agents-md|skills-readme|claude-md|copilot-instructions|fallowrc)\.md/.test(
       setupText,
     )
   ) {
-    errors.push("skills/ep-setup/SKILL.md: bundled resources must use relative paths");
+    errors.push(
+      "skills/ep-setup/SKILL.md: bundled resources must use relative paths",
+    );
   }
 
   for (const markdownPath of walkMarkdown(root)) {
@@ -162,7 +179,9 @@ function main() {
   for (const warning of warnings) process.stdout.write(`WARNING: ${warning}\n`);
   for (const error of errors) process.stderr.write(`ERROR: ${error}\n`);
   if (errors.length) process.exit(1);
-  process.stdout.write(`Package checks passed for ${skillCount} skills at version ${version}.\n`);
+  process.stdout.write(
+    `Package checks passed for ${skillCount} skills at version ${version}.\n`,
+  );
 }
 
 const invoked = isMain(import.meta.url);

@@ -5,19 +5,55 @@
       "id": 1,
       "prompt": "Audit this TypeScript monorepo for our documented engineering-principles violations. Produce independently actionable findings, but do not fix source code.",
       "expected_output": "Runs discovery and planning against AGENTS.md, writes a dated findings seam and self-contained action items, and leaves application source untouched.",
-      "files": []
+      "files": [],
+      "fixture": "tests/fixtures/repos/valid",
+      "baseline": true,
+      "assertions": [
+        { "type": "consent_asked", "true": true },
+        {
+          "type": "allowed_write",
+          "paths": ["docs/audit/**", ".audit-fallow-seed.json"]
+        },
+        { "type": "forbidden_write", "paths": ["packages/**", "src/**"] },
+        { "type": "status", "path": "docs/audit/*/findings.md", "exists": true }
+      ]
     },
     {
       "id": 2,
       "prompt": "Only check imports, package boundaries, and duplicated behavior this time. Pause after findings.md so I can remove false positives.",
       "expected_output": "Confirms the selected category subset, scans only those categories, writes resumable findings, and pauses before action-item expansion.",
-      "files": []
+      "files": [],
+      "fixture": "tests/fixtures/repos/valid",
+      "baseline": true,
+      "assertions": [
+        { "type": "consent_asked", "true": true },
+        { "type": "stop_message", "contains": "Phase 2" },
+        { "type": "forbidden_write", "paths": ["packages/**"] }
+      ]
     },
     {
       "id": 3,
-      "prompt": "Run ep-audit in this new repository. It has no AGENTS.md yet and Fallow is not installed.",
+      "prompt": "Run ep-audit in this new repository. AGENTS.md still has TODO placeholders and Fallow is not installed.",
       "expected_output": "Stops without scanning, explains the missing prerequisites, and directs the user to ep-setup and Fallow installation.",
-      "files": []
+      "files": [],
+      "fixture": "tests/fixtures/repos/placeholder",
+      "baseline": true,
+      "assertions": [
+        { "type": "stop_message", "contains": "ep-setup" },
+        { "type": "forbidden_write", "paths": ["packages/**", "docs/audit/**"] }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Audit this Python repository for DRY and boundary violations. Do not fix source.",
+      "expected_output": "Stops because Fallow is not installed, and writes neither findings nor source.",
+      "files": [],
+      "fixture": "evals/fixtures/repos/python-app",
+      "baseline": true,
+      "assertions": [
+        { "type": "stop_message", "contains": "fallow" },
+        { "type": "forbidden_write", "paths": ["packages/**", "docs/audit/**"] }
+      ]
     }
   ]
 }

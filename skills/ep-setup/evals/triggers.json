@@ -1,0 +1,101 @@
+{
+  "skill_name": "ep-setup",
+  "prompts": [
+    {
+      "id": "pos-direct",
+      "label": "direct invocation",
+      "should_trigger": true,
+      "prompt": "Run ep-setup in this repository."
+    },
+    {
+      "id": "pos-install",
+      "label": "implied after install",
+      "should_trigger": true,
+      "prompt": "We just installed the engineering-principles skills. Document our packages and agent guidance."
+    },
+    {
+      "id": "pos-refresh",
+      "label": "structure change",
+      "should_trigger": true,
+      "prompt": "We added a billing package. Refresh AGENTS.md and the skill README without auditing."
+    },
+    {
+      "id": "pos-bun",
+      "label": "package manager change",
+      "should_trigger": true,
+      "prompt": "We switched from npm to Bun. Update the engineering-principles setup files."
+    },
+    {
+      "id": "pos-confirm",
+      "label": "confirmation first",
+      "should_trigger": true,
+      "prompt": "Set up engineering principles but ask me to confirm package responsibilities before writing."
+    },
+    {
+      "id": "pos-preserve",
+      "label": "preserve existing notes",
+      "should_trigger": true,
+      "prompt": "Initialize ep-setup. Keep the deployment section already in AGENTS.md."
+    },
+    {
+      "id": "pos-interrupted",
+      "label": "interrupted setup",
+      "should_trigger": true,
+      "prompt": "You stopped after listing packages. Finish ep-setup and write the config files."
+    },
+    {
+      "id": "pos-ambiguous",
+      "label": "ambiguous wording",
+      "should_trigger": true,
+      "prompt": "Wire up the agent engineering docs for this monorepo the way the principles suite expects."
+    },
+    {
+      "id": "neg-audit",
+      "label": "audit not setup",
+      "should_trigger": false,
+      "prompt": "Audit this repo for DRY and boundary violations. Do not change setup files."
+    },
+    {
+      "id": "neg-fix",
+      "label": "source fix",
+      "should_trigger": false,
+      "prompt": "Apply the low-risk action items in docs/audit/2026-08-10."
+    },
+    {
+      "id": "neg-architecture",
+      "label": "layout redesign",
+      "should_trigger": false,
+      "prompt": "Propose a hexagonal layout for this monorepo. Do not document the current one."
+    },
+    {
+      "id": "neg-advice",
+      "label": "advice only",
+      "should_trigger": false,
+      "prompt": "What should an AGENTS.md contain in general? Don't write files."
+    },
+    {
+      "id": "neg-linter-only",
+      "label": "unrelated lint",
+      "should_trigger": false,
+      "prompt": "Enable @typescript-eslint/no-explicit-any in eslint.config.js."
+    },
+    {
+      "id": "neg-readme",
+      "label": "product readme",
+      "should_trigger": false,
+      "prompt": "Rewrite the product README for marketing."
+    },
+    {
+      "id": "neg-commit",
+      "label": "git commit",
+      "should_trigger": false,
+      "prompt": "Commit the staged TypeScript changes with a conventional message."
+    },
+    {
+      "id": "neg-ci",
+      "label": "ci workflow",
+      "should_trigger": false,
+      "prompt": "Add a GitHub Actions workflow that runs unit tests."
+    }
+  ]
+}

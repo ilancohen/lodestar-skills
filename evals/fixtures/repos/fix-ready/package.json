@@ -1,0 +1,9 @@
+{
+  "name": "fix-ready",
+  "private": true,
+  "scripts": {
+    "typecheck": "node -e \"process.exit(0)\"",
+    "lint": "node -e \"process.exit(0)\"",
+    "test": "node -e \"process.exit(0)\""
+  }
+}

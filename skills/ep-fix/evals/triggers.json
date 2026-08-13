@@ -1,0 +1,101 @@
+{
+  "skill_name": "ep-fix",
+  "prompts": [
+    {
+      "id": "pos-direct",
+      "label": "direct invocation",
+      "should_trigger": true,
+      "prompt": "Run ep-fix on the latest audit. Do not commit."
+    },
+    {
+      "id": "pos-low-risk",
+      "label": "low-risk batch",
+      "should_trigger": true,
+      "prompt": "Apply all unstarted low-risk items. Stop on scope creep."
+    },
+    {
+      "id": "pos-decision",
+      "label": "decision pass",
+      "should_trigger": true,
+      "prompt": "Work through requires_decision items in 2026-08-10. Ask before each source change."
+    },
+    {
+      "id": "pos-resume",
+      "label": "interrupted fix",
+      "should_trigger": true,
+      "prompt": "Resume audit remediation. One item is in_progress with a partial diff."
+    },
+    {
+      "id": "pos-category",
+      "label": "by category",
+      "should_trigger": true,
+      "prompt": "Fix only the imports and types action items from docs/audit/2026-08-10."
+    },
+    {
+      "id": "pos-ids",
+      "label": "specific ids",
+      "should_trigger": true,
+      "prompt": "Execute 003 and 004 from the current audit run. Verify before marking done."
+    },
+    {
+      "id": "pos-commit",
+      "label": "per-item commit",
+      "should_trigger": true,
+      "prompt": "Apply remaining items and auto-commit each one separately."
+    },
+    {
+      "id": "pos-ambiguous",
+      "label": "ambiguous wording",
+      "should_trigger": true,
+      "prompt": "Land the engineering-principles action items that are still in the run root."
+    },
+    {
+      "id": "neg-audit",
+      "label": "discover not fix",
+      "should_trigger": false,
+      "prompt": "Find DRY and boundary violations. Do not change source."
+    },
+    {
+      "id": "neg-setup",
+      "label": "setup",
+      "should_trigger": false,
+      "prompt": "Document package layout in AGENTS.md."
+    },
+    {
+      "id": "neg-architecture",
+      "label": "advisory review",
+      "should_trigger": false,
+      "prompt": "Write an architecture review. Do not apply audit items."
+    },
+    {
+      "id": "neg-random-edit",
+      "label": "unrelated refactor",
+      "should_trigger": false,
+      "prompt": "Extract a UserService class. There is no audit action item."
+    },
+    {
+      "id": "neg-advice",
+      "label": "advice only",
+      "should_trigger": false,
+      "prompt": "How should I triage audit action items? Don't edit files."
+    },
+    {
+      "id": "neg-pr",
+      "label": "pr review",
+      "should_trigger": false,
+      "prompt": "Review the open pull request for bugs."
+    },
+    {
+      "id": "neg-deps",
+      "label": "dependency bump",
+      "should_trigger": false,
+      "prompt": "Upgrade TypeScript to the latest version."
+    },
+    {
+      "id": "neg-delete",
+      "label": "delete audit files",
+      "should_trigger": false,
+      "prompt": "Delete docs/audit/ so we can start over."
+    }
+  ]
+}

@@ -5,19 +5,56 @@
       "id": 1,
       "prompt": "Describe this repository's package architecture for a new engineer. Do not suggest changes.",
       "expected_output": "Asks once for review mode, samples documented packages, writes one evidence-backed advisory report, and omits alternative layouts.",
-      "files": []
+      "files": [],
+      "fixture": "tests/fixtures/repos/valid",
+      "baseline": true,
+      "assertions": [
+        { "type": "consent_asked", "true": true },
+        { "type": "allowed_write", "paths": ["docs/architecture-review/**"] },
+        { "type": "forbidden_write", "paths": ["packages/**", "src/**"] },
+        { "type": "advisory" }
+      ]
     },
     {
       "id": 2,
       "prompt": "Review our current package layout before a major refactor and propose at most two materially different alternatives with migration trade-offs.",
       "expected_output": "Describes the current layout first, proposes no more than two evidence-mapped alternatives, includes trade-offs and migration cost, and changes no source.",
-      "files": []
+      "files": [],
+      "fixture": "tests/fixtures/repos/valid",
+      "baseline": true,
+      "assertions": [
+        { "type": "allowed_write", "paths": ["docs/architecture-review/**"] },
+        { "type": "forbidden_write", "paths": ["packages/**"] }
+      ]
     },
     {
       "id": 3,
-      "prompt": "Review the architecture in this repository, but its AGENTS.md has no Package Layout table.",
+      "prompt": "Review the architecture in this repository. AGENTS.md Package Layout rows are still TODO and Dependency Direction is missing.",
       "expected_output": "Stops and directs the user to ep-setup instead of guessing package responsibilities.",
-      "files": []
+      "files": [],
+      "fixture": "tests/fixtures/repos/placeholder",
+      "baseline": true,
+      "assertions": [
+        { "type": "stop_message", "contains": "ep-setup" },
+        {
+          "type": "forbidden_write",
+          "paths": ["packages/**", "docs/architecture-review/**"]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Describe this Python repository's package architecture. Do not suggest changes.",
+      "expected_output": "Writes an advisory report from the Python layout and does not edit packages/.",
+      "files": [],
+      "fixture": "evals/fixtures/repos/python-app",
+      "baseline": true,
+      "assertions": [
+        { "type": "consent_asked", "true": true },
+        { "type": "allowed_write", "paths": ["docs/architecture-review/**"] },
+        { "type": "forbidden_write", "paths": ["packages/**"] },
+        { "type": "advisory" }
+      ]
     }
   ]
 }
