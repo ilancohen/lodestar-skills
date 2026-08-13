@@ -58,7 +58,7 @@ function addSkills(source, consumer) {
 
 export function smokeInstall(root = ROOT, options = {}) {
   const version = readVersion(root);
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "ep-skills-smoke-"));
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-smoke-"));
   const dest = path.join(tmp, "checkout");
   const older = path.join(tmp, "older");
   const consumer = path.join(tmp, "consumer");

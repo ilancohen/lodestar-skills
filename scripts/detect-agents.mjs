@@ -198,7 +198,7 @@ export function resolveSelection(args, detectOptions = {}) {
 }
 
 export function isPackageRoot(dir) {
-  return exists(path.join(dir, "skills", "ep-setup", "SKILL.md"));
+  return exists(path.join(dir, "skills", "lodestar-setup", "SKILL.md"));
 }
 
 export function resolveSource(cwd = process.cwd()) {

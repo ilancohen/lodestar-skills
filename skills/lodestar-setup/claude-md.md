@@ -1,4 +1,4 @@
-# CLAUDE.md — Engineering Principles for This Monorepo
+# CLAUDE.md — Lodestar for This Monorepo
 
 Read this before touching any code. Treat it as law, not suggestion.
 
@@ -20,7 +20,7 @@ through `index.ts` only — never from internal paths like `<alias>/src/...`.
 
 If a change would put code in a package whose responsibility (per
 `AGENTS.md`) doesn't match what the code is doing, the package boundary
-is wrong, not the code — flag it. The `ep-review-architecture` skill exists
+is wrong, not the code — flag it. The `lodestar-architecture` skill exists
 for cases where the layout itself needs a second look.
 
 ---

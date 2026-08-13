@@ -1,13 +1,13 @@
 {
-  "name": "engineering-principles",
-  "displayName": "Engineering Principles",
+  "name": "lodestar",
+  "displayName": "Lodestar",
   "version": "0.1.0",
   "description": "Set up engineering principles, audit repositories, apply scoped fixes, and review package architecture.",
   "author": {
     "name": "Ilan Cohen"
   },
-  "homepage": "https://github.com/ilancohen/engineering-principles-skills",
-  "repository": "https://github.com/ilancohen/engineering-principles-skills",
+  "homepage": "https://github.com/ilancohen/lodestar-skills",
+  "repository": "https://github.com/ilancohen/lodestar-skills",
   "license": "MIT",
   "keywords": [
     "architecture",

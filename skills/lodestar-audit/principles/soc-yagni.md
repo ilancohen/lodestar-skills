@@ -165,7 +165,7 @@ candidates with Fallow's trace envelope (`kind: "trace"`).
   execute the split inside the action item if it touches more than 3 files;
   mark `requires_decision: true` and produce a plan only. If the split
   would move code between packages, also mark `requires_decision: true`
-  and add a note suggesting `ep-review-architecture`.
+  and add a note suggesting `lodestar-architecture`.
 - **B**, **C**, **D** — update every call site in the same commit.
 - For **D**: do not remove the export if any test outside the package
   imports it. Move the test or revisit.

@@ -22,7 +22,7 @@ and validate the envelope **before** any findings are written. Do not use
 audit.
 
 ```bash
-# Scripts live under the installed ep-audit skill. --out must be under <repo>.
+# Scripts live under the installed lodestar-audit skill. --out must be under <repo>.
 node scripts/fallow-contract.mjs resolve-bin --root <repo>
 node scripts/fallow-contract.mjs run \
   --root <repo> \
@@ -88,7 +88,7 @@ clone detectors alongside it.
 
 For `check.boundary_violations` to fire, the repo must have a `.fallowrc.json`
 whose zones match the `## Package Layout` table in `AGENTS.md`. The setup
-skill writes this file (Step 4.5 of `ep-setup`) using the repo's
+skill writes this file (Step 4.5 of `lodestar-setup`) using the repo's
 own package names as zone names — there is no canonical role mapping.
 
 If `.fallowrc.json` is absent, fallow still produces useful output for

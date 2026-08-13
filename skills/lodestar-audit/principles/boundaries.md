@@ -158,7 +158,7 @@ grep -rEn "isValid|\.parse\(|z\.object|\.safeParse" <all_pkg_roots> --include="*
 
 If the fix would move logic between packages and the layout itself is
 unclear, mark `requires_decision: true` and add a note suggesting
-`ep-review-architecture`.
+`lodestar-architecture`.
 
 ## Scope rules (must appear verbatim in generated action items)
 

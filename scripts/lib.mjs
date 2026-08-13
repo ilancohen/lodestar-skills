@@ -7,10 +7,10 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 export const ROOT = path.resolve(here, "..");
 export const VERSION_PATH = path.join(ROOT, "VERSION");
 export const SKILLS = [
-  "ep-setup",
-  "ep-audit",
-  "ep-fix",
-  "ep-review-architecture",
+  "lodestar-setup",
+  "lodestar-audit",
+  "lodestar-fix",
+  "lodestar-architecture",
 ];
 export const MANIFESTS = [
   "plugin.json",
@@ -22,9 +22,9 @@ export const ADAPTER_DIRS = [
   ".claude-plugin",
   ".codex-plugin",
 ];
-export const REPO_URL = "https://github.com/ilancohen/engineering-principles-skills";
+export const REPO_URL = "https://github.com/ilancohen/lodestar-skills";
 export const HOMEPAGE_URL = REPO_URL;
-export const INSTALL_SPEC = "ilancohen/engineering-principles-skills";
+export const INSTALL_SPEC = "ilancohen/lodestar-skills";
 
 export function readVersion(root = ROOT) {
   const text = fs.readFileSync(path.join(root, "VERSION"), "utf8").trim();

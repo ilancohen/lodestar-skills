@@ -19,7 +19,7 @@ test("manifests stay metadata-only and version-aligned", () => {
       fs.readFileSync(path.join(ROOT, relative), "utf8"),
     );
     assert.equal(manifest.version, version);
-    assert.equal(manifest.name, "engineering-principles");
+    assert.equal(manifest.name, "lodestar");
     assert.ok(!("instructions" in manifest));
     assert.ok(!("prompt" in manifest));
   }
@@ -39,10 +39,10 @@ test("skills CLI lists exactly four skills from this package", () => {
   }
 });
 
-test("no adapter auto-loads ep-fix", () => {
+test("no adapter auto-loads lodestar-fix", () => {
   for (const relative of MANIFESTS) {
     const text = fs.readFileSync(path.join(ROOT, relative), "utf8");
-    assert.doesNotMatch(text, /ep-fix/);
+    assert.doesNotMatch(text, /lodestar-fix/);
   }
   assert.equal(fs.existsSync(path.join(ROOT, ".kiro")), false);
 });

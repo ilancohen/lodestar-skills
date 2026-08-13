@@ -10,10 +10,10 @@ import {
   parseEnvelope,
   remediation,
   validateEnvelope,
-} from "../skills/ep-audit/scripts/fallow-contract.mjs";
+} from "../skills/lodestar-audit/scripts/fallow-contract.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const SCRIPT = path.join(ROOT, "skills/ep-audit/scripts/fallow-contract.mjs");
+const SCRIPT = path.join(ROOT, "skills/lodestar-audit/scripts/fallow-contract.mjs");
 const CONTRACT = loadContract();
 const FIX = path.join(ROOT, "tests/fixtures/fallow-envelopes");
 

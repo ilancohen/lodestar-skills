@@ -128,8 +128,8 @@ test("--agent and --skill override defaults", () => {
     "--agent",
     "claude-code",
     "--skill",
-    "ep-setup",
-    "ep-audit",
+    "lodestar-setup",
+    "lodestar-audit",
   ]);
   const cwd = tempDir("ep-install-cwd-");
   const home = tempDir("ep-install-home-");
@@ -137,15 +137,15 @@ test("--agent and --skill override defaults", () => {
     fs.mkdirSync(path.join(cwd, ".cursor"));
     const selection = resolveSelection(args, { cwd, home, env: emptyEnv() });
     assert.deepEqual(selection.agents, ["claude-code"]);
-    assert.deepEqual(selection.skills, ["ep-setup", "ep-audit"]);
+    assert.deepEqual(selection.skills, ["lodestar-setup", "lodestar-audit"]);
     assert.deepEqual(
       buildSkillsAddArgs({ source: INSTALL_SPEC, ...selection, copy: true }),
       [
         "add",
         INSTALL_SPEC,
         "--skill",
-        "ep-setup",
-        "ep-audit",
+        "lodestar-setup",
+        "lodestar-audit",
         "-a",
         "claude-code",
         "-y",

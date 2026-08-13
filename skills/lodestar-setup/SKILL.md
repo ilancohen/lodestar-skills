@@ -1,7 +1,7 @@
 ---
-name: ep-setup
+name: lodestar-setup
 description: >-
-  Sets up the engineering-principles suite in a repository by documenting its
+  Sets up the lodestar suite in a repository by documenting its
   package layout and writing agent guidance. Use after installing the suite or
   when repository structure changes. May also configure Fallow, gitignore
   entries, and existing linter rules with user consent.
@@ -12,10 +12,10 @@ metadata:
   version: "0.1.0"
 ---
 
-Write the four config files that coding agents need to use the engineering-principles
+Write the four config files that coding agents need to use the lodestar
 skills. This requires only the information needed to fill in the templates — do not
 do a broad repo survey, and do not propose architectural changes (the
-`ep-review-architecture` skill exists for that).
+`lodestar-architecture` skill exists for that).
 
 Resolve every bundled template path relative to the directory containing this
 `SKILL.md`. Paths beginning with `.agents/` below are output paths in the target
@@ -30,7 +30,7 @@ repository, not locations of this installed skill.
   (`core`, `api`, `ui`, etc.). The audit operates on whatever packages
   this skill documents.
 - **Does not**: propose, suggest, or critique an alternative layout.
-  If the user asks for that, point them at `ep-review-architecture` and
+  If the user asks for that, point them at `lodestar-architecture` and
   stop — do not silently start a layout review.
 
 ## Step 1 — Collect the minimum required facts
@@ -87,12 +87,12 @@ script prefixes until that is answered.
 
 Ask the user to correct anything wrong. One round of feedback only.
 Do not ask separate questions about coverage, branded types, or violations,
-and do not ask whether the layout is "right" — that's `ep-review-architecture`'s
+and do not ask whether the layout is "right" — that's `lodestar-architecture`'s
 job, not setup's.
 
 ## Step 3 — Build the shared principles block
 
-`principles.md` is the canonical engineering-principles
+`principles.md` is the canonical lodestar
 body. It gets inlined into all three of `CLAUDE.md`,
 `.agents/skills/README.md`, and `.github/copilot-instructions.md` so the
 three files never drift.
@@ -140,7 +140,7 @@ Start from `agents-md.md`. Fill in:
 `.agents/skills/README.md` for the principles. No inlining needed here.
 
 If `AGENTS.md` already exists, add or update only the `## Build & Test`,
-`## Dependency Direction`, `## Package Layout`, `## Engineering Principles`,
+`## Dependency Direction`, `## Package Layout`, `## Lodestar`,
 `## Skills`, and `## Audit Output` sections — leave everything else untouched.
 
 Write to `AGENTS.md`.
@@ -194,16 +194,16 @@ heuristic grep for direction violations.
 Decide whether to write it:
 
 1. Prefer the version pinned in the project, then check `PATH`, via the
-   ep-audit contract script (absolute path to
-   `ep-audit/scripts/fallow-contract.mjs`):
+   lodestar-audit contract script (absolute path to
+   `lodestar-audit/scripts/fallow-contract.mjs`):
    ```bash
-   node <ep-audit-skill>/scripts/fallow-contract.mjs resolve-bin --root <repo>
+   node <lodestar-audit-skill>/scripts/fallow-contract.mjs resolve-bin --root <repo>
    ```
    ```powershell
-   node <ep-audit-skill>/scripts/fallow-contract.mjs resolve-bin --root <repo>
+   node <lodestar-audit-skill>/scripts/fallow-contract.mjs resolve-bin --root <repo>
    ```
 2. If fallow is not found or outside the supported range, tell the user:
-   "fallow 3.15.0 (combined schema 10) is required for ep-audit. Install with
+   "fallow 3.15.0 (combined schema 10) is required for lodestar-audit. Install with
    `<pm add -D fallow@3.15.0>` using this repo's package manager (pnpm:
    `pnpm add -D fallow@3.15.0`; npm: `npm install --save-dev fallow@3.15.0`;
    yarn: `yarn add -D fallow@3.15.0`). Write `.fallowrc.json` anyway so
@@ -233,11 +233,11 @@ the project's `.gitignore` if it exists and doesn't already cover them
 (`.audit-fallow-seed.json` is the audit's transient seed cache; `.fallow/`
 is fallow's own cache directory).
 
-After writing, verify with the ep-audit contract script (absolute path to
-the installed `ep-audit/scripts/fallow-contract.mjs`):
+After writing, verify with the lodestar-audit contract script (absolute path to
+the installed `lodestar-audit/scripts/fallow-contract.mjs`):
 
 ```bash
-node <ep-audit-skill>/scripts/fallow-contract.mjs run \
+node <lodestar-audit-skill>/scripts/fallow-contract.mjs run \
   --root <repo> \
   --id list-boundaries \
   --out <repo>/.audit-fallow-boundaries.json
@@ -249,7 +249,7 @@ before continuing. Delete the temp JSON after reading it.
 
 ## Step 4.6 — (Optional) Linting rules for higher-accuracy audit findings
 
-The ep-audit skill runs an opportunistic linter probe when detecting
+The lodestar-audit skill runs an opportunistic linter probe when detecting
 `types` (#1, #3), `errors` (A, B), and `boundaries.B` violations. Enabling
 the relevant rules in your existing linter config makes those findings
 definitive rather than heuristic — no packages to install beyond what you
@@ -263,7 +263,7 @@ set up a new linter or modify linter config without the user's consent.
 Recommend enabling (in `eslint.config.*` or `.eslintrc.*`):
 
 ```js
-// @typescript-eslint rules that map directly to ep-audit categories
+// @typescript-eslint rules that map directly to lodestar-audit categories
 '@typescript-eslint/no-explicit-any': 'error',          // types #3
 '@typescript-eslint/consistent-type-imports': 'error',  // types #1
 '@typescript-eslint/no-floating-promises': 'error',     // errors A
@@ -271,11 +271,11 @@ Recommend enabling (in `eslint.config.*` or `.eslintrc.*`):
 '@typescript-eslint/prefer-promise-reject-errors': 'error', // errors B
 ```
 
-These rules are already assumed by ep-audit's fix recipes (e.g. the `any`
+These rules are already assumed by lodestar-audit's fix recipes (e.g. the `any`
 fix recipe references `eslint-disable-next-line @typescript-eslint/no-explicit-any`).
 
 For `boundaries.B` (misplaced business logic), also recommend adding
-`eslint-plugin-boundaries`. Once configured, the ep-audit skill uses its
+`eslint-plugin-boundaries`. Once configured, the lodestar-audit skill uses its
 output directly and produces definitive findings with no `requires_decision`
 overhead. Use the zone structure already written to `.fallowrc.json` as
 the source — each zone becomes an element type:
@@ -303,7 +303,7 @@ groups. Check that these are enabled:
 - `correctness/useImportType` → types #1
 
 Biome does not have a boundaries/layer enforcement rule. The grep fallback
-in ep-audit handles `boundaries.B` when Biome is the only linter.
+in lodestar-audit handles `boundaries.B` when Biome is the only linter.
 
 Ask the user once whether they want to add any of these. Do not write
 config without confirmation.
@@ -312,12 +312,12 @@ config without confirmation.
 
 Print a one-line summary of each file written or updated (including
 `.fallowrc.json` if Step 4.5 ran).
-Ask: "Does this look right? If so, run the `ep-audit`
+Ask: "Does this look right? If so, run the `lodestar-audit`
 skill to scan the codebase and produce action-item files in
 `docs/audit/<run-id>/`. If the layout itself feels off, run
-`ep-review-architecture` instead — it produces an advisory report and never
+`lodestar-architecture` instead — it produces an advisory report and never
 modifies source."
 
-Do not run the audit automatically. Do not run `ep-review-architecture`
+Do not run the audit automatically. Do not run `lodestar-architecture`
 automatically. Setup is descriptive — anything evaluative is the other
 skill's job.

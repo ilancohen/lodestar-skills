@@ -1,5 +1,5 @@
 <!--
-Canonical engineering-principles body. Read by `ep-setup`
+Canonical lodestar body. Read by `lodestar-setup`
 and inlined into every target file (CLAUDE.md, .agents/skills/README.md,
 .github/copilot-instructions.md) at the `<!-- INSERT principles.md -->`
 marker.
@@ -207,6 +207,6 @@ Before marking any task complete:
   a ticket reference; don't silently compromise.
 - Existing file already violates these rules → don't make it worse; flag it
   next time the audit skill is run; don't fix it unless that's the task.
-- Architecture itself feels wrong → run `ep-review-architecture` for a
+- Architecture itself feels wrong → run `lodestar-architecture` for a
   structured second opinion. That skill is advisory only and never modifies
   source.

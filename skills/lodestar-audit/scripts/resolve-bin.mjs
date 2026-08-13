@@ -12,7 +12,7 @@ function main(argv = process.argv.slice(2)) {
   const bin = resolveBin(name, root);
   if (!bin) {
     fail(
-      `${name} is required for ep-audit. Install the latest version as a devDependency at the workspace root.`,
+      `${name} is required for lodestar-audit. Install the latest version as a devDependency at the workspace root.`,
       2,
     );
   }

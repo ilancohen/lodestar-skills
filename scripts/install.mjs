@@ -33,7 +33,7 @@ async function promptSelection(defaults, args) {
     process.exit(0);
   };
 
-  intro("Engineering Principles skills");
+  intro("Lodestar skills");
   const detected = new Set(defaults.detected);
   const agents = await multiselect({
     message: "Agents",

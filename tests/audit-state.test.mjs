@@ -14,10 +14,10 @@ import {
   parseFindings,
   parsePackageLayout,
   sortFindings,
-} from "../skills/ep-audit/scripts/audit-state.mjs";
+} from "../skills/lodestar-audit/scripts/audit-state.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const SCRIPT = path.join(ROOT, "skills/ep-audit/scripts/audit-state.mjs");
+const SCRIPT = path.join(ROOT, "skills/lodestar-audit/scripts/audit-state.mjs");
 const VALID = path.join(ROOT, "tests/fixtures/repos/valid");
 const PLACEHOLDER = path.join(ROOT, "tests/fixtures/repos/placeholder");
 const CLEAN = path.join(ROOT, "tests/fixtures/audit-runs/clean/findings.md");
@@ -103,7 +103,7 @@ test("placeholders are detected", () => {
 });
 
 test("interrupted recover resumes discover", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "ep-audit-"));
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-audit-"));
   const runDir = path.join(tmp, "2026-08-10");
   fs.mkdirSync(runDir, { recursive: true });
   fs.copyFileSync(INTERRUPTED, path.join(runDir, "findings.md"));
@@ -117,7 +117,7 @@ test("interrupted recover resumes discover", () => {
 });
 
 test("checkpoint is atomic and recover does not duplicate findings", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "ep-audit-"));
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-audit-"));
   const runDir = path.join(tmp, "2026-08-10");
   fs.mkdirSync(runDir, { recursive: true });
   fs.copyFileSync(HEAVY, path.join(runDir, "findings.md"));
@@ -151,7 +151,7 @@ test("checkpoint is atomic and recover does not duplicate findings", () => {
 });
 
 test("merge-findings rejects malformed json", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "ep-audit-"));
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-audit-"));
   const bad = path.join(tmp, "bad.json");
   fs.writeFileSync(bad, "{not json");
   const result = run(["merge-findings", "--in", bad]);
@@ -160,7 +160,7 @@ test("merge-findings rejects malformed json", () => {
 });
 
 test("recover after one category checkpoint stays in discover", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "ep-audit-"));
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-audit-"));
   const runDir = path.join(tmp, "2026-08-10");
   fs.mkdirSync(runDir, { recursive: true });
   const first = run([
@@ -182,7 +182,7 @@ test("recover after one category checkpoint stays in discover", () => {
 });
 
 test("partial checkpoint keeps recover in discover after all categories are marked", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "ep-audit-"));
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-audit-"));
   const runDir = path.join(tmp, "2026-08-10");
   fs.mkdirSync(runDir, { recursive: true });
   fs.copyFileSync(CLEAN, path.join(runDir, "findings.md"));

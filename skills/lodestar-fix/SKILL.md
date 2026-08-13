@@ -1,7 +1,7 @@
 ---
-name: ep-fix
+name: lodestar-fix
 description: >-
-  Triages and executes action items produced by ep-audit. Use when asked to
+  Triages and executes action items produced by lodestar-audit. Use when asked to
   apply fixes from a docs/audit run, filter them by risk or category, or resume
   unfinished audit remediation. Updates item status, verifies changes, and can
   commit with consent. Modifies application source code.
@@ -12,20 +12,20 @@ metadata:
   version: "0.1.0"
 ---
 
-You are running `ep-fix`. The job is to **triage** and **execute** the
-action items produced by an `ep-audit` run, marking each with a status
-so re-runs pick up where you left off. Unlike `ep-audit` (read-only)
-and `ep-review-architecture` (read-only), this skill modifies
+You are running `lodestar-fix`. The job is to **triage** and **execute** the
+action items produced by an `lodestar-audit` run, marking each with a status
+so re-runs pick up where you left off. Unlike `lodestar-audit` (read-only)
+and `lodestar-architecture` (read-only), this skill modifies
 application source code.
 
 This skill is the executive counterpart to the rest of the harness:
 
 | Skill                    | Shape                                      | Modifies source?                        |
 | ------------------------ | ------------------------------------------ | --------------------------------------- |
-| `ep-setup`               | Descriptive — documents the layout         | No (writes config files)                |
-| `ep-audit`               | Prescriptive-local — one fix per finding   | No (writes `docs/audit/`)               |
-| `ep-review-architecture` | Advisory-global — one report on the layout | No (writes `docs/architecture-review/`) |
-| `ep-fix` (this)          | Executive — applies the audit's fixes      | **Yes**                                 |
+| `lodestar-setup`               | Descriptive — documents the layout         | No (writes config files)                |
+| `lodestar-audit`               | Prescriptive-local — one fix per finding   | No (writes `docs/audit/`)               |
+| `lodestar-architecture` | Advisory-global — one report on the layout | No (writes `docs/architecture-review/`) |
+| `lodestar-fix` (this)          | Executive — applies the audit's fixes      | **Yes**                                 |
 
 Scripts live beside this `SKILL.md` under `scripts/`. Keep the process
 cwd as the target repository. Invoke scripts with an absolute path to
@@ -40,16 +40,16 @@ writes and file moves instead of POSIX `mv`.
 The skill operates on one `docs/audit/<RUN_ID>/` directory at a time.
 Required contents:
 
-- `INDEX.md` (written by `ep-audit`'s Plan phase).
+- `INDEX.md` (written by `lodestar-audit`'s Plan phase).
 - One or more `NNN-<category>-<slug>.md` action items.
 
-If any are missing, stop and ask the user to run `ep-audit` first.
+If any are missing, stop and ask the user to run `lodestar-audit` first.
 
 Capture from `AGENTS.md`:
 
 - `<typecheck>`, `<lint>`, `<test>` — the build commands used to verify
   each fix. If any is missing, stop and ask the user to re-run
-  `ep-setup`.
+  `lodestar-setup`.
 
 ---
 
@@ -251,7 +251,7 @@ The orchestrator:
 Print a session summary:
 
 ```
-ep-fix session complete on docs/audit/<RUN_ID>/.
+lodestar-fix session complete on docs/audit/<RUN_ID>/.
 
   done:       N
   deferred:   N
@@ -262,9 +262,9 @@ Of the deferred items, M hit scope-creep limits and N need a human
 decision — see the note: field in each.
 
 Next steps:
-  - Re-run `ep-fix` to pick up where you left off.
+  - Re-run `lodestar-fix` to pick up where you left off.
   - Review deferred items individually; resolve the blocker and either
-    re-run `ep-fix` (which will surface them) or remove the deferred
+    re-run `lodestar-fix` (which will surface them) or remove the deferred
     status manually to retry.
 ```
 
@@ -296,7 +296,7 @@ unstarted), skip this step and leave the run in place.
 
 ## Resuming
 
-`ep-fix` is restartable. Re-running against the same run directory:
+`lodestar-fix` is restartable. Re-running against the same run directory:
 
 1. Files already moved to `docs/audit/<RUN_ID>/done/` are never
    re-touched — their absence from the run root is the signal.

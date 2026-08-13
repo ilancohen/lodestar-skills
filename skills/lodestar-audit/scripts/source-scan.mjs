@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Portable source search used by ep-audit detectors.
+ * Portable source search used by lodestar-audit detectors.
  * Replaces grep/awk/sort/uniq pipelines in principle docs.
  */
 import fs from "node:fs";

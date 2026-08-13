@@ -5,16 +5,16 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { scan } from "../skills/ep-audit/scripts/source-scan.mjs";
+import { scan } from "../skills/lodestar-audit/scripts/source-scan.mjs";
 import {
   localBin,
   tempDir,
   which,
-} from "../skills/ep-audit/scripts/runtime.mjs";
-import { resolveBin } from "../skills/ep-setup/scripts/resolve-bin.mjs";
+} from "../skills/lodestar-audit/scripts/runtime.mjs";
+import { resolveBin } from "../skills/lodestar-setup/scripts/resolve-bin.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const ACTION = path.join(ROOT, "skills/ep-fix/scripts/action-state.mjs");
+const ACTION = path.join(ROOT, "skills/lodestar-fix/scripts/action-state.mjs");
 const FIX_READY = path.join(
   ROOT,
   "tests/fixtures/audit-runs/fix-ready",
@@ -65,7 +65,7 @@ test("source-scan handles paths with spaces and CRLF", () => {
 });
 
 test("action-state lists items and move-done is atomic", () => {
-  const tmp = tempDir("ep-fix-");
+  const tmp = tempDir("lodestar-fix-");
   try {
     const runDir = path.join(tmp, "2026-08-10");
     fs.cpSync(FIX_READY, runDir, { recursive: true });
@@ -90,7 +90,7 @@ test("action-state lists items and move-done is atomic", () => {
 });
 
 test("action-state set-status writes frontmatter", () => {
-  const tmp = tempDir("ep-fix-");
+  const tmp = tempDir("lodestar-fix-");
   try {
     const runDir = path.join(tmp, "2026-08-10");
     fs.cpSync(FIX_READY, runDir, { recursive: true });
@@ -114,7 +114,7 @@ test("resolve-bin finds node and fails closed on missing bins", () => {
   assert.ok(nodeBin);
   assert.ok(which("node", ROOT));
   const missing = run(
-    path.join(ROOT, "skills/ep-setup/scripts/resolve-bin.mjs"),
+    path.join(ROOT, "skills/lodestar-setup/scripts/resolve-bin.mjs"),
     ["definitely-not-a-bin-ep-skills", "--root", ROOT],
   );
   assert.equal(missing.status, 2);

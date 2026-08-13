@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Atomic action-item status transitions for ep-fix.
+ * Atomic action-item status transitions for lodestar-fix.
  */
 import fs from "node:fs";
 import path from "node:path";

@@ -152,7 +152,7 @@ export function checkPackage(root = ROOT) {
       errors.push(error.message);
       continue;
     }
-    if (manifest.name !== "engineering-principles") {
+    if (manifest.name !== "lodestar") {
       errors.push(`${relative}: unexpected plugin name`);
     }
     if (manifest.version !== version) {
@@ -212,16 +212,16 @@ export function checkPackage(root = ROOT) {
   }
 
   const setupText = fs.readFileSync(
-    path.join(root, "skills/ep-setup/SKILL.md"),
+    path.join(root, "skills/lodestar-setup/SKILL.md"),
     "utf8",
   );
   if (
-    /\.agents\/skills\/ep-setup\/(?:principles|agents-md|skills-readme|claude-md|copilot-instructions|fallowrc)\.md/.test(
+    /\.agents\/skills\/lodestar-setup\/(?:principles|agents-md|skills-readme|claude-md|copilot-instructions|fallowrc)\.md/.test(
       setupText,
     )
   ) {
     errors.push(
-      "skills/ep-setup/SKILL.md: bundled resources must use relative paths",
+      "skills/lodestar-setup/SKILL.md: bundled resources must use relative paths",
     );
   }
 

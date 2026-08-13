@@ -44,7 +44,7 @@ test("set_version updates VERSION, manifests, and skill metadata", () => {
     assert.equal(fs.readFileSync(path.join(tmp, "VERSION"), "utf8").trim(), "0.1.1");
     const plugin = JSON.parse(fs.readFileSync(path.join(tmp, "plugin.json"), "utf8"));
     assert.equal(plugin.version, "0.1.1");
-    const skill = fs.readFileSync(path.join(tmp, "skills/ep-audit/SKILL.md"), "utf8");
+    const skill = fs.readFileSync(path.join(tmp, "skills/lodestar-audit/SKILL.md"), "utf8");
     assert.match(skill, /version:\s*"0.1.1"/);
     const result = checkPackage(tmp);
     assert.deepEqual(result.errors, []);

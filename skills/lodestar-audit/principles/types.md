@@ -10,7 +10,7 @@ elimination. **Low risk.** No logic changes, ever.
    nominated as the shared / types package in AGENTS.md `## Package
 Layout`. If no such package exists, this is a layout question — emit
    the finding anyway, mark `requires_decision: true`, and point the
-   reader at `ep-review-architecture` in the notes.
+   reader at `lodestar-architecture` in the notes.
 
 2. **Redeclared fields** — type `B` repeats fields already on type `A`
    instead of extending it (`extends`, `Pick`, `Omit`, `Partial`, `Required`,

@@ -56,7 +56,7 @@ Notes for the table:
 - Responsibility is short and concrete — it's used by the audit to
   understand which package owns which kind of code.
 
-## Engineering Principles
+## Lodestar
 
 This repo enforces the principles in `.agents/skills/README.md`.
 Before completing any task, check the pre-commit checklist in that file.
@@ -67,10 +67,10 @@ The following skills are available. To use one, read its `SKILL.md` and follow i
 
 | Skill | File | When to use |
 |---|---|---|
-| Setup | `.agents/skills/ep-setup/SKILL.md` | Re-scaffold or refresh this config |
-| Audit | `.agents/skills/ep-audit/SKILL.md` | Scan the codebase and emit action-item files into `docs/audit/<run-id>/` |
-| Fix audit items | `.agents/skills/ep-fix/SKILL.md` | Triage and apply fixes from an audit run |
-| Review architecture | `.agents/skills/ep-review-architecture/SKILL.md` | Get an advisory second opinion on the layout above; optionally have it propose an alternative |
+| Setup | `.agents/skills/lodestar-setup/SKILL.md` | Re-scaffold or refresh this config |
+| Audit | `.agents/skills/lodestar-audit/SKILL.md` | Scan the codebase and emit action-item files into `docs/audit/<run-id>/` |
+| Fix audit items | `.agents/skills/lodestar-fix/SKILL.md` | Triage and apply fixes from an audit run |
+| Review architecture | `.agents/skills/lodestar-architecture/SKILL.md` | Get an advisory second opinion on the layout above; optionally have it propose an alternative |
 
 ## Audit Output
 

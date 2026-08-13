@@ -1,5 +1,5 @@
 {
-  "name": "engineering-principles-skills",
+  "name": "lodestar-skills",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.20.0",
@@ -7,7 +7,7 @@
     "node": ">=22"
   },
   "bin": {
-    "engineering-principles-skills": "scripts/install.mjs"
+    "lodestar-skills": "scripts/install.mjs"
   },
   "scripts": {
     "check": "node scripts/check_package.mjs",

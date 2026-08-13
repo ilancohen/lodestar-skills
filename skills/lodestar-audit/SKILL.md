@@ -1,7 +1,7 @@
 ---
-name: ep-audit
+name: lodestar-audit
 description: >-
-  Audits a codebase against the engineering principles documented by ep-setup
+  Audits a codebase against the engineering principles documented by lodestar-setup
   and writes self-contained findings and action items under docs/audit/. Use
   when asked to find architecture, boundary, duplication, type, error-handling,
   testability, or styling violations. Discovery only; never modifies
@@ -13,7 +13,7 @@ metadata:
   version: "0.1.0"
 ---
 
-You are running an engineering-principles audit. **Discover** and
+You are running an lodestar audit. **Discover** and
 **document** violations as self-contained action items. Do not fix them.
 
 Each action-item file must stand alone: an agent reading only that file
@@ -56,7 +56,7 @@ Never overwrite a previous run. Output stays under `docs/audit/<RUN_ID>/`.
 
 ## Preconditions
 
-If any of these is missing, **stop** and tell the user to run `ep-setup`:
+If any of these is missing, **stop** and tell the user to run `lodestar-setup`:
 
 - `AGENTS.md`
 - `CLAUDE.md`
@@ -101,7 +101,7 @@ Read the category sub-doc before scanning that category. Read
 Known blind spots (copy into `INDEX.md`): coverage floor unless `<test>`
 emits coverage; wide-diff DRY as `dry.C` advisory only; Rule of Three
 beyond `soc-yagni.D`; whether the documented layout is the right one
-(`ep-review-architecture`).
+(`lodestar-architecture`).
 
 ---
 
@@ -159,7 +159,7 @@ docs/audit/<RUN_ID>`.
    `templates/action-item.md`. Skip files that already exist.
 3. Validate each file for placeholder leaks.
 4. Write `INDEX.md` from `templates/index.md`.
-5. Align category order with `ep-fix`:
+5. Align category order with `lodestar-fix`:
    `imports → types → ssot → soc-yagni → boundaries → errors →
 testability → dry → styling`.
 
@@ -180,7 +180,7 @@ testability → dry → styling`.
   bug; `validate-output` must pass.
 - **`requires_decision: true`** is the default for semantic findings.
 - **Don't fix.** Don't propose layout changes; mention
-  `ep-review-architecture` in `notes:` if needed.
+  `lodestar-architecture` in `notes:` if needed.
 - **Restartable.** Interrupted runs resume from checkpoints. Past runs
   are never modified.
 

@@ -40,19 +40,19 @@ jobs:
 
       - name: Representative skill scripts
         run: |
-          node skills/ep-audit/scripts/audit-state.mjs validate-input --root tests/fixtures/repos/valid
-          node skills/ep-audit/scripts/source-scan.mjs --recipe explicit-any --root tests/fixtures/repos/valid
-          node skills/ep-fix/scripts/action-state.mjs list --run-dir tests/fixtures/audit-runs/fix-ready
-          node skills/ep-setup/scripts/resolve-bin.mjs node
+          node skills/lodestar-audit/scripts/audit-state.mjs validate-input --root tests/fixtures/repos/valid
+          node skills/lodestar-audit/scripts/source-scan.mjs --recipe explicit-any --root tests/fixtures/repos/valid
+          node skills/lodestar-fix/scripts/action-state.mjs list --run-dir tests/fixtures/audit-runs/fix-ready
+          node skills/lodestar-setup/scripts/resolve-bin.mjs node
 
       - name: Verify installer discovery (exactly four)
         run: |
           out=$(pnpm dlx skills add . --list)
           echo "$out"
-          echo "$out" | grep -q ep-setup
-          echo "$out" | grep -q ep-audit
-          echo "$out" | grep -q ep-fix
-          echo "$out" | grep -q ep-review-architecture
+          echo "$out" | grep -q lodestar-setup
+          echo "$out" | grep -q lodestar-audit
+          echo "$out" | grep -q lodestar-fix
+          echo "$out" | grep -q lodestar-architecture
           echo "$out" | grep -q 'Found 4 skills'
 
       - name: Native Claude plugin validator when available

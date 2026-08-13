@@ -20,4 +20,4 @@ npm install --save-dev fallow@3.15.0
 ```
 
 Do not change the supported version without regenerating fixtures, updating
-`skills/ep-audit/scripts/fallow-contract.json`, and human review.
+`skills/lodestar-audit/scripts/fallow-contract.json`, and human review.

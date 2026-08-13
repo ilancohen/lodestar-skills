@@ -14,7 +14,7 @@ Parse every `### F<NNNN>` block. Group by `scope_unit`:
 Assign action-item IDs as `001`, `002`, … ordered by category table
 order then file path. Action-item IDs are independent of finding IDs.
 
-Category order for files and INDEX (must match `ep-fix`):
+Category order for files and INDEX (must match `lodestar-fix`):
 
 `imports → types → ssot → soc-yagni → boundaries → errors →
 testability → dry → styling`
@@ -49,4 +49,4 @@ Write `docs/audit/<RUN_ID>/INDEX.md` from `templates/index.md`:
 ## Report
 
 Print counts by category and how many items need a human decision.
-Point at `INDEX.md`. Do not start `ep-fix`.
+Point at `INDEX.md`. Do not start `lodestar-fix`.

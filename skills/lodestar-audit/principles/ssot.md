@@ -144,7 +144,7 @@ output is separately consumed by `dry`.
   - The fix would touch more than 8 files for a single literal.
   - The cited sites span packages with no shared package they both
     reach (per AGENTS.md `## Dependency Direction`). This is an
-    architectural smell; suggest `ep-review-architecture` in `notes:`.
+    architectural smell; suggest `lodestar-architecture` in `notes:`.
   - Two sites that "look the same" turn out to encode different
     business rules at the same value.
 

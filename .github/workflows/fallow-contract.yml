@@ -52,7 +52,7 @@ jobs:
       - name: Report latest fallow without expanding support
         run: |
           latest=$(npm view fallow version)
-          current=$(node -e "console.log(JSON.parse(require('fs').readFileSync('skills/ep-audit/scripts/fallow-contract.json','utf8')).tool_version)")
+          current=$(node -e "console.log(JSON.parse(require('fs').readFileSync('skills/lodestar-audit/scripts/fallow-contract.json','utf8')).tool_version)")
           echo "latest=$latest current=$current"
           if [ "$latest" != "$current" ]; then
             echo "::warning::Newest fallow $latest differs from pinned $current. Do not expand the contract without regenerating fixtures and human review."

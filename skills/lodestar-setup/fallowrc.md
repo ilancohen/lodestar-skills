@@ -1,9 +1,9 @@
 <!--
 Template for `.fallowrc.json` — the optional config file that lets the
-audit's fallow seed (see ep-audit/principles/fallow-seed.md)
+audit's fallow seed (see lodestar-audit/principles/fallow-seed.md)
 detect cross-package boundary violations.
 
-Read by `ep-setup` Step 4.5 only when the user opts in
+Read by `lodestar-setup` Step 4.5 only when the user opts in
 to fallow integration. The setup skill substitutes the placeholders below
 from the AGENTS.md `## Package Layout` table and the dependency direction.
 
@@ -106,9 +106,9 @@ import from each other.
 After writing, run:
 
 ```bash
-# Absolute path to the installed ep-audit skill script; --root/--out are
+# Absolute path to the installed lodestar-audit skill script; --root/--out are
 # the target repository.
-node <ep-audit-skill>/scripts/fallow-contract.mjs run \
+node <lodestar-audit-skill>/scripts/fallow-contract.mjs run \
   --root <repo> \
   --id list-boundaries \
   --out <repo>/.audit-fallow-boundaries.json

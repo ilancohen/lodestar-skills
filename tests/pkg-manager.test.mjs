@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import {
   detectPkgManager,
   installFallowCommand,
-} from "../skills/ep-audit/scripts/pkg-manager.mjs";
+} from "../skills/lodestar-audit/scripts/pkg-manager.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 

@@ -1,19 +1,19 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
-  "name": "engineering-principles",
+  "name": "lodestar",
   "version": "0.1.0",
   "description": "Set up engineering principles, audit repositories, apply scoped fixes, and review package architecture.",
   "author": {
     "name": "Ilan Cohen"
   },
-  "homepage": "https://github.com/ilancohen/engineering-principles-skills",
-  "repository": "https://github.com/ilancohen/engineering-principles-skills",
+  "homepage": "https://github.com/ilancohen/lodestar-skills",
+  "repository": "https://github.com/ilancohen/lodestar-skills",
   "license": "MIT",
   "keywords": [
     "architecture",
     "audit",
     "code-quality",
-    "engineering-principles",
+    "lodestar",
     "refactoring"
   ]
 }
