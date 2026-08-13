@@ -33,33 +33,32 @@ and improving software architecture:
 Project scope is the default. The skills write project-specific configuration
 and audit output.
 
-The [skills CLI](https://github.com/vercel-labs/skills) discovers this suite,
-detects the coding agents you have installed, and prompts for which to
-install to. Omit `-a` so detection is the default selection.
+The installer detects which coding agents you use, pre-selects them plus all
+four skills, and installs. Enter accepts those defaults; space toggles.
 
 ```bash
-pnpm dlx skills add ilancohen/engineering-principles-skills
+pnpm dlx github:ilancohen/engineering-principles-skills
 ```
 
-npm: `npx skills add …`. Yarn: `yarn dlx skills add …`. Use the
+npm: `npx github:ilancohen/engineering-principles-skills`. Yarn:
+`yarn dlx github:ilancohen/engineering-principles-skills`. Use the
 target repository's package manager; ask if more than one lockfile is
 present, or none is.
 
 From this directory during development:
 
 ```bash
-pnpm dlx skills add .
+node scripts/install.mjs
 ```
 
 | Intent | Command |
 | --- | --- |
-| Full suite, skip skill picker | `pnpm dlx skills add ilancohen/engineering-principles-skills --skill '*'` |
-| One agent | `pnpm dlx skills add ilancohen/engineering-principles-skills --skill '*' -a cursor` |
-| Several agents | `pnpm dlx skills add ilancohen/engineering-principles-skills --skill '*' -a cursor -a claude-code` |
-| Non-interactive (CI / scripts) | same plus `-y` (and `--copy` when a smoke test needs copies) |
+| Skip prompts | `node scripts/install.mjs -y` |
+| One agent | `node scripts/install.mjs -a cursor` |
+| Scripts / CI | `pnpm dlx skills add ilancohen/engineering-principles-skills --skill '*' -y` |
 
-Agent ids for clients this suite ships adapters for: `cursor`, `claude-code`,
-`codex`, `gemini-cli`, `github-copilot`, `kiro-cli`. See the
+Agent ids: `cursor`, `claude-code`, `codex`, `gemini-cli`, `github-copilot`,
+`kiro-cli`. See the
 [skills CLI supported agents](https://github.com/vercel-labs/skills#supported-agents)
 for the full list.
 

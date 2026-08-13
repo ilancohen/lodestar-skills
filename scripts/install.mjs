@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /** Interactive installer. Defaults = detected agents + all skills + project. */
 
 import { SKILLS, isMain } from "./lib.mjs";

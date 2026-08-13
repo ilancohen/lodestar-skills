@@ -9,16 +9,15 @@ Use the consuming repository's package manager (`pnpm dlx`, `npx`, or
 ## Install
 
 ```bash
-pnpm dlx skills add ilancohen/engineering-principles-skills
+pnpm dlx github:ilancohen/engineering-principles-skills
 ```
 
-Omit `-a` so the skills CLI detects installed agents and uses those as the
-default selection. That is the normal install and update path. Copying or
-symlinking `skills/` into a repository is a legacy path; use
-`node scripts/migrate_vendored.mjs` instead of copying again.
+Enter accepts detected agents and all four skills. That is the normal
+install path. Copying or symlinking `skills/` into a repository is a
+legacy path; use `node scripts/migrate_vendored.mjs` instead of copying
+again.
 
-Scripts that must not prompt should pin the full suite with `--skill '*'`
-and `-y`:
+Scripts that must not prompt:
 
 ```bash
 pnpm dlx skills add ilancohen/engineering-principles-skills --skill '*' -y
@@ -29,7 +28,7 @@ pnpm dlx skills add ilancohen/engineering-principles-skills --skill '*' -y
 From the consuming repository:
 
 ```bash
-pnpm dlx skills add ilancohen/engineering-principles-skills
+pnpm dlx github:ilancohen/engineering-principles-skills
 ```
 
 Non-interactive:
