@@ -22,7 +22,8 @@ repository, applying audit fixes, and reviewing package architecture.
 ## Commands
 
 ```bash
-python3 scripts/check_package.py
+node scripts/check_package.mjs
+node --test tests/*.test.mjs
 uvx --from skills-ref agentskills validate skills/ep-setup
 uvx --from skills-ref agentskills validate skills/ep-audit
 uvx --from skills-ref agentskills validate skills/ep-fix

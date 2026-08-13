@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented here.
 
-## [0.1.0] - 2026-08-11
+## [0.1.0] - 2026-08-13
 
 ### Added
 
@@ -10,6 +10,8 @@ All notable changes to this project will be documented here.
   `ep-review-architecture`.
 - Portable Agent Plugin and Claude, Codex, and Gemini package manifests.
 - Implementation roadmap, package validation, CI, and starter eval sets.
+- Canonical `VERSION` source, install/upgrade docs, and a dry-run-first
+  migration tool for legacy vendored copies.
 
 ### Fixed
 

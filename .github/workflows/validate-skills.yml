@@ -12,10 +12,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
       - uses: astral-sh/setup-uv@v6
 
       - uses: actions/setup-node@v4
@@ -23,7 +19,10 @@ jobs:
           node-version: "22"
 
       - name: Check package invariants
-        run: python3 scripts/check_package.py
+        run: node scripts/check_package.mjs
+
+      - name: Unit tests
+        run: node --test tests/*.test.mjs
 
       - name: Validate Agent Skills
         run: |

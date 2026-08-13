@@ -16,13 +16,19 @@ and improving software architecture:
 
 - A skills-compatible coding agent.
 - Git.
-- A POSIX-compatible shell for the current command recipes.
-- Node.js for JavaScript/TypeScript repository inspection.
+- Node.js 22 or later for package checks and bundled skill scripts.
+- A POSIX-compatible shell for current skill command recipes.
 - [Fallow](https://docs.fallow.tools) in the target repository for `ep-audit`.
 
 ## Install
 
-### Cross-agent Skills CLI
+Project scope is the default. The skills write project-specific configuration
+and audit output.
+
+```bash
+npx skills add ilancohen/engineering-principles-skills \
+  --skill ep-setup ep-audit ep-fix ep-review-architecture
+```
 
 From this directory during development:
 
@@ -30,20 +36,11 @@ From this directory during development:
 npx skills add . --skill ep-setup ep-audit ep-fix ep-review-architecture
 ```
 
-After publishing this repository:
+See [UPGRADING.md](UPGRADING.md) for updates, version pinning, rollback, and
+migration of legacy copied skills.
 
-```bash
-npx skills add <owner>/<repository> \
-  --skill ep-setup ep-audit ep-fix ep-review-architecture
-```
-
-Choose project scope unless you intentionally want the suite in every
-repository. The skills write project-specific configuration and audit output.
-
-### Direct project install
-
-Copy or symlink the four directories under `skills/` into the target
-repository's `.agents/skills/` directory.
+Copying or symlinking `skills/` by hand is a legacy path, not the normal
+install method.
 
 ### Product packages
 
@@ -77,7 +74,8 @@ Read [ROADMAP.md](ROADMAP.md) and [AGENTS.md](AGENTS.md) before changing the
 suite. Run:
 
 ```bash
-python3 scripts/check_package.py
+node scripts/check_package.mjs
+node --test tests/*.test.mjs
 uvx --from skills-ref agentskills validate skills/ep-setup
 uvx --from skills-ref agentskills validate skills/ep-audit
 uvx --from skills-ref agentskills validate skills/ep-fix
