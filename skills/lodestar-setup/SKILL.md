@@ -10,7 +10,7 @@ license: MIT
 compatibility: Requires filesystem write access and a POSIX-compatible shell for optional Fallow setup. Supports npm, pnpm, and yarn repositories.
 metadata:
   author: Ilan Cohen
-  version: "0.1.0"
+  version: "0.2.0"
 ---
 
 Write the agent-neutral config files that coding agents need to use the

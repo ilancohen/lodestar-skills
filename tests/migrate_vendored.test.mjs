@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { ROOT, SKILLS } from "../scripts/lib.mjs";
+import { ROOT, SKILLS, readVersion } from "../scripts/lib.mjs";
 import {
   RENAME_MAP,
   compareCopy,
@@ -61,7 +61,7 @@ test("clean Lodestar tree is reported clean", () => {
       renamed: false,
     },
     ROOT,
-    "0.1.0",
+    readVersion(),
   );
   assert.equal(report.clean, true);
   assert.equal(report.renamed, false);
@@ -126,7 +126,7 @@ test("applying a rename re-homes the dir and writes marker", () => {
     const marker = JSON.parse(
       fs.readFileSync(path.join(dest, ".lodestar-source.json"), "utf8"),
     );
-    assert.equal(marker.source_version, "0.1.0");
+    assert.equal(marker.source_version, readVersion());
     assert.ok(fs.existsSync(path.join(tmp, ".lodestar-backup")));
     fs.rmSync(tmp, { recursive: true, force: true });
   });

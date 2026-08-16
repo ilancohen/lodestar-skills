@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { ROOT } from "../scripts/lib.mjs";
+import { ROOT, readVersion } from "../scripts/lib.mjs";
 import { checkPackage } from "../scripts/check_package.mjs";
 import { setVersion } from "../scripts/set_version.mjs";
 
@@ -33,7 +33,7 @@ function copyRepo() {
 test("package checks pass against this repository", () => {
   const result = checkPackage(ROOT);
   assert.deepEqual(result.errors, []);
-  assert.equal(result.version, "0.1.0");
+  assert.equal(result.version, readVersion());
   assert.equal(result.skillCount, 4);
 });
 

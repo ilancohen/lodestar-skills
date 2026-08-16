@@ -44,7 +44,7 @@ pnpm dlx skills add ilancohen/lodestar-skills --skill '*' -y
 Pin to a release:
 
 ```bash
-pnpm dlx skills add ilancohen/lodestar-skills@v0.1.0 --skill '*' -y
+pnpm dlx skills add ilancohen/lodestar-skills@v0.2.0 --skill '*' -y
 ```
 
 ## Rollback
@@ -52,7 +52,7 @@ pnpm dlx skills add ilancohen/lodestar-skills@v0.1.0 --skill '*' -y
 Re-run the install command against a prior tag:
 
 ```bash
-pnpm dlx skills add ilancohen/lodestar-skills@v0.1.0 --skill '*' -y
+pnpm dlx skills add ilancohen/lodestar-skills@<prior-tag> --skill '*' -y
 ```
 
 Confirm installed metadata reports the rolled-back version in each

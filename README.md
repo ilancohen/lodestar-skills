@@ -115,7 +115,7 @@ pnpm dlx skills add . --list
 
 ## Status
 
-Initial standalone extraction: `0.1.0`.
+Initial standalone extraction: `0.1.0`. First published release: `0.2.0`.
 
 Trigger phrases and expected outcomes live in [`docs/evals.md`](docs/evals.md)
 as a manual checklist.
