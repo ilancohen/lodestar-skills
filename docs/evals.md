@@ -96,6 +96,6 @@ Near-miss: violation hunt, applying audit items, documenting current layout, sta
 
 Expected outcomes (once explicitly invoked):
 
-- Ask describe vs suggest once; write under `docs/architecture-review/`; never edit source.
+- Ask describe vs suggest once; write under `docs/architecture-review/`; never edit application source.
 - At most two evidence-mapped alternatives with trade-offs when asked to suggest.
 - Stop and point at `lodestar-setup` when Package Layout / Dependency Direction is missing from `AGENTS.md`. Missing `CLAUDE.md` or `.agents/skills/README.md` is not a blocker.

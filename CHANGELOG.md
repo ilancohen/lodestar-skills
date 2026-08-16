@@ -23,6 +23,23 @@ All notable changes to this project will be documented here.
   copies under `.agents/skills`, `.claude/skills`, and `.cursor/skills`
   (refuses local checksum edits without `--force`).
 
+- Generated audit `INDEX.md` title is `# Lodestar audit`; suggested order of
+  attack matches the canonical category sequence
+  (`imports → types → ssot → soc-yagni → boundaries → errors →
+  testability → dry → styling`).
+
+- `lodestar-architecture` Inputs require only `AGENTS.md` (Package Layout
+  and Dependency Direction); `.agents/skills/README.md` is not a gate.
+
+- `lodestar-setup` asks separately before adding `.audit-fallow-seed.json`
+  and `.fallow/` to `.gitignore` (decline still writes `.fallowrc.json`).
+
+- `lodestar-fix` Step 1 only offers runs that already have both `INDEX.md`
+  and at least one `NNN-*.md` in the run root.
+
+- Optional linter rule detail for setup lives in bundled `linters.md`;
+  Step 4.6 is a short consent step.
+
 ### Added
 
 - Standalone package for `lodestar-setup`, `lodestar-audit`, `lodestar-fix`, and
@@ -41,3 +58,9 @@ All notable changes to this project will be documented here.
 - Added `lodestar-fix` to generated skill indexes.
 - Corrected the audit category count and the fix-category order.
 - Corrected a stale `lodestar-setup` reference in the Fallow seed guide.
+- Documented per-client adapter discovery (Codex `skills` path; Claude /
+  Gemini convention on root `skills/`; Cursor Agent Plugins).
+- Clarified Windows CI: suite checks run under bash on `windows-latest`,
+  not native PowerShell.
+- Removed unreachable no-Fallow coverage narrative from `imports.md`.
+- `audit-state checkpoint` help lists `--package`.
