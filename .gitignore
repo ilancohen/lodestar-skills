@@ -6,3 +6,9 @@ coverage/
 .fallow/
 
 .lodestar-backup/
+
+# Kept locally for contributor reference; purged from git history before
+# the repo went public (internal planning/audit docs, not suite output).
+/docs/plans/
+/docs/plan.md
+/docs/2026-08-16-suite-audit.md
