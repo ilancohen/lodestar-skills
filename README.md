@@ -21,8 +21,11 @@ and improving software architecture:
   pnpm, npm, or yarn — skills detect the lockfile and ask if it is
   unclear.
 - A POSIX-compatible shell for remaining skill command recipes.
-  PowerShell equivalents exist for suite validation scripts; skills do
-  not claim Windows support until the CI matrix is green.
+  Suite checks run on Windows under bash (CI: `ubuntu-latest`,
+  `macos-latest`, and `windows-latest` with `shell: bash`) — not native
+  PowerShell or cmd. Skill recipes are POSIX-first; a few places include
+  PowerShell equivalents (for example `principles/fallow-seed.md` and
+  `lodestar-fix` Step 3.7).
 - [Fallow](https://docs.fallow.tools) **3.15.0** (combined schema 10) in the
   target repository for `lodestar-audit`. Pin with that repo's package manager,
   e.g. `pnpm add -D fallow@3.15.0` (or `npm install --save-dev` /
@@ -105,12 +108,6 @@ Read [AGENTS.md](AGENTS.md) and
 [CONTRIBUTING.md](CONTRIBUTING.md) before changing the suite. Run:
 
 ```bash
-pnpm check
-pnpm test
-pnpm dlx skills add . --list
-```
-
-```powershell
 pnpm check
 pnpm test
 pnpm dlx skills add . --list
