@@ -16,16 +16,6 @@ metadata:
 You are running an architecture review. The job is to **describe** and **suggest** — never to modify application source, and never to produce
 the kind of fix-this-line action items the audit skill writes.
 
-This skill is the architectural counterpart to the descriptive
-`lodestar-setup` and the prescriptive
-`lodestar-audit`:
-
-| Skill                          | What it does                                   | What it writes                                                     |
-| ------------------------------ | ---------------------------------------------- | ------------------------------------------------------------------ |
-| `lodestar-setup`               | Documents the layout that exists               | `AGENTS.md`, `.agents/skills/README.md`                            |
-| `lodestar-audit`               | Finds violations inside the layout that exists | `docs/audit/<RUN_ID>/...` (one file per violation)                 |
-| `lodestar-architecture` (this) | Reviews / critiques the layout itself          | `docs/architecture-review/<RUN_ID>.md` (one report; advisory only) |
-
 Setup and audit both take the documented layout as given. This skill is
 the only place where the layout is itself the subject.
 
@@ -100,30 +90,13 @@ Read-only: never modify application source.
 
 ### Step 2a — (Optional) Sub-agent fan-out for per-package sampling
 
-If your host exposes a sub-agent tool, the per-package reads in Step 2
-items 1–3 parallelize cleanly. Skip this if no sub-agent tool is
-available — the inline loop is the canonical path.
+If a sub-agent tool exists, Step 2 items 1–3 parallelize per package.
+Skip when unavailable — the inline loop is canonical.
 
-Spawn one sub-agent per package with:
-
-- The package row (`name`, `path`, `alias`, `responsibility`).
-- The dependency direction (so the sub-agent can comment on the
-  package's position in the chain).
-
-Required return shape — a small object per package:
-
-```
-{
-  "matches": "yes" | "partially" | "no",
-  "reason": "<one sentence — what evidence supports the verdict>",
-  "notable": "<optional: one risk or surprise worth surfacing>"
-}
-```
-
-Same rules as the audit's sub-agents: read-only, structured return only,
-no application source modifications. The orchestrator assembles the returned values
-into the "Matches contents?" column of the report's Current Layout
-table and folds any `notable` lines into the Risks section.
+Spawn one sub-agent per package with the package row and dependency
+direction. Return `{matches, reason, notable?}`. Constraints: read-only,
+structured return only, no nested spawns, no application source changes.
+Orchestrator fills "Matches contents?" and folds `notable` into Risks.
 
 ---
 

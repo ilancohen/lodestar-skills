@@ -19,15 +19,6 @@ so re-runs pick up where you left off. Unlike `lodestar-audit` (read-only)
 and `lodestar-architecture` (read-only), this skill modifies
 application source code.
 
-This skill is the executive counterpart to the rest of the harness:
-
-| Skill                   | Shape                                      | Modifies source?                        |
-| ----------------------- | ------------------------------------------ | --------------------------------------- |
-| `lodestar-setup`        | Descriptive — documents the layout         | No (writes config files)                |
-| `lodestar-audit`        | Prescriptive-local — one fix per finding   | No (writes `docs/audit/`)               |
-| `lodestar-architecture` | Advisory-global — one report on the layout | No (writes `docs/architecture-review/`) |
-| `lodestar-fix` (this)   | Executive — applies the audit's fixes      | **Yes**                                 |
-
 Scripts live beside this `SKILL.md` under `scripts/`. Keep the process
 cwd as the target repository. Invoke scripts with an absolute path to
 that file (or `node <skill-dir>/scripts/<name>.mjs`). `--file` and
@@ -215,37 +206,18 @@ have to scan completed work.
 
 ## Step 3a — (Optional) Sub-agent fan-out
 
-If your host exposes a sub-agent tool (e.g. Claude Code's `Agent` /
-`Task`), per-category execution parallelizes cleanly. Categories are
-independent — an `imports` fix doesn't depend on a `boundaries` fix.
-Skip this section if no sub-agent tool is available; the inline loop
-in Step 3 is the canonical path.
+If a sub-agent tool exists, categories parallelize (independent fixes).
+Skip when unavailable — Step 3's inline loop is canonical.
 
-Spawn one sub-agent per category with:
+Spawn one sub-agent per category with the item paths, full item text,
+`<typecheck>` / `<test>`, and `AUTO_COMMIT`. Constraints: action item is
+the contract (scope rules stop the work); no edits outside `files:`;
+no nested spawns; return JSON
+`[{item_id, status, files_modified, commit_sha, notes}]`.
 
-- The list of action-item file paths to process for that category.
-- The full content of each action item (so the sub-agent doesn't need
-  to re-read).
-- The substituted `<typecheck>` / `<test>` commands.
-- The `AUTO_COMMIT` choice.
-
-Constraints sub-agents must obey (state these explicitly in every
-spawn prompt):
-
-- The action item is the contract. Scope rules are stop conditions;
-  hitting one means `status: deferred`, never "ignore and proceed".
-- No edits to files outside any item's `files:` list.
-- No spawning further sub-agents — flat fan-out only.
-- Return a JSON array of `{item_id, status, files_modified, commit_sha,
-notes}` records.
-
-The orchestrator:
-
-- Runs `<test>` once after all sub-agents return (sub-agents run
-  `<typecheck>` per their batch but defer `<test>` to the
-  orchestrator, since a single test failure may surface from
-  cross-category interactions).
-- Reassembles the global status table and prints the Step 4 report.
+Sub-agents run `<typecheck>` per batch but defer `<test>` to the
+orchestrator (cross-category interactions). Orchestrator runs `<test>`
+once after all return, then prints Step 4.
 
 ---
 

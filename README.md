@@ -117,7 +117,6 @@ pnpm dlx skills add . --list
 
 Initial standalone extraction: `0.1.0`.
 
-The skills have extensive real-world use in their source repository.
 Trigger phrases and expected outcomes live in [`docs/evals.md`](docs/evals.md)
 as a manual checklist.
 

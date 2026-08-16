@@ -240,55 +240,9 @@ already use.
 **Only do this if the project has a linter already configured.** Do not
 set up a new linter or modify linter config without the user's consent.
 
-### If the project uses ESLint with `@typescript-eslint`
-
-Recommend enabling (in `eslint.config.*` or `.eslintrc.*`):
-
-```js
-// @typescript-eslint rules that map directly to lodestar-audit categories
-'@typescript-eslint/no-explicit-any': 'error',          // types #3
-'@typescript-eslint/consistent-type-imports': 'error',  // types #1
-'@typescript-eslint/no-floating-promises': 'error',     // errors A
-'@typescript-eslint/no-throw-literal': 'error',         // errors B
-'@typescript-eslint/prefer-promise-reject-errors': 'error', // errors B
-```
-
-These rules are already assumed by lodestar-audit's fix recipes (e.g. the `any`
-fix recipe references `eslint-disable-next-line @typescript-eslint/no-explicit-any`).
-
-For `boundaries.B` (misplaced business logic), also recommend adding
-`eslint-plugin-boundaries`. Once configured, the lodestar-audit skill uses its
-output directly and produces definitive findings with no `requires_decision`
-overhead. Use the zone structure already written to `.fallowrc.json` as
-the source — each zone becomes an element type:
-
-```js
-// eslint-plugin-boundaries element-types rule
-// (derived from .fallowrc.json zones — one entry per package)
-'boundaries/element-types': ['error', {
-  default: 'disallow',
-  rules: [
-    // Mirror the dependency direction from AGENTS.md:
-    // e.g. { from: 'web', allow: ['server'] },
-    //       { from: 'server', allow: ['core'] }, ...
-  ]
-}]
-```
-
-### If the project uses Biome
-
-Biome covers the equivalent rules via its `correctness` and `suspicious`
-groups. Check that these are enabled:
-
-- `correctness/noFloatingPromises` → errors A
-- `suspicious/noExplicitAny` → types #3
-- `correctness/useImportType` → types #1
-
-Biome does not have a boundaries/layer enforcement rule. The grep fallback
-in lodestar-audit handles `boundaries.B` when Biome is the only linter.
-
-Ask the user once whether they want to add any of these. Do not write
-config without confirmation.
+Ask once whether they want to tighten ESLint / Biome rules for audit
+accuracy. If they decline, skip. If they opt in, read
+[linters.md](linters.md) and apply only the rules they confirm.
 
 ## Step 5 — Confirm
 

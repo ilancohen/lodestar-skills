@@ -66,16 +66,14 @@ When resuming, skip categories that already have
 ## Optional mechanical fan-out
 
 If a sub-agent tool exists and there are 4+ packages, spawn one
-sub-agent per package. Each prompt must include the package row,
-categories, substituted principle text, and the exclusion list.
-Sub-agents are read-only, return JSON findings, and must not write
-`findings.md` or re-run Fallow.
+sub-agent per package (package row, categories, principle text,
+exclusion list). Constraints: read-only, JSON findings only, no
+`findings.md` writes, no nested spawns, no Fallow re-run. Inline loop
+is canonical when fan-out is unavailable.
 
-After they return, merge with
-`node scripts/audit-state.mjs merge-findings --in a.json --in b.json --out docs/audit/<RUN_ID>/findings.md --run-id <RUN_ID>`.
-That command reassigns `F0001…` in category then file order. For every
-(package × category) with no result, append
-`## skipped: <category> in <package> — sub-agent did not return`.
+Merge with `merge-findings`. Append
+`## skipped: <category> in <package> — sub-agent did not return` for
+missing (package × category) results.
 
 ## Semantic pass
 
@@ -89,7 +87,7 @@ Detectors: `soc-yagni.A`, `dry.B`, `dry.C`. Work one package at a time.
   history. Orchestrator only; do not fan out.
 
 Optional fan-out: one sub-agent per package for `soc-yagni.A` and
-`dry.B`. Same read-only rules.
+`dry.B` (same read-only / structured-return / no-nested-spawn rules).
 
 After each package, record progress in `.checkpoint.json` (`status:
 partial`, `package: <name>`). Only call `checkpoint` with a real
