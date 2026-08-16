@@ -2,9 +2,10 @@
 name: lodestar-setup
 description: >-
   Sets up the lodestar suite in a repository by documenting its
-  package layout and writing agent guidance. Use after installing the suite or
-  when repository structure changes. May also configure Fallow, gitignore
-  entries, and existing linter rules with user consent.
+  package layout and writing agent guidance. May also configure Fallow,
+  gitignore entries, and existing linter rules with user consent. Do not
+  load unless the user explicitly invokes lodestar-setup by name.
+disable-model-invocation: true
 license: MIT
 compatibility: Requires filesystem write access and a POSIX-compatible shell for optional Fallow setup. Supports npm, pnpm, and yarn repositories.
 metadata:

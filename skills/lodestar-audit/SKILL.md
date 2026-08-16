@@ -2,10 +2,11 @@
 name: lodestar-audit
 description: >-
   Audits a codebase against the engineering principles documented by lodestar-setup
-  and writes self-contained findings and action items under docs/audit/. Use
-  when asked to find architecture, boundary, duplication, type, error-handling,
-  testability, or styling violations. Discovery only; never modifies
-  application source. Restartable from findings.md.
+  and writes self-contained findings and action items under docs/audit/.
+  Discovery only; never modifies application source. Restartable from
+  findings.md. Do not load unless the user explicitly invokes lodestar-audit
+  by name.
+disable-model-invocation: true
 license: MIT
 compatibility: Requires git, a POSIX-compatible shell, Node.js, and Fallow 3.15.0 (combined schema 10) installed in the target project or available on PATH. Designed for JavaScript/TypeScript repositories.
 metadata:

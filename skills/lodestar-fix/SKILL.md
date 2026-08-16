@@ -1,10 +1,11 @@
 ---
 name: lodestar-fix
 description: >-
-  Triages and executes action items produced by lodestar-audit. Use when asked to
-  apply fixes from a docs/audit run, filter them by risk or category, or resume
-  unfinished audit remediation. Updates item status, verifies changes, and can
-  commit with consent. Modifies application source code.
+  Triages and executes action items produced by lodestar-audit. Updates item
+  status, verifies changes, and can commit with consent. Modifies application
+  source code. Do not load unless the user explicitly invokes lodestar-fix by
+  name.
+disable-model-invocation: true
 license: MIT
 compatibility: Requires git and the target repository's declared typecheck and test commands. Shell examples assume a POSIX-compatible environment.
 metadata:
@@ -20,12 +21,12 @@ application source code.
 
 This skill is the executive counterpart to the rest of the harness:
 
-| Skill                    | Shape                                      | Modifies source?                        |
-| ------------------------ | ------------------------------------------ | --------------------------------------- |
-| `lodestar-setup`               | Descriptive — documents the layout         | No (writes config files)                |
-| `lodestar-audit`               | Prescriptive-local — one fix per finding   | No (writes `docs/audit/`)               |
+| Skill                   | Shape                                      | Modifies source?                        |
+| ----------------------- | ------------------------------------------ | --------------------------------------- |
+| `lodestar-setup`        | Descriptive — documents the layout         | No (writes config files)                |
+| `lodestar-audit`        | Prescriptive-local — one fix per finding   | No (writes `docs/audit/`)               |
 | `lodestar-architecture` | Advisory-global — one report on the layout | No (writes `docs/architecture-review/`) |
-| `lodestar-fix` (this)          | Executive — applies the audit's fixes      | **Yes**                                 |
+| `lodestar-fix` (this)   | Executive — applies the audit's fixes      | **Yes**                                 |
 
 Scripts live beside this `SKILL.md` under `scripts/`. Keep the process
 cwd as the target repository. Invoke scripts with an absolute path to

@@ -192,6 +192,9 @@ export function checkPackage(root = ROOT) {
     if (scalar(yaml, "license") !== "MIT") {
       errors.push(`${relativeSkill}: license must be MIT`);
     }
+    if (scalar(yaml, "disable-model-invocation") !== "true") {
+      errors.push(`${relativeSkill}: disable-model-invocation must be true`);
+    }
     if (metadataVersion(yaml) !== version) {
       errors.push(`${relativeSkill}: metadata.version must be ${version}`);
     }

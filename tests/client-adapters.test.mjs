@@ -46,3 +46,13 @@ test("no adapter auto-loads lodestar-fix", () => {
   }
   assert.equal(fs.existsSync(path.join(ROOT, ".kiro")), false);
 });
+
+test("canonical skills disable model invocation", () => {
+  for (const skill of SKILLS) {
+    const text = fs.readFileSync(
+      path.join(ROOT, "skills", skill, "SKILL.md"),
+      "utf8",
+    );
+    assert.match(text, /^disable-model-invocation:\s*true$/m);
+  }
+});

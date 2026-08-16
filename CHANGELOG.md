@@ -6,6 +6,9 @@ All notable changes to this project will be documented here.
 
 ### Changed
 
+- All four skills set `disable-model-invocation: true` so they load only when
+  the user invokes them by name.
+
 - Suite renamed to **Lodestar** (`ilancohen/lodestar-skills`). Hard cutover —
   old `ep-*` skill IDs are not aliases. Mapping:
 

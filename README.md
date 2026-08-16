@@ -54,10 +54,10 @@ From this directory during development:
 node scripts/install.mjs
 ```
 
-| Intent       | Command                                                                      |
-| ------------ | ---------------------------------------------------------------------------- |
-| Skip prompts | `node scripts/install.mjs -y`                                                |
-| One agent    | `node scripts/install.mjs -a cursor`                                         |
+| Intent       | Command                                                        |
+| ------------ | -------------------------------------------------------------- |
+| Skip prompts | `node scripts/install.mjs -y`                                  |
+| One agent    | `node scripts/install.mjs -a cursor`                           |
 | Scripts / CI | `pnpm dlx skills add ilancohen/lodestar-skills --skill '*' -y` |
 
 Agent ids: `cursor`, `claude-code`, `codex`, `gemini-cli`, `github-copilot`,
@@ -84,6 +84,10 @@ skill logic.
 
 ## Use
 
+Skills load **only when you invoke them by name**. They do not auto-activate
+from related conversation. Syntax varies by client: `/lodestar-setup`,
+`$lodestar-setup`, or picking the skill in the client's skills UI.
+
 Run the workflow in this order:
 
 1. Invoke `lodestar-setup` once in the target repository.
@@ -92,9 +96,6 @@ Run the workflow in this order:
 4. Invoke `lodestar-fix` only when you want source changes.
 5. Invoke `lodestar-architecture` separately when the package layout itself
    needs review.
-
-Invocation syntax varies by client: `/lodestar-setup`, `$lodestar-setup`, or selecting the
-skill from the client's skills UI.
 
 ## Development
 
