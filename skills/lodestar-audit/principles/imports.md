@@ -5,9 +5,9 @@ action items are **low risk**.
 
 Fallow is the required detector — it covers subtypes #3, #5, #6, #7,
 #8, #9 directly. Subtypes #1 (`cross-package-src`) and #4 (`export *`
-barrels) are always grep (they are not fallow concepts). Without the
-fallow seed, subtypes #7, #8, and #9 have no coverage and #6 falls back
-to the grep heuristic below.
+barrels) are always grep (they are not fallow concepts). When Fallow runs
+but `.fallowrc.json` is absent, `check.boundary_violations` is empty and
+subtype #6 uses the grep heuristic below.
 
 ## What counts as a violation
 
