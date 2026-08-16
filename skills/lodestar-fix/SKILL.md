@@ -14,7 +14,7 @@ metadata:
 ---
 
 You are running `lodestar-fix`. The job is to **triage** and **execute** the
-action items produced by an `lodestar-audit` run, marking each with a status
+action items produced by a `lodestar-audit` run, marking each with a status
 so re-runs pick up where you left off. Unlike `lodestar-audit` (read-only)
 and `lodestar-architecture` (read-only), this skill modifies
 application source code.

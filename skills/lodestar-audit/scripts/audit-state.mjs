@@ -44,7 +44,7 @@ Commands:
   validate-input --root DIR
   merge-findings --in FILE [--in FILE ...] [--out FILE]
   validate-output --path FILE
-  checkpoint --run-dir DIR --category NAME --status complete|partial --count N
+  checkpoint --run-dir DIR --category NAME --status complete|partial --count N [--package NAME]
   recover --run-dir DIR
 `);
 }

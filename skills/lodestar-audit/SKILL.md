@@ -14,7 +14,7 @@ metadata:
   version: "0.1.0"
 ---
 
-You are running an lodestar audit. **Discover** and
+You are running a lodestar audit. **Discover** and
 **document** violations as self-contained action items. Do not fix them.
 
 Each action-item file must stand alone: an agent reading only that file
