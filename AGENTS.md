@@ -23,6 +23,7 @@ to use — do not guess.
 | `skills/lodestar-architecture/` | Advisory package-layout review                          |
 | `.agents/attention-kind/` etc.  | Local reply-style skills (not published; AGPL-3.0)      |
 | `.cursor/skills/`               | Cursor wrappers for local `.agents/` contributor skills |
+| `.cursor/skills/create-plan/`   | Contributor planning skill; Cursor-only (no `.agents/` SSOT; intentional) |
 | `scripts/`                      | Deterministic package-development validation            |
 | `package.json`                  | pnpm pin and suite scripts (`pnpm check`, `pnpm test`)  |
 | `plugin.json`                   | Portable Agent Plugins manifest                         |

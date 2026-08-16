@@ -21,3 +21,12 @@ Before committing suite changes:
    `lodestar-fix`
 
 Keep versions synchronized via `VERSION` / `scripts/set_version.mjs`.
+
+## Deliberate duplication
+
+`runtime.mjs` ships in three skill copies (`lodestar-audit`,
+`lodestar-fix`, `lodestar-setup`) and `resolve-bin.mjs` in two
+(`lodestar-audit`, `lodestar-setup`). The copies are intentional: each
+skill must stand alone when installed individually. Do not "DRY" them into
+a shared module under `scripts/` — that would break standalone install.
+Edit each copy deliberately, or update them together in one change.
