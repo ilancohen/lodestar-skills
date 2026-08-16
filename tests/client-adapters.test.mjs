@@ -12,6 +12,23 @@ test("adapters and manifests discover exactly four canonical skills", () => {
   assert.equal(result.skillCount, 4);
 });
 
+test("root skills/ holds exactly the four canonical SKILL.md files", () => {
+  const skillsRoot = path.join(ROOT, "skills");
+  assert.ok(fs.statSync(skillsRoot).isDirectory());
+  const entries = fs
+    .readdirSync(skillsRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+  assert.deepEqual(entries, [...SKILLS].sort());
+  for (const skill of SKILLS) {
+    assert.ok(
+      fs.existsSync(path.join(skillsRoot, skill, "SKILL.md")),
+      `missing skills/${skill}/SKILL.md`,
+    );
+  }
+});
+
 test("manifests stay metadata-only and version-aligned", () => {
   const version = fs.readFileSync(path.join(ROOT, "VERSION"), "utf8").trim();
   for (const relative of MANIFESTS) {

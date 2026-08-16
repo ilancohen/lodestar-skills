@@ -75,12 +75,14 @@ install method.
 Prefer a native plugin only when you do not want the skills CLI:
 
 - Cursor — `plugin.json` (Agent Plugins 1.0)
-- Claude Code — `.claude-plugin/plugin.json`
-- Codex — `.codex-plugin/plugin.json`
-- Gemini CLI — `gemini-extension.json`
+- Claude Code — `.claude-plugin/plugin.json` (discovers root `skills/` by
+  convention)
+- Codex — `.codex-plugin/plugin.json` declares `"skills": "./skills/"`
+- Gemini CLI — `gemini-extension.json` (discovers root `skills/` by
+  convention, same as Claude Code)
 
-All adapters load the same canonical `skills/` directories. They do not copy
-skill logic.
+Adapters do not copy skill logic. Convention-based clients rely on the
+root `skills/` layout holding the four canonical skills.
 
 ## Use
 
