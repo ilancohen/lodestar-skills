@@ -1,7 +1,7 @@
 # AGENTS.md
 
-Suite contributors: also read `CONTRIBUTING.md` and
-`docs/plans/README.md` before changing this skill package.
+Suite contributors: also read `CONTRIBUTING.md` before changing this
+skill package.
 
 ## Project
 
@@ -59,6 +59,6 @@ This repository develops the reusable suite itself. Do not encode assumptions
 from one consuming repository into canonical skill logic. Capture examples in
 documentation or test fixtures instead.
 
-Read `CONTRIBUTING.md` for the pre-commit checklist. In-flight work is in
-`docs/plans/README.md`; delivered roadmap evidence is in
-`docs/plans/done/2026-08-13-roadmap-delivery/`.
+Read `CONTRIBUTING.md` for the pre-commit checklist. In-flight work
+lives under `docs/plans/` (see the `create-plan` / `implement-plan`
+contributor skills).
