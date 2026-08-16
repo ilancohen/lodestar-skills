@@ -59,7 +59,6 @@ Never overwrite a previous run. Output stays under `docs/audit/<RUN_ID>/`.
 If any of these is missing, **stop** and tell the user to run `lodestar-setup`:
 
 - `AGENTS.md`
-- `CLAUDE.md`
 - `.agents/skills/README.md`
 
 Then run:

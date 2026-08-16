@@ -1,8 +1,7 @@
 <!--
 Canonical lodestar body. Read by `lodestar-setup`
-and inlined into every target file (CLAUDE.md, .agents/skills/README.md,
-.github/copilot-instructions.md) at the `<!-- INSERT principles.md -->`
-marker.
+and inlined into `.agents/skills/README.md` at the
+`<!-- INSERT principles.md -->` marker.
 
 This file is the single source of truth for the principles content. Do not
 edit the same content in any wrapper template — change it here and re-run

@@ -216,7 +216,7 @@ export function checkPackage(root = ROOT) {
     "utf8",
   );
   if (
-    /\.agents\/skills\/lodestar-setup\/(?:principles|agents-md|skills-readme|claude-md|copilot-instructions|fallowrc)\.md/.test(
+    /\.agents\/skills\/lodestar-setup\/(?:principles|agents-md|skills-readme|fallowrc)\.md/.test(
       setupText,
     )
   ) {

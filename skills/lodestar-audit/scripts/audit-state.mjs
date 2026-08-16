@@ -401,13 +401,9 @@ function cmdValidateInput(flags) {
   if (!fs.existsSync(agentsPath)) {
     fail("AGENTS.md is missing. Run lodestar-setup first.", 2);
   }
-  for (const required of [
-    "CLAUDE.md",
-    path.join(".agents", "skills", "README.md"),
-  ]) {
-    if (!fs.existsSync(path.join(root, required))) {
-      fail(`${required} is missing. Run lodestar-setup first.`, 2);
-    }
+  const skillsReadme = path.join(root, ".agents", "skills", "README.md");
+  if (!fs.existsSync(skillsReadme)) {
+    fail(".agents/skills/README.md is missing. Run lodestar-setup first.", 2);
   }
   const agentsText = fs.readFileSync(agentsPath, "utf8");
   let packages;

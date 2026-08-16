@@ -12,8 +12,8 @@ metadata:
   version: "0.1.0"
 ---
 
-Write the four config files that coding agents need to use the lodestar
-skills. This requires only the information needed to fill in the templates — do not
+Write the agent-neutral config files that coding agents need to use the
+lodestar skills. This requires only the information needed to fill in the templates — do not
 do a broad repo survey, and do not propose architectural changes (the
 `lodestar-architecture` skill exists for that).
 
@@ -60,8 +60,8 @@ Read only what's needed to fill in the template placeholders:
 - **Dependency direction** — infer from imports between packages. If
   ambiguous or undocumented, ask the user once (Step 2) — don't guess
   silently.
-- **Existing files** — check whether `AGENTS.md`, `CLAUDE.md`, and
-  `.github/copilot-instructions.md` already exist. If they do, read them
+- **Existing files** — check whether `AGENTS.md` and
+  `.agents/skills/README.md` already exist. If they do, read them
   briefly so you don't overwrite unrelated content.
 
 Stop there. Do not read tsconfig deeply, explore individual packages, check
@@ -93,9 +93,9 @@ job, not setup's.
 ## Step 3 — Build the shared principles block
 
 `principles.md` is the canonical lodestar
-body. It gets inlined into all three of `CLAUDE.md`,
-`.agents/skills/README.md`, and `.github/copilot-instructions.md` so the
-three files never drift.
+body. It gets inlined into `.agents/skills/README.md`. Do not write
+agent-specific files (`CLAUDE.md`, `.github/copilot-instructions.md`,
+or similar).
 
 Read `principles.md` once and produce a substituted copy in memory:
 
@@ -155,33 +155,6 @@ Start from `skills-readme.md`. Fill in:
 Replace `<!-- INSERT principles.md -->` with `PRINCIPLES_BLOCK`.
 
 Write to `.agents/skills/README.md`.
-
-### CLAUDE.md
-
-Start from `claude-md.md`. The body of this file
-points at AGENTS.md `## Package Layout` rather than restating the layout
-in CLAUDE.md, so there are no layout-specific placeholders to fill in
-the Repository Layout section — leave the prose as-is.
-
-Replace `<!-- INSERT principles.md -->` with `PRINCIPLES_BLOCK`.
-
-If `CLAUDE.md` already exists, replace only the file's body from the first
-`# CLAUDE.md` heading onward — leave any unrelated repo-specific content
-above the heading untouched.
-
-Write to `CLAUDE.md`.
-
-### .github/copilot-instructions.md
-
-Start from `copilot-instructions.md`. No
-file-specific placeholders — just replace `<!-- INSERT principles.md -->`
-with `PRINCIPLES_BLOCK`.
-
-If `.github/copilot-instructions.md` already exists, add or update only the
-`# GitHub Copilot Instructions` section onward — leave any unrelated
-repo-specific content above the heading untouched.
-
-Write to `.github/copilot-instructions.md`.
 
 ## Step 4.5 — `.fallowrc.json` for the audit's fallow seed
 

@@ -22,7 +22,7 @@ Near-miss (should not trigger):
 
 Expected outcomes:
 
-- Consent before writes; touch only owned guidance files; never edit `packages/**` / `src/**`.
+- Consent before writes; touch only `AGENTS.md` and `.agents/skills/README.md` (plus optional Fallow/linter with consent); never edit `packages/**` / `src/**`. Do not write `CLAUDE.md` or `.github/copilot-instructions.md`.
 - Refresh after structure or package-manager change without auditing or redesigning architecture.
 - Redirect redesign requests to `lodestar-architecture`.
 
@@ -45,7 +45,7 @@ Expected outcomes:
 
 - Discovery + plan under `docs/audit/`; no application source edits.
 - Honor category subsets and pause after `findings.md` when asked.
-- Stop and point at `lodestar-setup` / Fallow when prerequisites are missing.
+- Stop and point at `lodestar-setup` / Fallow when `AGENTS.md` (Package Layout) or `.agents/skills/README.md` is missing. Missing `CLAUDE.md` is not a blocker.
 
 ## lodestar-fix
 
@@ -87,4 +87,4 @@ Expected outcomes:
 
 - Ask describe vs suggest once; write under `docs/architecture-review/`; never edit source.
 - At most two evidence-mapped alternatives with trade-offs when asked to suggest.
-- Stop and point at `lodestar-setup` when Package Layout / Dependency Direction is missing.
+- Stop and point at `lodestar-setup` when Package Layout / Dependency Direction or `.agents/skills/README.md` is missing. Missing `CLAUDE.md` is not a blocker.

@@ -37,7 +37,7 @@ shapes; abstracting prematurely is worse than the duplication.
 
 ### C. Wide-diff smell — process-level (not source-detectable)
 
-CLAUDE.md treats a change that touches 6+ unrelated files for one logical
+The DRY principle treats a change that touches 6+ unrelated files for one logical
 change as a missing-abstraction signal. This is a **commit-level** check,
 not a code-state check. Surface it as a single advisory action item that
 points the reader at recent PR/commit history, not at source files.

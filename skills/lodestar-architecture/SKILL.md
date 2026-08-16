@@ -19,10 +19,10 @@ This skill is the architectural counterpart to the descriptive
 `lodestar-setup` and the prescriptive
 `lodestar-audit`:
 
-| Skill                        | What it does                                   | What it writes                                                                          |
-| ---------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `setup`                      | Documents the layout that exists               | `AGENTS.md`, `CLAUDE.md`, `.github/copilot-instructions.md`, `.agents/skills/README.md` |
-| `audit`                      | Finds violations inside the layout that exists | `docs/audit/<RUN_ID>/...` (one file per violation)                                      |
+| Skill                          | What it does                                   | What it writes                                                                          |
+| ------------------------------ | ---------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `setup`                        | Documents the layout that exists               | `AGENTS.md`, `.agents/skills/README.md`                                                 |
+| `audit`                        | Finds violations inside the layout that exists | `docs/audit/<RUN_ID>/...` (one file per violation)                                      |
 | `lodestar-architecture` (this) | Reviews / critiques the layout itself          | `docs/architecture-review/<RUN_ID>.md` (one report; advisory only)                      |
 
 Setup and audit both take the documented layout as given. This skill is
@@ -38,7 +38,6 @@ the user to run `/lodestar-setup` first:
 - `AGENTS.md` with a `## Package Layout` table (every row must have
   package name, path, alias, and a one-sentence Responsibility) and a
   `## Dependency Direction` declaration.
-- `CLAUDE.md`.
 - `.agents/skills/README.md`.
 
 Capture from `AGENTS.md`:
