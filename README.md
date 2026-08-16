@@ -36,32 +36,34 @@ and improving software architecture:
 Project scope is the default. The skills write project-specific configuration
 and audit output.
 
-The installer detects which coding agents you use, pre-selects them plus all
-four skills, and installs. Enter accepts those defaults; space toggles.
+Use whichever command matches tools you already have. All of these install
+the suite into the current repository.
+
+**Skills CLI** (works with any agent the [skills CLI](https://github.com/vercel-labs/skills) supports):
 
 ```bash
-pnpm dlx skills add ilancohen/lodestar-skills
+npx skills add ilancohen/lodestar-skills
+# or:  pnpm dlx skills add ilancohen/lodestar-skills
+# or:  yarn dlx skills add ilancohen/lodestar-skills
 ```
 
-Per-agent: `pnpm dlx skills add ilancohen/lodestar-skills --skill '*' -a cursor`.
-
-Or via the Clack installer: `pnpm dlx github:ilancohen/lodestar-skills`.
-npm: `npx github:ilancohen/lodestar-skills`. Yarn:
-`yarn dlx github:ilancohen/lodestar-skills`. Use the
-target repository's package manager; ask if more than one lockfile is
-present, or none is.
-
-From this directory during development:
+**Lodestar installer** (detects your agents, pre-selects them plus all four
+skills; Enter accepts, space toggles):
 
 ```bash
-node scripts/install.mjs
+npx github:ilancohen/lodestar-skills
+# or:  pnpm dlx github:ilancohen/lodestar-skills
+# or:  yarn dlx github:ilancohen/lodestar-skills
 ```
 
-| Intent       | Command                                                        |
-| ------------ | -------------------------------------------------------------- |
-| Skip prompts | `node scripts/install.mjs -y`                                  |
-| One agent    | `node scripts/install.mjs -a cursor`                           |
-| Scripts / CI | `pnpm dlx skills add ilancohen/lodestar-skills --skill '*' -y` |
+Prefer the package manager already used in the target repo. If none or more
+than one lockfile is present, pick one — do not guess.
+
+| Intent       | Example                                                          |
+| ------------ | ---------------------------------------------------------------- |
+| One agent    | `npx skills add ilancohen/lodestar-skills --skill '*' -a cursor` |
+| Skip prompts | `npx skills add ilancohen/lodestar-skills --skill '*' -y`        |
+| From a clone | `node scripts/install.mjs` (or `-y` / `-a cursor`)               |
 
 Agent ids: `cursor`, `claude-code`, `codex`, `gemini-cli`, `github-copilot`,
 `kiro-cli`. See the
