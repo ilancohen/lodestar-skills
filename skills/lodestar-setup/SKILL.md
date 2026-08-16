@@ -167,7 +167,7 @@ heuristic grep for direction violations.
 
 Decide whether to write it:
 
-1. Prefer the version pinned in the project, then check `PATH`, via the
+1. Prefer the version already in the project, then check `PATH`, via the
    lodestar-audit contract script (absolute path to
    `lodestar-audit/scripts/fallow-contract.mjs`):
    ```bash
@@ -176,11 +176,11 @@ Decide whether to write it:
    ```powershell
    node <lodestar-audit-skill>/scripts/fallow-contract.mjs resolve-bin --root <repo>
    ```
-2. If fallow is not found or outside the supported range, tell the user:
-   "fallow 3.15.0 (combined schema 10) is required for lodestar-audit. Install with
-   `<pm add -D fallow@3.15.0>` using this repo's package manager (pnpm:
-   `pnpm add -D fallow@3.15.0`; npm: `npm install --save-dev fallow@3.15.0`;
-   yarn: `yarn add -D fallow@3.15.0`). Write `.fallowrc.json` anyway so
+2. If fallow is not found or outside `^3.15.0`, tell the user:
+   "fallow ^3.15.0 (combined schema 10) is required for lodestar-audit. Install with
+   `<pm add -D fallow@^3.15.0>` using this repo's package manager (pnpm:
+   `pnpm add -D fallow@^3.15.0`; npm: `npm install --save-dev fallow@^3.15.0`;
+   yarn: `yarn add -D fallow@^3.15.0`). Write `.fallowrc.json` anyway so
    it's ready when fallow is installed?"
    Use the command for the manager already confirmed in Step 2. If that
    manager is still unknown, ask before quoting an install command.

@@ -26,10 +26,10 @@ and improving software architecture:
   PowerShell or cmd. Skill recipes are POSIX-first; a few places include
   PowerShell equivalents (for example `principles/fallow-seed.md` and
   `lodestar-fix` Step 3.7).
-- [Fallow](https://docs.fallow.tools) **3.15.0** (combined schema 10) in the
-  target repository for `lodestar-audit`. Pin with that repo's package manager,
-  e.g. `pnpm add -D fallow@3.15.0` (or `npm install --save-dev` /
-  `yarn add -D`).
+- [Fallow](https://docs.fallow.tools) **^3.15.0** (combined schema 10) in the
+  target repository for `lodestar-audit`. Same major, at least 3.15.0. Install
+  with that repo's package manager, e.g. `pnpm add -D fallow@^3.15.0` (or
+  `npm install --save-dev` / `yarn add -D`).
 
 ## Install
 

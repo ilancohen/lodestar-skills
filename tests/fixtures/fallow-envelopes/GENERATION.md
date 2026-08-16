@@ -2,7 +2,8 @@
 
 Generated against `tests/fixtures/repos/fallow-contract`.
 
-Supported tool version: `3.15.0` (combined `schema_version` 10; dupes `schema_version` 8).
+Supported tool range: `^3.15.0` (combined `schema_version` 10; dupes `schema_version` 8).
+Checked-in envelopes were generated with `3.15.0`.
 
 ## Regeneration
 
@@ -19,5 +20,6 @@ npm install --save-dev fallow@3.15.0
 ./node_modules/.bin/fallow dead-code --trace-dependency typescript --format json --quiet > "$OLDPWD/$OUT/v3.15.0/dead-code-trace-dependency.json"
 ```
 
-Do not change the supported version without regenerating fixtures, updating
-`skills/lodestar-audit/scripts/fallow-contract.json`, and human review.
+Do not raise the floor or change the supported major without regenerating
+fixtures, updating `skills/lodestar-audit/scripts/fallow-contract.json`, and
+human review.

@@ -82,23 +82,23 @@ test("ignores bun.lockb and still asks", () => {
 
 test("install command matches the detected manager", () => {
   assert.equal(
-    installFallowCommand("3.15.0", "pnpm"),
-    "pnpm add -D fallow@3.15.0",
+    installFallowCommand("^3.15.0", "pnpm"),
+    "pnpm add -D fallow@^3.15.0",
   );
   assert.equal(
-    installFallowCommand("3.15.0", "npm"),
-    "npm install --save-dev fallow@3.15.0",
+    installFallowCommand("^3.15.0", "npm"),
+    "npm install --save-dev fallow@^3.15.0",
   );
   assert.equal(
-    installFallowCommand("3.15.0", "yarn"),
-    "yarn add -D fallow@3.15.0",
+    installFallowCommand("^3.15.0", "yarn"),
+    "yarn add -D fallow@^3.15.0",
   );
 });
 
 test("unknown manager lists pnpm, npm, and yarn and says to ask", () => {
-  const command = installFallowCommand("3.15.0", null);
-  assert.match(command, /pnpm add -D fallow@3\.15\.0/);
-  assert.match(command, /npm install --save-dev fallow@3\.15\.0/);
-  assert.match(command, /yarn add -D fallow@3\.15\.0/);
+  const command = installFallowCommand("^3.15.0", null);
+  assert.match(command, /pnpm add -D fallow@\^3\.15\.0/);
+  assert.match(command, /npm install --save-dev fallow@\^3\.15\.0/);
+  assert.match(command, /yarn add -D fallow@\^3\.15\.0/);
   assert.match(command, /ask which package manager/);
 });

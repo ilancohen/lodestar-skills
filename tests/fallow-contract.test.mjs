@@ -5,6 +5,7 @@ import { spawnSync } from "node:child_process";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import {
+  compatibleFallowVersion,
   hasPath,
   loadContract,
   parseEnvelope,
@@ -13,7 +14,10 @@ import {
 } from "../skills/lodestar-audit/scripts/fallow-contract.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const SCRIPT = path.join(ROOT, "skills/lodestar-audit/scripts/fallow-contract.mjs");
+const SCRIPT = path.join(
+  ROOT,
+  "skills/lodestar-audit/scripts/fallow-contract.mjs",
+);
 const CONTRACT = loadContract();
 const FIX = path.join(ROOT, "tests/fixtures/fallow-envelopes");
 
@@ -28,11 +32,16 @@ function spec(id) {
   return CONTRACT.commands.find((item) => item.id === id);
 }
 
-test("contract pins Fallow 3.15.0", () => {
+test("contract accepts Fallow ^3.15.0", () => {
   assert.equal(CONTRACT.schema_version, 10);
   assert.equal(CONTRACT.tool_version, "3.15.0");
   assert.equal(spec("combined").schema_version, 10);
   assert.equal(spec("dupes-semantic").schema_version, 8);
+  assert.equal(true, compatibleFallowVersion("3.15.0", "3.15.0"));
+  assert.equal(true, compatibleFallowVersion("3.15.1", "3.15.0"));
+  assert.equal(true, compatibleFallowVersion("3.16.0", "3.15.0"));
+  assert.equal(false, compatibleFallowVersion("3.14.0", "3.15.0"));
+  assert.equal(false, compatibleFallowVersion("4.0.0", "3.15.0"));
 });
 
 test("current fixtures satisfy every command contract", () => {
@@ -92,9 +101,9 @@ test("negative fixtures fail closed with remediation", () => {
     ]);
     assert.equal(result.status, 2, name);
     assert.match(result.stderr, pattern, name);
-    assert.match(result.stderr, /Supported version: 3\.15\.0/);
-    assert.match(result.stderr, /pnpm add -D fallow@3\.15\.0/);
-    assert.match(result.stderr, /npm install --save-dev fallow@3\.15\.0/);
+    assert.match(result.stderr, /Supported version: \^3\.15\.0/);
+    assert.match(result.stderr, /pnpm add -D fallow@\^3\.15\.0/);
+    assert.match(result.stderr, /npm install --save-dev fallow@\^3\.15\.0/);
   }
 });
 
@@ -120,7 +129,14 @@ test("combined fixtures expose contracted file_score fields", () => {
   }
 });
 
-test("remediation names installed version, pin, schema/kind, and install command", () => {
+test("newer same-major envelope version is accepted", () => {
+  const file = path.join(FIX, "v3.15.0", "combined.json");
+  const envelope = parseEnvelope(fs.readFileSync(file, "utf8"));
+  envelope.version = "3.16.0";
+  validateEnvelope(envelope, spec("combined"), CONTRACT);
+});
+
+test("remediation names installed version, range, schema/kind, and install command", () => {
   const message = remediation(CONTRACT, "unsupported schema 99.", {
     installed: "3.14.0",
     schema: 99,
@@ -128,9 +144,9 @@ test("remediation names installed version, pin, schema/kind, and install command
     manager: "npm",
   });
   assert.match(message, /Installed Fallow: 3\.14\.0/);
-  assert.match(message, /Supported version: 3\.15\.0 \(schema 10\)/);
+  assert.match(message, /Supported version: \^3\.15\.0 \(schema 10\)/);
   assert.match(message, /Received schema\/kind: 99\/combined/);
-  assert.match(message, /npm install --save-dev fallow@3\.15\.0/);
+  assert.match(message, /npm install --save-dev fallow@\^3\.15\.0/);
   assert.doesNotMatch(message, /ask which package manager/);
 });
 
@@ -142,8 +158,6 @@ test("live fallow matrix validates every consumed command when enabled", async (
     return;
   }
   const fixture = path.join(ROOT, "tests/fixtures/repos/fallow-contract");
-  const version = process.env.FALLOW_CONTRACT_VERSION || CONTRACT.tool_version;
-  assert.ok(version, "FALLOW_CONTRACT_VERSION is required for live runs");
   for (const command of CONTRACT.commands) {
     const args = ["run", "--root", fixture, "--id", command.id];
     if (command.id === "dead-code-trace") {
@@ -156,7 +170,13 @@ test("live fallow matrix validates every consumed command when enabled", async (
     const result = run(args);
     assert.equal(result.status, 0, `${command.id}: ${result.stderr}`);
     const payload = JSON.parse(result.stdout);
-    assert.equal(payload.version || version, version);
+    if (payload.version) {
+      assert.equal(
+        true,
+        compatibleFallowVersion(payload.version, CONTRACT.tool_version),
+        payload.version,
+      );
+    }
     if (command.require_schema) {
       assert.equal(payload.schema_version, command.schema_version);
     }

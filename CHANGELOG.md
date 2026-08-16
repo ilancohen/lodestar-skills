@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented here.
 
+## [Unreleased]
+
+### Changed
+
+- `lodestar-audit` accepts Fallow `^3.15.0` (same major, at least 3.15.0)
+  instead of pinning an exact tool version. Envelope schema and field
+  checks are unchanged.
+
+- `scripts/migrate_vendored.mjs` drops the `ep-*` -> `lodestar-*` rename
+  mapping (never published under the old name, so no vendored `ep-*`
+  copies exist to migrate). The rename-detection mechanism itself stays
+  as a generic, currently-empty `RENAME_MAP` for handling a future skill
+  ID rename; the drift-check/re-sync path for vendored copies (checksum
+  compare, backup, reapply) is unaffected.
+
 ## [0.1.0] - 2026-08-13
 
 ### Changed
@@ -26,7 +41,7 @@ All notable changes to this project will be documented here.
 - Generated audit `INDEX.md` title is `# Lodestar audit`; suggested order of
   attack matches the canonical category sequence
   (`imports → types → ssot → soc-yagni → boundaries → errors →
-  testability → dry → styling`).
+testability → dry → styling`).
 
 - `lodestar-architecture` Inputs require only `AGENTS.md` (Package Layout
   and Dependency Direction); `.agents/skills/README.md` is not a gate.

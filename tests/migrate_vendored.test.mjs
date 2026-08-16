@@ -5,6 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import { ROOT, SKILLS } from "../scripts/lib.mjs";
 import {
+  RENAME_MAP,
   compareCopy,
   detectCopies,
   migrate,
@@ -26,7 +27,7 @@ function copyTree(from, to) {
   }
 }
 
-function writeLegacyStub(dest, name = "ep-setup") {
+function writeRenamedStub(dest, name) {
   const dir = path.join(dest, name);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(
@@ -36,74 +37,99 @@ function writeLegacyStub(dest, name = "ep-setup") {
   return dir;
 }
 
+// RENAME_MAP ships empty; these tests exercise the rename hook itself by
+// registering a throwaway old-name -> current-id mapping for the duration
+// of the test, proving the mechanism still works when a future rename lands.
+function withRenameMapping(oldName, skillId, fn) {
+  RENAME_MAP[oldName] = skillId;
+  try {
+    return fn();
+  } finally {
+    delete RENAME_MAP[oldName];
+  }
+}
+
 test("clean Lodestar tree is reported clean", () => {
   const tmp = makeTemp();
   const copyDir = path.join(tmp, ".agents/skills/lodestar-setup");
   copyTree(SOURCE_SETUP, copyDir);
   const report = compareCopy(
-    { path: copyDir, dirName: "lodestar-setup", skill: "lodestar-setup", legacy: false },
+    {
+      path: copyDir,
+      dirName: "lodestar-setup",
+      skill: "lodestar-setup",
+      renamed: false,
+    },
     ROOT,
     "0.1.0",
   );
   assert.equal(report.clean, true);
-  assert.equal(report.legacy, false);
+  assert.equal(report.renamed, false);
   assert.deepEqual(report.modified, []);
   fs.rmSync(tmp, { recursive: true, force: true });
 });
 
-test("legacy ep-* tree is detected and maps to Lodestar IDs", () => {
-  const tmp = makeTemp();
-  writeLegacyStub(path.join(tmp, ".agents/skills"), "ep-setup");
-  writeLegacyStub(path.join(tmp, ".agents/skills"), "ep-audit");
-  fs.mkdirSync(path.join(tmp, "src"), { recursive: true });
-  fs.writeFileSync(path.join(tmp, "src/app.ts"), "export const x = 1;\n");
-  const copies = detectCopies(tmp);
-  assert.equal(copies.length, 2);
-  assert.deepEqual(
-    copies.map((c) => [c.dirName, c.skill, c.legacy]).sort(),
-    [
-      ["ep-audit", "lodestar-audit", true],
-      ["ep-setup", "lodestar-setup", true],
-    ],
-  );
-  assert.equal(fs.readFileSync(path.join(tmp, "src/app.ts"), "utf8"), "export const x = 1;\n");
-  fs.rmSync(tmp, { recursive: true, force: true });
-});
-
-test("mixed tree reports both legacy and Lodestar copies", () => {
-  const tmp = makeTemp();
-  writeLegacyStub(path.join(tmp, ".agents/skills"), "ep-fix");
-  copyTree(SOURCE_SETUP, path.join(tmp, ".cursor/skills/lodestar-setup"));
-  const copies = detectCopies(tmp);
-  assert.equal(copies.length, 2);
-  const byDir = Object.fromEntries(copies.map((c) => [c.dirName, c]));
-  assert.equal(byDir["ep-fix"].skill, "lodestar-fix");
-  assert.equal(byDir["ep-fix"].legacy, true);
-  assert.equal(byDir["lodestar-setup"].legacy, false);
-  fs.rmSync(tmp, { recursive: true, force: true });
-});
-
-test("legacy apply renames ep-* to lodestar-* and writes marker", () => {
-  const tmp = makeTemp();
-  const legacy = writeLegacyStub(path.join(tmp, ".agents/skills"), "ep-setup");
-  const applied = migrate({
-    target: tmp,
-    source: ROOT,
-    apply: true,
-    check: false,
-    force: true,
+test("a future renamed skill dir is detected via RENAME_MAP", () => {
+  withRenameMapping("lodestar-setup-old", "lodestar-setup", () => {
+    const tmp = makeTemp();
+    writeRenamedStub(path.join(tmp, ".agents/skills"), "lodestar-setup-old");
+    fs.mkdirSync(path.join(tmp, "src"), { recursive: true });
+    fs.writeFileSync(path.join(tmp, "src/app.ts"), "export const x = 1;\n");
+    const copies = detectCopies(tmp);
+    assert.equal(copies.length, 1);
+    assert.deepEqual(
+      [copies[0].dirName, copies[0].skill, copies[0].renamed],
+      ["lodestar-setup-old", "lodestar-setup", true],
+    );
+    assert.equal(
+      fs.readFileSync(path.join(tmp, "src/app.ts"), "utf8"),
+      "export const x = 1;\n",
+    );
+    fs.rmSync(tmp, { recursive: true, force: true });
   });
-  assert.equal(applied.exitCode, 0);
-  assert.equal(fs.existsSync(legacy), false);
-  const dest = path.join(tmp, ".agents/skills/lodestar-setup");
-  assert.ok(fs.existsSync(path.join(dest, "SKILL.md")));
-  assert.ok(fs.existsSync(path.join(dest, ".lodestar-source.json")));
-  const marker = JSON.parse(
-    fs.readFileSync(path.join(dest, ".lodestar-source.json"), "utf8"),
-  );
-  assert.equal(marker.source_version, "0.1.0");
-  assert.ok(fs.existsSync(path.join(tmp, ".lodestar-backup")));
-  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test("mixed tree reports both a renamed and an up-to-date copy", () => {
+  withRenameMapping("lodestar-fix-old", "lodestar-fix", () => {
+    const tmp = makeTemp();
+    writeRenamedStub(path.join(tmp, ".agents/skills"), "lodestar-fix-old");
+    copyTree(SOURCE_SETUP, path.join(tmp, ".cursor/skills/lodestar-setup"));
+    const copies = detectCopies(tmp);
+    assert.equal(copies.length, 2);
+    const byDir = Object.fromEntries(copies.map((c) => [c.dirName, c]));
+    assert.equal(byDir["lodestar-fix-old"].skill, "lodestar-fix");
+    assert.equal(byDir["lodestar-fix-old"].renamed, true);
+    assert.equal(byDir["lodestar-setup"].renamed, false);
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+});
+
+test("applying a rename re-homes the dir and writes marker", () => {
+  withRenameMapping("lodestar-setup-old", "lodestar-setup", () => {
+    const tmp = makeTemp();
+    const renamed = writeRenamedStub(
+      path.join(tmp, ".agents/skills"),
+      "lodestar-setup-old",
+    );
+    const applied = migrate({
+      target: tmp,
+      source: ROOT,
+      apply: true,
+      check: false,
+      force: true,
+    });
+    assert.equal(applied.exitCode, 0);
+    assert.equal(fs.existsSync(renamed), false);
+    const dest = path.join(tmp, ".agents/skills/lodestar-setup");
+    assert.ok(fs.existsSync(path.join(dest, "SKILL.md")));
+    assert.ok(fs.existsSync(path.join(dest, ".lodestar-source.json")));
+    const marker = JSON.parse(
+      fs.readFileSync(path.join(dest, ".lodestar-source.json"), "utf8"),
+    );
+    assert.equal(marker.source_version, "0.1.0");
+    assert.ok(fs.existsSync(path.join(tmp, ".lodestar-backup")));
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
 });
 
 test("already-migrated Lodestar rerun is idempotent", () => {
@@ -166,7 +192,9 @@ test("modified files are not overwritten without --force", () => {
   });
   assert.equal(blocked.exitCode, 2);
   assert.ok(
-    fs.readFileSync(path.join(copyDir, "SKILL.md"), "utf8").includes("# local edit"),
+    fs
+      .readFileSync(path.join(copyDir, "SKILL.md"), "utf8")
+      .includes("# local edit"),
   );
   fs.rmSync(tmp, { recursive: true, force: true });
 });
@@ -194,30 +222,41 @@ test("canonical skill list remains the four Lodestar IDs", () => {
   ]);
 });
 
-test("same-parent legacy+Lodestar --force backs up the Lodestar dest", () => {
-  const tmp = makeTemp();
-  writeLegacyStub(path.join(tmp, ".agents/skills"), "ep-setup");
-  const dest = path.join(tmp, ".agents/skills/lodestar-setup");
-  copyTree(SOURCE_SETUP, dest);
-  fs.writeFileSync(path.join(dest, "local-only.md"), "# keep me\n");
-  fs.appendFileSync(path.join(dest, "SKILL.md"), "\n# lodestar local edit\n");
-  const result = migrate({
-    target: tmp,
-    source: ROOT,
-    apply: true,
-    check: false,
-    force: true,
+test("same-parent renamed+current dirs --force backs up the current dest", () => {
+  withRenameMapping("lodestar-setup-old", "lodestar-setup", () => {
+    const tmp = makeTemp();
+    writeRenamedStub(path.join(tmp, ".agents/skills"), "lodestar-setup-old");
+    const dest = path.join(tmp, ".agents/skills/lodestar-setup");
+    copyTree(SOURCE_SETUP, dest);
+    fs.writeFileSync(path.join(dest, "local-only.md"), "# keep me\n");
+    fs.appendFileSync(path.join(dest, "SKILL.md"), "\n# lodestar local edit\n");
+    const result = migrate({
+      target: tmp,
+      source: ROOT,
+      apply: true,
+      check: false,
+      force: true,
+    });
+    assert.equal(result.exitCode, 0);
+    assert.equal(
+      fs.existsSync(path.join(tmp, ".agents/skills/lodestar-setup-old")),
+      false,
+    );
+    assert.ok(fs.existsSync(path.join(dest, "SKILL.md")));
+    assert.ok(fs.existsSync(path.join(dest, ".lodestar-source.json")));
+    const backupRoot = path.join(tmp, ".lodestar-backup");
+    const stamps = fs.readdirSync(backupRoot);
+    const precious = stamps
+      .map((stamp) =>
+        path.join(
+          backupRoot,
+          stamp,
+          ".agents/skills/lodestar-setup/local-only.md",
+        ),
+      )
+      .find((file) => fs.existsSync(file));
+    assert.ok(precious, "expected lodestar dest backup with local-only.md");
+    assert.equal(fs.readFileSync(precious, "utf8"), "# keep me\n");
+    fs.rmSync(tmp, { recursive: true, force: true });
   });
-  assert.equal(result.exitCode, 0);
-  assert.equal(fs.existsSync(path.join(tmp, ".agents/skills/ep-setup")), false);
-  assert.ok(fs.existsSync(path.join(dest, "SKILL.md")));
-  assert.ok(fs.existsSync(path.join(dest, ".lodestar-source.json")));
-  const backupRoot = path.join(tmp, ".lodestar-backup");
-  const stamps = fs.readdirSync(backupRoot);
-  const precious = stamps
-    .map((stamp) => path.join(backupRoot, stamp, ".agents/skills/lodestar-setup/local-only.md"))
-    .find((file) => fs.existsSync(file));
-  assert.ok(precious, "expected lodestar dest backup with local-only.md");
-  assert.equal(fs.readFileSync(precious, "utf8"), "# keep me\n");
-  fs.rmSync(tmp, { recursive: true, force: true });
 });

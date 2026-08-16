@@ -1,7 +1,13 @@
 #!/usr/bin/env node
 /**
- * Detect and migrate known vendored copies of this skill suite.
- * Handles legacy `ep-*` directories and current `lodestar-*` dirs.
+ * Detect and re-sync vendored copies of this skill suite against the
+ * canonical source: drift checksums, back up, and reapply from `skills/`.
+ *
+ * Also the hook for any *future* skill ID rename: populate RENAME_MAP
+ * (old dir name -> current skill id) when a rename ships, the same way
+ * detectCopies/compareCopy/applyCopy already re-home a renamed directory
+ * to its canonical name. Empty today — no rename is in flight.
+ *
  * Never scans or modifies application source. Defaults to dry-run.
  */
 
@@ -13,16 +19,10 @@ import { ROOT, SKILLS, isMain, readVersion } from "./lib.mjs";
 
 const KNOWN_PARENTS = [".agents/skills", ".claude/skills", ".cursor/skills"];
 const MARKER_NAME = ".lodestar-source.json";
-const LEGACY_MARKER_NAME = ".ep-skills-source.json";
 const BACKUP_ROOT = ".lodestar-backup";
 
-/** @type {Record<string, string>} */
-export const LEGACY_SKILL_MAP = {
-  "ep-setup": "lodestar-setup",
-  "ep-audit": "lodestar-audit",
-  "ep-fix": "lodestar-fix",
-  "ep-review-architecture": "lodestar-architecture",
-};
+/** @type {Record<string, string>} old vendored dir name -> current skill id */
+export const RENAME_MAP = {};
 
 function resolveSourceTag(source, explicit) {
   if (explicit) return explicit;
@@ -55,12 +55,12 @@ function skillFiles(skillDir) {
 }
 
 function isMarker(relative) {
-  return relative === MARKER_NAME || relative === LEGACY_MARKER_NAME;
+  return relative === MARKER_NAME;
 }
 
 export function canonicalSkillId(dirName) {
   if (SKILLS.includes(dirName)) return dirName;
-  return LEGACY_SKILL_MAP[dirName] || null;
+  return RENAME_MAP[dirName] || null;
 }
 
 export function checksumMap(skillDir) {
@@ -74,7 +74,7 @@ export function checksumMap(skillDir) {
 }
 
 /**
- * @returns {{ path: string, dirName: string, skill: string, legacy: boolean }[]}
+ * @returns {{ path: string, dirName: string, skill: string, renamed: boolean }[]}
  */
 export function detectCopies(target) {
   const found = [];
@@ -95,7 +95,7 @@ export function detectCopies(target) {
         path: candidate,
         dirName: entry.name,
         skill,
-        legacy: Boolean(LEGACY_SKILL_MAP[entry.name]),
+        renamed: Boolean(RENAME_MAP[entry.name]),
       });
     }
   }
@@ -103,16 +103,13 @@ export function detectCopies(target) {
 }
 
 function readMarker(copyDir) {
-  for (const name of [MARKER_NAME, LEGACY_MARKER_NAME]) {
-    const markerPath = path.join(copyDir, name);
-    if (!fs.existsSync(markerPath)) continue;
-    try {
-      return JSON.parse(fs.readFileSync(markerPath, "utf8"));
-    } catch {
-      return null;
-    }
+  const markerPath = path.join(copyDir, MARKER_NAME);
+  if (!fs.existsSync(markerPath)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(markerPath, "utf8"));
+  } catch {
+    return null;
   }
-  return null;
 }
 
 export function compareCopy(copy, canonicalRoot, version) {
@@ -121,10 +118,10 @@ export function compareCopy(copy, canonicalRoot, version) {
     typeof copy === "string"
       ? canonicalSkillId(path.basename(copyDir))
       : copy.skill;
-  const legacy =
+  const renamed =
     typeof copy === "string"
-      ? Boolean(LEGACY_SKILL_MAP[path.basename(copyDir)])
-      : copy.legacy;
+      ? Boolean(RENAME_MAP[path.basename(copyDir)])
+      : copy.renamed;
   const canonical = path.join(canonicalRoot, "skills", skill);
   const local = checksumMap(copyDir);
   const source = checksumMap(canonical);
@@ -136,20 +133,20 @@ export function compareCopy(copy, canonicalRoot, version) {
   const extra = [...localKeys].filter((key) => !sourceKeys.has(key)).sort();
   const missing = [...sourceKeys].filter((key) => !localKeys.has(key)).sort();
   const payload = readMarker(copyDir);
-  const migrated = Boolean(payload && payload.source_version === version && !legacy);
+  const migrated = Boolean(payload && payload.source_version === version && !renamed);
   const sourceTag = payload?.source_tag || payload?.source_version || null;
   return {
     path: copyDir,
     dirName: path.basename(copyDir),
     skill,
-    legacy,
+    renamed,
     modified,
     extra,
     missing,
-    clean: modified.length === 0 && extra.length === 0 && missing.length === 0 && !legacy,
+    clean: modified.length === 0 && extra.length === 0 && missing.length === 0 && !renamed,
     already_migrated:
       migrated &&
-      !legacy &&
+      !renamed &&
       modified.length === 0 &&
       extra.length === 0 &&
       missing.length === 0,
@@ -177,8 +174,6 @@ function writeMarker(copyDir, version, tag) {
     `${JSON.stringify(payload, null, 2)}\n`,
     "utf8",
   );
-  const legacyMarker = path.join(copyDir, LEGACY_MARKER_NAME);
-  if (fs.existsSync(legacyMarker)) fs.rmSync(legacyMarker);
 }
 
 function backupCopy(target, copyDir) {
@@ -271,8 +266,13 @@ export function migrate(flags) {
       "local edits found; pass --force to replace after backup, or copy the modified files aside first.";
     return { ...result, exitCode: 2 };
   }
+  // Renamed dirs go first: when a renamed copy and its already-current-named
+  // sibling collide on the same dest, the rename must win so the old dir
+  // gets removed rather than silently left behind because its dest was
+  // already claimed by the sibling.
+  const applyOrder = [...reports].sort((a, b) => Number(b.renamed) - Number(a.renamed));
   const written = new Set();
-  for (const report of reports) {
+  for (const report of applyOrder) {
     if (report.already_migrated) continue;
     const dest = destinationPath(target, report.path, report.skill);
     if (written.has(dest)) continue;

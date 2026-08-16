@@ -1,8 +1,8 @@
 {
   "schema_version": 10,
   "tool_version": "3.15.0",
-  "install_current": "pnpm add -D fallow@3.15.0",
-  "notes": "Pinned to Fallow 3.15.0. Combined envelopes use schema_version 10; dupes envelopes use schema_version 8.",
+  "install_current": "pnpm add -D fallow@^3.15.0",
+  "notes": "Accept Fallow ^3.15.0 (same major, at least 3.15.0). Combined envelopes use schema_version 10; dupes envelopes use schema_version 8.",
   "fixture_repo": "tests/fixtures/repos/fallow-contract",
   "envelope_fixtures": {
     "current": "tests/fixtures/fallow-envelopes/v3.15.0"

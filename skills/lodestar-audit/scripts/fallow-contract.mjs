@@ -16,20 +16,44 @@ export function loadContract(filePath = CONTRACT_PATH) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
+export function fallowInstallSpec(minVersion) {
+  return `^${minVersion}`;
+}
+
+export function parseSemver(version) {
+  const match = String(version)
+    .trim()
+    .match(/^(\d+)\.(\d+)\.(\d+)/);
+  if (!match) return null;
+  return {
+    major: Number(match[1]),
+    minor: Number(match[2]),
+    patch: Number(match[3]),
+  };
+}
+
+/** Same major as the floor, and not older than it (`^3.15.0`). */
+export function compatibleFallowVersion(version, minVersion) {
+  const got = parseSemver(version);
+  const floor = parseSemver(minVersion);
+  if (!got || !floor) return false;
+  if (got.major !== floor.major) return false;
+  if (got.minor !== floor.minor) return got.minor > floor.minor;
+  return got.patch >= floor.patch;
+}
+
 export function remediation(contract, details, extras = {}) {
   const installed = extras.installed || "unknown";
   const schema = extras.schema === undefined ? "n/a" : String(extras.schema);
   const kind = extras.kind || "n/a";
-  const install = installFallowCommand(
-    contract.tool_version,
-    extras.manager,
-  );
+  const range = fallowInstallSpec(contract.tool_version);
+  const install = installFallowCommand(range, extras.manager);
   return [
     details,
     `Installed Fallow: ${installed}.`,
-    `Supported version: ${contract.tool_version} (schema ${contract.schema_version}).`,
+    `Supported version: ${range} (schema ${contract.schema_version}).`,
     `Received schema/kind: ${schema}/${kind}.`,
-    `Install the supported version with: ${install}`,
+    `Install a compatible version with: ${install}`,
   ].join(" ");
 }
 
@@ -85,9 +109,12 @@ export function validateEnvelope(envelope, spec, contract) {
   if (spec.kind && envelope.kind !== spec.kind) {
     throw new Error(`expected kind=${spec.kind}, got ${envelope.kind}`);
   }
-  if (envelope.version && envelope.version !== contract.tool_version) {
+  if (
+    envelope.version &&
+    !compatibleFallowVersion(envelope.version, contract.tool_version)
+  ) {
     throw new Error(
-      `unsupported Fallow ${envelope.version}; supported ${contract.tool_version}`,
+      `unsupported Fallow ${envelope.version}; supported ${fallowInstallSpec(contract.tool_version)}`,
     );
   }
   for (const field of spec.required_fields || []) {
@@ -159,7 +186,7 @@ export function resolveFallow(root, contract = loadContract()) {
     );
   }
   const version = detectVersion(bin);
-  if (version !== contract.tool_version) {
+  if (!compatibleFallowVersion(version, contract.tool_version)) {
     throw new Error(
       remediation(contract, `unsupported Fallow installed ${version}.`, {
         installed: version,

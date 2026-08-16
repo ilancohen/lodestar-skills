@@ -6,7 +6,7 @@ on:
     branches:
       - main
   schedule:
-    # Weekly probe of the latest fallow release without auto-expanding support.
+    # Weekly probe: warn only if latest Fallow is a different major.
     - cron: "17 6 * * 1"
 
 jobs:
@@ -28,9 +28,9 @@ jobs:
       - name: Install
         run: pnpm install
 
-      - name: Install pinned Fallow in fixture repo
+      - name: Install compatible Fallow in fixture repo
         working-directory: tests/fixtures/repos/fallow-contract
-        run: npm install --save-dev fallow@3.15.0
+        run: npm install --save-dev 'fallow@^3.15.0'
 
       - name: Unit + fixture contract tests
         run: node --test tests/fallow-contract.test.mjs
@@ -38,7 +38,6 @@ jobs:
       - name: Live command matrix
         env:
           FALLOW_CONTRACT_LIVE: "1"
-          FALLOW_CONTRACT_VERSION: "3.15.0"
         run: node --test tests/fallow-contract.test.mjs
 
   latest-probe:
@@ -49,11 +48,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Report latest fallow without expanding support
+      - name: Report latest fallow major
         run: |
           latest=$(npm view fallow version)
-          current=$(node -e "console.log(JSON.parse(require('fs').readFileSync('skills/lodestar-audit/scripts/fallow-contract.json','utf8')).tool_version)")
-          echo "latest=$latest current=$current"
-          if [ "$latest" != "$current" ]; then
-            echo "::warning::Newest fallow $latest differs from pinned $current. Do not expand the contract without regenerating fixtures and human review."
+          min=$(node -e "console.log(JSON.parse(require('fs').readFileSync('skills/lodestar-audit/scripts/fallow-contract.json','utf8')).tool_version)")
+          echo "latest=$latest min=$min"
+          latest_maj=${latest%%.*}
+          min_maj=${min%%.*}
+          if [ "$latest_maj" != "$min_maj" ]; then
+            echo "::warning::Newest fallow $latest is a different major than supported ^$min."
           fi
