@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { ROOT, readVersion } from "../scripts/lib.mjs";
+import { ROOT, frontmatter, metadataVersion, readVersion, scalar } from "../scripts/lib.mjs";
 import { checkPackage } from "../scripts/check_package.mjs";
 import { setVersion } from "../scripts/set_version.mjs";
 
@@ -56,4 +56,13 @@ test("set_version updates VERSION, manifests, and skill metadata", () => {
 
 test("set_version rejects a non-semver value", () => {
   assert.throws(() => setVersion("v1", ROOT), /MAJOR\.MINOR\.PATCH/);
+});
+
+test("frontmatter tolerates CRLF line endings (Windows checkout without .gitattributes)", () => {
+  const crlf =
+    '---\r\nname: example\r\nlicense: MIT\r\nmetadata:\r\n  version: "1.2.3"\r\n---\r\n\r\nBody\r\n';
+  const yaml = frontmatter(crlf, "example.md");
+  assert.equal(scalar(yaml, "name"), "example");
+  assert.equal(scalar(yaml, "license"), "MIT");
+  assert.equal(metadataVersion(yaml), "1.2.3");
 });

@@ -47,7 +47,10 @@ export function readJson(filePath) {
 }
 
 export function frontmatter(markdown, relativePath) {
-  const match = markdown.match(/^---\n([\s\S]*?)\n---\n/);
+  // Normalize CRLF first: a Windows checkout without .gitattributes can
+  // convert LF to CRLF, and \n-anchored regexes below would otherwise miss.
+  const normalized = markdown.replace(/\r\n/g, "\n");
+  const match = normalized.match(/^---\n([\s\S]*?)\n---\n/);
   if (!match) throw new Error(`${relativePath}: missing YAML frontmatter`);
   return match[1];
 }

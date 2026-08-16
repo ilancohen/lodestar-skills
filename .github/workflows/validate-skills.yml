@@ -46,6 +46,11 @@ jobs:
           node skills/lodestar-setup/scripts/resolve-bin.mjs node
 
       - name: Verify installer discovery (exactly four)
+        env:
+          # The `skills` CLI emits ANSI color codes even to a non-TTY CI
+          # runner, which split literal substrings like "Found 4 skills"
+          # across escape sequences and broke the greps below.
+          NO_COLOR: "1"
         run: |
           out=$(pnpm dlx skills add . --list)
           echo "$out"
