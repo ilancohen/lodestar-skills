@@ -56,13 +56,15 @@ Capture from `AGENTS.md`:
 
 ## Step 1 — Pick a run
 
-1. List `docs/audit/*/` directories that contain at least one
-   `NNN-<category>-<slug>.md` file **in the run root** (not under
-   `done/`). Exclude `docs/audit/done/` itself.
+1. List `docs/audit/*/` directories that contain **both** `INDEX.md` and
+   at least one `NNN-<category>-<slug>.md` file **in the run root** (not
+   under `done/`). Exclude `docs/audit/done/` itself. Never offer a run
+   that lacks `INDEX.md` — Inputs would stop immediately.
 2. An "unfinished" run is one where the run root (not the `done/`
    subfolder) still holds at least one action-item file. If exactly one
    run is unfinished, default to that. Otherwise list the unfinished
-   runs and ask which one.
+   runs and ask which one. If no candidate run qualifies, say so and
+   point the user at `lodestar-audit`'s Plan phase.
 3. Print: "Working on `docs/audit/<RUN_ID>/`."
 
 ---

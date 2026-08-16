@@ -27,7 +27,7 @@ Near-miss (should not trigger):
 
 Expected outcomes (once explicitly invoked):
 
-- Consent before writes; touch only `AGENTS.md` and `.agents/skills/README.md` (plus optional Fallow/linter with consent); never edit `packages/**` / `src/**`. Do not write `CLAUDE.md` or `.github/copilot-instructions.md`.
+- Consent before writes; touch only `AGENTS.md` and `.agents/skills/README.md` (plus optional Fallow/linter with consent); never edit `packages/**` / `src/**`. Do not write `CLAUDE.md` or `.github/copilot-instructions.md`. Ask separately before adding `.audit-fallow-seed.json` / `.fallow/` to `.gitignore`; if declined, still write `.fallowrc.json` and note the skip.
 - Refresh after structure or package-manager change without auditing or redesigning architecture.
 - Redirect redesign requests to `lodestar-architecture`.
 
@@ -75,7 +75,7 @@ Expected outcomes (once explicitly invoked):
 
 - Honor each item's file list; no `git add -A`; stop on scope creep.
 - Ask before decision items and before overwriting `in_progress` work.
-- Stop and ask for `lodestar-audit` when `INDEX.md` is missing.
+- Offer only runs that have both `INDEX.md` and at least one `NNN-*.md` in the run root; if none qualify, point at `lodestar-audit`'s Plan phase. Stop if `INDEX.md` is missing after selection.
 
 ## lodestar-architecture
 
@@ -98,4 +98,4 @@ Expected outcomes (once explicitly invoked):
 
 - Ask describe vs suggest once; write under `docs/architecture-review/`; never edit source.
 - At most two evidence-mapped alternatives with trade-offs when asked to suggest.
-- Stop and point at `lodestar-setup` when Package Layout / Dependency Direction or `.agents/skills/README.md` is missing. Missing `CLAUDE.md` is not a blocker.
+- Stop and point at `lodestar-setup` when Package Layout / Dependency Direction is missing from `AGENTS.md`. Missing `CLAUDE.md` or `.agents/skills/README.md` is not a blocker.

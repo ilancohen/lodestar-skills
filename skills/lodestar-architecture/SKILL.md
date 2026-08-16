@@ -39,7 +39,6 @@ the user to run `/lodestar-setup` first:
 - `AGENTS.md` with a `## Package Layout` table (every row must have
   package name, path, alias, and a one-sentence Responsibility) and a
   `## Dependency Direction` declaration.
-- `.agents/skills/README.md`.
 
 Capture from `AGENTS.md`:
 

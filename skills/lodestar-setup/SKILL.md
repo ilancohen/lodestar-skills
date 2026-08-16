@@ -202,10 +202,18 @@ JSON inside a fenced block). Substitute:
   package to the right of `from` in the dependency direction. The
   tail-of-chain package gets `allow: []`.
 
-Write to `.fallowrc.json`. Add `.audit-fallow-seed.json` and `.fallow/` to
-the project's `.gitignore` if it exists and doesn't already cover them
-(`.audit-fallow-seed.json` is the audit's transient seed cache; `.fallow/`
-is fallow's own cache directory).
+Write to `.fallowrc.json`.
+
+Then ask separately before editing `.gitignore`:
+
+> Add `.audit-fallow-seed.json` and `.fallow/` to `.gitignore`?
+> (yes / no)
+
+If the user agrees and `.gitignore` exists and does not already cover
+them, add those two entries (`.audit-fallow-seed.json` is the audit's
+transient seed cache; `.fallow/` is fallow's own cache directory). If
+they decline, still write `.fallowrc.json` and say the gitignore entries
+were skipped.
 
 After writing, verify with the lodestar-audit contract script (absolute path to
 the installed `lodestar-audit/scripts/fallow-contract.mjs`):
