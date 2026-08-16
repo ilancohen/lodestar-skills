@@ -15,18 +15,20 @@ to use — do not guess.
 
 ## Layout
 
-| Path                            | Responsibility                                         |
-| ------------------------------- | ------------------------------------------------------ |
-| `skills/lodestar-setup/`        | Repository context and principles setup                |
-| `skills/lodestar-audit/`        | Read-only violation discovery and action-item planning |
-| `skills/lodestar-fix/`          | Scoped execution of audit action items                 |
-| `skills/lodestar-architecture/` | Advisory package-layout review                         |
-| `scripts/`                      | Deterministic package-development validation           |
-| `package.json`                  | pnpm pin and suite scripts (`pnpm check`, `pnpm test`) |
-| `plugin.json`                   | Portable Agent Plugins manifest                        |
-| `.claude-plugin/`               | Claude Code packaging adapter                          |
-| `.codex-plugin/`                | Codex packaging adapter                                |
-| `gemini-extension.json`         | Gemini CLI packaging adapter                           |
+| Path                            | Responsibility                                          |
+| ------------------------------- | ------------------------------------------------------- |
+| `skills/lodestar-setup/`        | Repository context and principles setup                 |
+| `skills/lodestar-audit/`        | Read-only violation discovery and action-item planning  |
+| `skills/lodestar-fix/`          | Scoped execution of audit action items                  |
+| `skills/lodestar-architecture/` | Advisory package-layout review                          |
+| `.agents/attention-kind/` etc.  | Local reply-style skills (not published; AGPL-3.0)      |
+| `.cursor/skills/`               | Cursor wrappers for local `.agents/` contributor skills |
+| `scripts/`                      | Deterministic package-development validation            |
+| `package.json`                  | pnpm pin and suite scripts (`pnpm check`, `pnpm test`)  |
+| `plugin.json`                   | Portable Agent Plugins manifest                         |
+| `.claude-plugin/`               | Claude Code packaging adapter                           |
+| `.codex-plugin/`                | Codex packaging adapter                                 |
+| `gemini-extension.json`         | Gemini CLI packaging adapter                            |
 
 ## Commands
 
