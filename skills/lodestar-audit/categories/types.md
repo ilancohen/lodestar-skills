@@ -7,7 +7,7 @@ elimination. **Low risk.** No logic changes, ever.
 
 1. **Misplaced type** — an `interface` or `type` defined in package `P` but
    imported from a different package. Should live in whichever package is
-   nominated as the shared / types package in AGENTS.md `## Package
+   nominated as the shared / types package in `context.md` `## Package
 Layout`. If no such package exists, this is a layout question — emit
    the finding anyway, mark `requires_decision: true`, and point the
    reader at `lodestar-architecture` in the notes.
@@ -26,7 +26,7 @@ Layout`. If no such package exists, this is a layout question — emit
 ## Detection
 
 All commands below use placeholders resolved from the `## Package Layout`
-table in `AGENTS.md` (see references/discover.md). Substitute before running.
+table in `context.md` (see references/discover.md). Substitute before running.
 
 ### Linter probe (best-effort, run once before greps)
 
@@ -77,7 +77,7 @@ node scripts/source-scan.mjs --recipe explicit-any --root <pkg_root>
 ```
 
 To identify the "shared types home" for the purpose of #1: look at
-the Responsibility column in AGENTS.md `## Package Layout`. Any row
+the Responsibility column in `context.md` `## Package Layout`. Any row
 whose responsibility mentions "shared types", "types", "domain types",
 "DTOs", or similar qualifies. If multiple rows qualify or none do, mark
 all #1 findings `requires_decision: true` and explain in `notes:`.
@@ -90,7 +90,7 @@ all #1 findings `requires_decision: true` and explain in `notes:`.
 
 ## Suggested fix shape
 
-- #1 — move the type to the shared types package (per AGENTS.md), into
+- #1 — move the type to the shared types package (per `context.md`), into
   whichever module is conventional there (e.g. `types/domain.ts` for
   entities, `types/api.ts` for HTTP shapes, `types/events.ts` for event
   payloads — whatever exists). Add to that package's `index.ts`. Update

@@ -1,41 +1,13 @@
 # Lodestar
 
-Single source of truth for engineering standards in this repo. Any agent
-completing a task should check this before submitting work.
+Repo facts for the lodestar skills — package layout, dependency direction,
+build commands, and the skills index — live in `.agents/lodestar/context.md`
+(relative to the repo root). That file is the one the skills read.
 
----
+The principles themselves live in `./lodestar-setup/principles.md`
+(relative to this file): principles, TypeScript rules, testability, error
+handling, anti-pattern reference, and pre-commit checklist. That file is
+the single source of truth — do not copy its content here or anywhere else.
 
-<!-- INSERT principles.md -->
-
----
-
-## Package Dependency Direction
-
-```
-[e.g. web → server → core → shared — use the actual package names from
-AGENTS.md, not generic role names]
-```
-
-See the `## Package Layout` table in `AGENTS.md` for the path → import
-alias → responsibility mapping the audit skill uses.
-
----
-
-## Skills Index
-
-| Skill | File | When to use |
-|---|---|---|
-| Setup | `.agents/skills/lodestar-setup/SKILL.md` | Re-scaffold or refresh this config |
-| Audit | `.agents/skills/lodestar-audit/SKILL.md` | Scan the codebase and emit action-item files into `docs/audit/<run-id>/` |
-| Fix audit items | `.agents/skills/lodestar-fix/SKILL.md` | Triage and apply fixes from an audit run |
-| Review architecture | `.agents/skills/lodestar-architecture/SKILL.md` | Advisory layout review; can propose an alternative architecture on request |
-
-The audit skill is **discovery only** — it produces one self-contained
-markdown file per violation. Each file is designed to be handed
-independently to a human or LLM as a fix task.
-
-The lodestar-architecture skill is **advisory only** — it never modifies
-source and never writes audit-style action items. It produces a single
-report comparing the documented layout to recognised architectural
-patterns and, on request, a candidate alternative layout to discuss with
-the team.
+This README is a signpost only. Nothing reads it, so nothing here needs
+keeping in sync.

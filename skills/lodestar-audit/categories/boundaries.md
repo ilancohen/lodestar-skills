@@ -5,11 +5,11 @@ business logic, CQS, and Tell Don't Ask. **Medium to high risk** — most
 fixes change contracts.
 
 This audit is structure-agnostic. The detectors below run across every
-package in AGENTS.md `## Package Layout`. Where a detector needs to
+package in `context.md` `## Package Layout`. Where a detector needs to
 distinguish "domain code" from "HTTP/UI code" or "infrastructure code",
 it relies on:
 
-- The Responsibility column from AGENTS.md (advisory — read it before
+- The Responsibility column from `context.md` (advisory — read it before
   judging a hit).
 - Path-pattern signals (e.g. `routes/`, `*.tsx`, `infra/`) on the file
   itself, never the package name.
@@ -20,6 +20,7 @@ If neither signal is present, the audit flags the finding with
 ## What counts as a violation
 
 ### A. Branded primitives missing
+
 Domain identifiers, monetary amounts, and validated strings typed as raw
 `string` / `number`. Risk: medium.
 
@@ -31,8 +32,10 @@ explicitly skip hits in obvious boundary-shape files (`*.dto.ts`,
 `*.request.ts`, `*.response.ts`, generated client files).
 
 ### B. Misplaced business logic
+
 Domain decisions in files that, by their path or responsibility, should
 not own them:
+
 - Conditional logic beyond request validation inside `*/routes/*`,
   `*/handlers/*`, or `*/controllers/*` files.
 - Domain calculations in `*.tsx` / `*.jsx` component files.
@@ -49,6 +52,7 @@ control-flow guards, not domain logic. Linter-sourced B findings
 `requires_decision: true` by default.
 
 ### C. CQS violation
+
 A function that returns meaningful data **and** causes a side effect
 (DB write, event dispatch, state mutation). Risk: medium.
 
@@ -62,15 +66,17 @@ violation is clear-cut (the function definitely both writes and
 returns the post-write state).
 
 ### D. Tell Don't Ask (getter chains)
+
 `a.getB().getC().doThing()` patterns, or callers reading multiple getters
 on an object to make a decision the object should own
 (`if (user.getRole() === 'admin' && user.getStatus() === 'active')`).
 Risk: medium.
 
 ### E. Validation deeper than the boundary
+
 Schema parses, `isValid` checks, and `z.object` / `.safeParse` calls inside
-files whose responsibility (per AGENTS.md) is downstream of the entry
-point — i.e. anything called *after* request/CLI/event parsing should
+files whose responsibility (per `context.md`) is downstream of the entry
+point — i.e. anything called _after_ request/CLI/event parsing should
 already trust its inputs. Detection here is heuristic: the audit lists
 candidate sites and asks the reader to confirm, since the call may be
 legitimate (e.g. parsing a third-party API response at an internal
@@ -83,7 +89,7 @@ file whose path strongly suggests it owns the entry boundary (e.g.
 ## Detection
 
 All commands below use placeholders resolved from the `## Package Layout`
-table in `AGENTS.md` (see references/discover.md). Substitute before running.
+table in `context.md` (see references/discover.md). Substitute before running.
 Where `<pkg_root>` appears, iterate over every row.
 
 ```bash
@@ -140,10 +146,10 @@ grep -rEn "isValid|\.parse\(|z\.object|\.safeParse" <all_pkg_roots> --include="*
 ## Suggested fix shape
 
 - **A** — define the brand in the package nominated for shared types
-  (per AGENTS.md `## Package Layout`), export it, update signatures, add
+  (per `context.md` `## Package Layout`), export it, update signatures, add
   the boundary constructor (`toUserId`) at the entry point.
 - **B** — name the rule, find or create the appropriate domain service
-  (in whichever package owns domain logic per AGENTS.md), move the logic
+  (in whichever package owns domain logic per `context.md`), move the logic
   with injected dependencies, write a unit test that passes without HTTP
   or DOM, run the full suite.
 - **C** — split into command (`Promise<void>`) and query (pure read);
@@ -170,7 +176,7 @@ unclear, mark `requires_decision: true` and add a note suggesting
   - Fix would change a public API consumed outside the monorepo.
   - The concept spans two bounded contexts (D).
   - The fix would require moving the file to a different package, and
-    AGENTS.md doesn't clearly show which package should own it.
+    `context.md` doesn't clearly show which package should own it.
 
 ## Acceptance check
 

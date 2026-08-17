@@ -1,11 +1,12 @@
 <!--
 Template for `.fallowrc.json` — the optional config file that lets the
-audit's fallow seed (see lodestar-audit/principles/fallow-seed.md)
+audit's fallow seed (see lodestar-audit/categories/fallow-seed.md)
 detect cross-package boundary violations.
 
 Read by `lodestar-setup` Step 4.5 only when the user opts in
 to fallow integration. The setup skill substitutes the placeholders below
-from the AGENTS.md `## Package Layout` table and the dependency direction.
+from the `.agents/lodestar/context.md` `## Package Layout` table and the
+dependency direction.
 
 Do not check this template's literal `<placeholder>` form into a user
 project — the setup skill must always substitute before writing.
@@ -15,8 +16,8 @@ project — the setup skill must always substitute before writing.
 {
   "$schema": "./node_modules/fallow/schema.json",
 
-  // Boundaries derived from AGENTS.md `## Package Layout` and the
-  // dependency direction declared above the table.
+  // Boundaries derived from `.agents/lodestar/context.md`
+  // `## Package Layout` and the dependency direction declared above it.
   //
   // One zone per package row, using the repo's own package name (no role
   // mapping). `patterns` use the literal path glob from the table — no
@@ -27,7 +28,7 @@ project — the setup skill must always substitute before writing.
   // The tail-of-chain package gets `allow: []` and is fully isolated.
   "boundaries": {
     "zones": [
-      // EXAMPLE — substitute one entry per row in AGENTS.md Package Layout.
+      // EXAMPLE — one entry per row in the context.md Package Layout table.
       // For rows using a glob like `apps/*/src`, prefer `autoDiscover`
       // (see fallow docs) so each app becomes its own sub-zone.
       { "name": "<package_name>", "patterns": ["<path_glob>"] },
@@ -54,7 +55,7 @@ project — the setup skill must always substitute before writing.
 
 ## Worked example — `web → server → core → shared`
 
-For an `AGENTS.md` that declares the four-package chain
+For a `context.md` that declares the four-package chain
 `web → server → core → shared` with these path globs:
 
 | Package  | Path glob             |

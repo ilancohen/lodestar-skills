@@ -16,7 +16,7 @@ or whose methods cluster into two or more unrelated groups. Example:
 `UserService` that both handles auth flow _and_ renders email templates.
 
 When checking this, compare the file's apparent responsibility against
-the **package's** Responsibility (AGENTS.md `## Package Layout`):
+the **package's** Responsibility (`context.md` `## Package Layout`):
 
 - If the file does something its package isn't supposed to own, that's a
   responsibility-misplacement finding — flag it.
@@ -55,7 +55,7 @@ or by a public package contract.
 ## Detection
 
 All commands below use placeholders resolved from the `## Package Layout`
-table in `AGENTS.md` (see references/discover.md). Substitute before running.
+table in `context.md` (see references/discover.md). Substitute before running.
 
 ### A — file/class with multiple responsibilities (semantic)
 
@@ -66,11 +66,11 @@ flagged as complexity hotspots.
    - Every `health.findings[].path` (functions already over threshold).
    - When that set is large or empty, rank `health.file_scores[]` by
      `total_cyclomatic` then `total_cognitive` and take the top paths.
-   Prefer `file_scores` rows with `crap_above_threshold > 0` when present.
+     Prefer `file_scores` rows with `crap_above_threshold > 0` when present.
 
 2. For each file in that set, summarize its responsibility in one
    sentence. Compare to the owning package's Responsibility column in
-   AGENTS.md. Flag any that:
+   `context.md`. Flag any that:
    - Need "and" / describe two unrelated nouns; or
    - Describe work outside the package's stated responsibility.
 

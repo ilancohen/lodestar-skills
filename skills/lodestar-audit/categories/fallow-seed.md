@@ -87,7 +87,7 @@ clone detectors alongside it.
 ## Boundary configuration
 
 For `check.boundary_violations` to fire, the repo must have a `.fallowrc.json`
-whose zones match the `## Package Layout` table in `AGENTS.md`. The setup
+whose zones match the `## Package Layout` table in `context.md`. The setup
 skill writes this file (Step 4.5 of `lodestar-setup`) using the repo's
 own package names as zone names — there is no canonical role mapping.
 
@@ -117,7 +117,7 @@ grep- and domain-judgment detectors:
 - `types` (any, branded primitives, redeclared fields)
 - `boundaries.A` (branded primitives missing)
 - `boundaries.B` (misplaced business logic — path-pattern heuristic plus
-  AGENTS.md responsibilities)
+  `context.md` responsibilities)
 - `boundaries.C` (CQS violations)
 - `boundaries.D` (Tell Don't Ask getter chains)
 - `boundaries.E` (validation deeper than the boundary)

@@ -208,7 +208,16 @@ test("partial checkpoint keeps recover in discover after all categories are mark
 
 test("parsePackageLayout is used by validate-input", () => {
   const rows = parsePackageLayout(
-    fs.readFileSync(path.join(VALID, "AGENTS.md"), "utf8"),
+    fs.readFileSync(path.join(VALID, ".agents/lodestar/context.md"), "utf8"),
   );
   assert.equal(rows[1].alias, "@repo/api");
+});
+
+test("validate-input stops when the context file is missing", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-audit-"));
+  fs.writeFileSync(path.join(tmp, "AGENTS.md"), "# AGENTS.md\n");
+  const result = run(["validate-input", "--root", tmp]);
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /\.agents\/lodestar\/context\.md is missing/);
+  fs.rmSync(tmp, { recursive: true, force: true });
 });

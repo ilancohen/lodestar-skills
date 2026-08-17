@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented here.
 
+## [0.3.0] - unreleased
+
+### Changed
+
+- **Breaking.** `AGENTS.md` is no longer load-bearing. `lodestar-setup`
+  writes the package layout, dependency direction, and build commands to
+  `.agents/lodestar/context.md`, and `lodestar-audit`, `lodestar-fix`, and
+  `lodestar-architecture` read only that file. They no longer read
+  `AGENTS.md` at all, and will not fall back to a layout table left there
+  by an older setup.
+
+- `lodestar-setup` touches `AGENTS.md` only when the user picks full-suite
+  enforcement, and then only to add a short `## Lodestar` pointer section.
+  In skills-only mode `AGENTS.md` is left untouched. A new Step 4.1 offers
+  to strip the now-unread lodestar sections from a pre-0.3 `AGENTS.md`.
+
+- `.agents/skills/README.md` is now a static signpost. No skill requires or
+  reads it.
+
+- `lodestar-audit`'s `principles/` directory is renamed to `categories/`.
+  Those files are per-category detector playbooks (what counts as a
+  violation, detection commands, fix recipes); the principles themselves
+  live only in `skills/lodestar-setup/principles.md`. The old name implied
+  two competing copies.
+
+  **Upgrading:** re-run `lodestar-setup` in each consuming repository
+  before running the other skills. They stop with
+  "`.agents/lodestar/context.md` is missing" until you do.
+
 ## [0.2.0] - 2026-08-16
 
 ### Changed

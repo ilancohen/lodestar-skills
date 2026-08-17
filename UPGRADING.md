@@ -24,6 +24,16 @@ Scripts that must not prompt:
 npx skills add ilancohen/lodestar-skills --skill '*' -y
 ```
 
+## Upgrading to 0.3.0 — re-run setup
+
+0.3.0 moves the repo facts the skills read out of `AGENTS.md` and into
+`.agents/lodestar/context.md`. After updating, run `lodestar-setup` once
+in each consuming repository. It reuses whatever it finds in `AGENTS.md`,
+writes the new file, and offers to strip the leftover lodestar sections
+from `AGENTS.md`. Until then, `lodestar-audit`, `lodestar-fix`, and
+`lodestar-architecture` stop with "`.agents/lodestar/context.md` is
+missing".
+
 ## Update
 
 From the consuming repository:

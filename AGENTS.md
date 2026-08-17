@@ -59,6 +59,12 @@ This repository develops the reusable suite itself. Do not encode assumptions
 from one consuming repository into canonical skill logic. Capture examples in
 documentation or test fixtures instead.
 
+The suite is not applied to this repository. There is no
+`.agents/lodestar/context.md` and no installed copy under
+`.agents/skills/` here — both paths are gitignored, so a local install for
+smoke-testing stays uncommitted. Test suite behavior with the fixtures
+under `tests/fixtures/repos/` instead.
+
 Read `CONTRIBUTING.md` for the pre-commit checklist. In-flight work
 lives under `docs/plans/` (see the `create-plan` / `implement-plan`
 contributor skills).

@@ -3,6 +3,11 @@
 Load this file before running detectors. Keep the read-only rule from
 `SKILL.md`.
 
+Throughout this skill, `context.md` means `.agents/lodestar/context.md` in
+the target repository — the file `lodestar-setup` writes. It is the only
+source of package layout, dependency direction, and commands. `AGENTS.md`
+is never read.
+
 ## Package set
 
 Use `node scripts/audit-state.mjs validate-input --root <repo>`. It
@@ -18,7 +23,7 @@ Substitute placeholders literally before any detector command:
 
 | Placeholder                       | Resolved to                    |
 | --------------------------------- | ------------------------------ |
-| `<typecheck>`, `<lint>`, `<test>` | Commands from AGENTS.md        |
+| `<typecheck>`, `<lint>`, `<test>` | Commands from `context.md`     |
 | `<pkg_root>`                      | Current row `path`             |
 | `<pkg_alias>`                     | Current row `alias`            |
 | `<pkg_responsibility>`            | Current row `responsibility`   |
@@ -32,7 +37,7 @@ string to pattern-match.
 
 ## Fallow seed
 
-Read `principles/fallow-seed.md` once. Fallow is required. Run
+Read `categories/fallow-seed.md` once. Fallow is required. Run
 `scripts/fallow-contract.mjs` to resolve the binary and validate every
 envelope before writing findings. Cache JSON in memory or write
 `.audit-fallow-seed.json` at the repo root and delete it at the end of

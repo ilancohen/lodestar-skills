@@ -4,17 +4,21 @@ Replace every <PLACEHOLDER>. Delete sections that don't apply except where
 marked "required". The generated file must be self-contained — assume the
 executor has access only to this file and the repo.
 -->
+
 ---
+
 id: <NNN>
 category: <imports | types | boundaries | errors | testability | soc-yagni | dry | ssot | styling>
 subtype: <e.g. cross-package-src | branded-primitive-missing | cqs-violation | responsibility-overload | duplication>
 risk: <low | medium | high>
 requires_decision: <true | false>
 files:
-  - <path/to/file>
-  - <path/to/file>
-scope: <one-line description of the smallest landable unit>
-findings: <comma-separated F-IDs this action item absorbs, e.g. F0007, F0008>
+
+- <path/to/file>
+- <path/to/file>
+  scope: <one-line description of the smallest landable unit>
+  findings: <comma-separated F-IDs this action item absorbs, e.g. F0007, F0008>
+
 ---
 
 # <NNN> — <Imperative title, e.g. "Move `User` type to shared/types/domain.ts">
@@ -22,7 +26,8 @@ findings: <comma-separated F-IDs this action item absorbs, e.g. F0007, F0008>
 ## Problem
 
 <2–4 sentences. What's wrong, where, and the principle it violates. Cite the
-principle by name as it appears in `.agents/skills/README.md`
+principle by name as it appears in
+`.agents/skills/lodestar-setup/principles.md`
 (e.g. "Centralize types", "Parse Don't Validate", "CQS"). Include the exact
 file path(s) and, where useful, a short code excerpt.>
 
@@ -40,14 +45,14 @@ to be created, name it and describe its content shape.>
 
 ## Scope rules
 
-<Copy verbatim from the matching principles/<category>.md sub-doc. These
+<Copy verbatim from the matching categories/<category>.md sub-doc. These
 rules constrain the executor and define stop conditions.>
 
 ## Acceptance check
 
-<Copy verbatim from the matching principles/<category>.md sub-doc, with
+<Copy verbatim from the matching categories/<category>.md sub-doc, with
 `<typecheck>`, `<lint>`, `<test>` substituted with the real commands from
-`AGENTS.md`.>
+`.agents/lodestar/context.md`.>
 
 ## Depends on
 

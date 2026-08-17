@@ -1,20 +1,29 @@
 ---
 name: lodestar-setup
 description: >-
-  Sets up the lodestar suite in a repository by documenting its
-  package layout and writing agent guidance. May also configure Fallow,
-  gitignore entries, and existing linter rules with user consent. Do not
-  load unless the user explicitly invokes lodestar-setup by name.
+  Sets up the lodestar suite in a repository by documenting its package
+  layout in .agents/lodestar/context.md, the one file the other lodestar
+  skills read, which links to the bundled principles.md (never copied or
+  inlined). Asks separately whether to add a pointer section to AGENTS.md
+  so principles apply to every task (full suite) or to leave AGENTS.md
+  untouched (skills-only). May also configure Fallow, gitignore entries,
+  and existing linter rules with user consent. Do not load unless the
+  user explicitly invokes lodestar-setup by name.
 disable-model-invocation: true
 license: MIT
 compatibility: Requires filesystem write access and a POSIX-compatible shell for optional Fallow setup. Supports npm, pnpm, and yarn repositories.
 metadata:
   author: Ilan Cohen
-  version: "0.2.0"
+  version: "0.3.0"
 ---
 
-Write the agent-neutral config files that coding agents need to use the
-lodestar skills. This requires only the information needed to fill in the templates — do not
+Write the agent-neutral config the lodestar skills need. The one file that
+matters is `.agents/lodestar/context.md`: package layout, dependency
+direction, and build commands. `lodestar-audit`, `lodestar-fix`, and
+`lodestar-architecture` read that file and nothing else for repo facts —
+they never read `AGENTS.md`.
+
+This requires only the information needed to fill in the templates — do not
 do a broad repo survey, and do not propose architectural changes (the
 `lodestar-architecture` skill exists for that).
 
@@ -61,9 +70,13 @@ Read only what's needed to fill in the template placeholders:
 - **Dependency direction** — infer from imports between packages. If
   ambiguous or undocumented, ask the user once (Step 2) — don't guess
   silently.
-- **Existing files** — check whether `AGENTS.md` and
-  `.agents/skills/README.md` already exist. If they do, read them
-  briefly so you don't overwrite unrelated content.
+- **Existing files** — check whether `.agents/lodestar/context.md` already
+  exists, and whether `AGENTS.md` exists and already has a `## Lodestar`
+  section. If they do, read them briefly so you don't overwrite unrelated
+  content. Older installs kept the layout table and command table in
+  `AGENTS.md` — if you find them there, reuse those values for
+  `context.md` and then strip those sections from `AGENTS.md` (see
+  Step 4.1).
 
 Stop there. Do not read tsconfig deeply, explore individual packages, check
 for issue trackers, or investigate test frameworks beyond the scripts.
@@ -91,44 +104,54 @@ Do not ask separate questions about coverage, branded types, or violations,
 and do not ask whether the layout is "right" — that's `lodestar-architecture`'s
 job, not setup's.
 
-## Step 3 — Build the shared principles block
+## Step 2.5 — Choose how principles get enforced
 
-`principles.md` is the canonical lodestar
-body. It gets inlined into `.agents/skills/README.md`. Do not write
-agent-specific files (`CLAUDE.md`, `.github/copilot-instructions.md`,
-or similar).
+`.agents/lodestar/context.md` gets written either way — the other three
+skills require it and won't run without it. What's optional is whether
+`AGENTS.md` gets a short `## Lodestar` section telling _every_ agent, on
+_every_ task, to check the principles. That's a bigger blast radius than
+the rest of setup, so ask about it on its own:
 
-Read `principles.md` once and produce a substituted copy in memory:
+> Should these principles apply automatically to every task any agent does
+> in this repo, or only when someone explicitly runs a lodestar skill
+> (`lodestar-audit`, `lodestar-fix`, `lodestar-architecture`)?
+>
+> - **Full suite** — add a short `## Lodestar` section to `AGENTS.md` that
+>   tells every agent to check the principles before completing any task,
+>   and points at `.agents/lodestar/context.md`.
+> - **Skills-only** — leave `AGENTS.md` untouched. The skills still work
+>   when invoked; nothing applies the principles unprompted.
 
-| Placeholder   | Replace with                                                    |
-| ------------- | --------------------------------------------------------------- |
-| `[typecheck]` | The exact typecheck command from `AGENTS.md` Build & Test table |
-| `[lint]`      | The exact lint command from `AGENTS.md` Build & Test table      |
+Record the answer as `ENFORCEMENT_MODE` (`full` or `skills-only`) for
+Step 4.1. This choice does not affect any other step — the layout table,
+Fallow (Step 4.5), and linting (Step 4.6) run the same way regardless,
+since `lodestar-audit` needs them whether or not principles are
+auto-enforced.
 
-`principles.md` no longer references specific role names — every principle
-is stated abstractly and points back at AGENTS.md `## Package Layout`
-for the concrete details. No package-name substitution is required here.
+## Step 3 — `principles.md` stays where it is
 
-Hold the substituted block — call it `PRINCIPLES_BLOCK` — for use in the
-file-write steps below.
+`principles.md` (beside this `SKILL.md`) is the single source of truth for
+the principles content. Every install of this suite — regardless of which
+agent(s) it was installed for — always also lands a real copy at the fixed
+path `.agents/skills/lodestar-setup/principles.md` (the install tooling
+requests the skills CLI's `universal` target for exactly this reason). Do
+not copy, inline, or edit its content into any other file, and do not write
+agent-specific files (`CLAUDE.md`, `.github/copilot-instructions.md`, or
+similar) — `.agents/lodestar/context.md` just links to it.
+
+This means no placeholder substitution step is needed here: `principles.md`
+references `.agents/lodestar/context.md`'s `## Build & Test` and
+`## Package Layout` tables by name instead of embedding literal commands,
+so it reads correctly untouched, in every consuming repo.
 
 ## Step 4 — Write the files
 
 Use the templates beside this `SKILL.md`. Fill every `[bracketed
-placeholder]` with real values. Wherever a template contains the literal
-line:
+placeholder]` with real values. Announce each file before writing it.
 
-```
-<!-- INSERT principles.md -->
-```
+### .agents/lodestar/context.md
 
-replace that line (and only that line) with `PRINCIPLES_BLOCK` from Step 3.
-
-Announce each file before writing it.
-
-### AGENTS.md
-
-Start from `agents-md.md`. Fill in:
+This is the load-bearing file. Start from `context-md.md`. Fill in:
 
 - One-sentence project description.
 - The exact commands in the Build & Test table.
@@ -137,25 +160,54 @@ Start from `agents-md.md`. Fill in:
   Use the repo's own names verbatim. Fill the Responsibility column with
   the one-sentence summary you drafted.
 
-`AGENTS.md` does not contain `<!-- INSERT principles.md -->`; it points at
-`.agents/skills/README.md` for the principles. No inlining needed here.
+Leave the `## Principles` and `## Skills` sections as the template has
+them — the principles link must stay pointed at
+`.agents/skills/lodestar-setup/principles.md`.
 
-If `AGENTS.md` already exists, add or update only the `## Build & Test`,
-`## Dependency Direction`, `## Package Layout`, `## Lodestar`,
-`## Skills`, and `## Audit Output` sections — leave everything else untouched.
+If the file already exists, replace the `## Build & Test`,
+`## Dependency Direction`, and `## Package Layout` sections and leave any
+other content the user added alone.
 
-Write to `AGENTS.md`.
+Create the `.agents/lodestar/` directory if needed, and write to
+`.agents/lodestar/context.md`. Write it in both enforcement modes — the
+other three skills require it.
+
+### AGENTS.md — only in `full` mode
+
+If `ENFORCEMENT_MODE` is `skills-only`, **do not touch `AGENTS.md`**. Skip
+to Step 4.1.
+
+If it is `full`, take the `## Lodestar` section from `agents-md.md` and
+append it to `AGENTS.md`, or replace an existing `## Lodestar` section with
+it. Change nothing else in the file. Do not add a layout table, a command
+table, or a skills index to `AGENTS.md` — those live in `context.md`, and
+duplicating them there would guarantee drift.
+
+If `AGENTS.md` does not exist, create it with a `# AGENTS.md` heading and
+that one section.
 
 ### .agents/skills/README.md
 
-Start from `skills-readme.md`. Fill in:
+Write `skills-readme.md` verbatim to `.agents/skills/README.md`. It has no
+placeholders: it is a signpost to `.agents/lodestar/context.md` and
+`principles.md` for anyone browsing `.agents/skills/`. No skill reads it.
+Skip it if a README already exists there with other content.
 
-- The dependency direction (in `## Package Dependency Direction`), using
-  the same package names as AGENTS.md.
+## Step 4.1 — Clean up a pre-0.3 install
 
-Replace `<!-- INSERT principles.md -->` with `PRINCIPLES_BLOCK`.
+Older versions of this skill put the `## Build & Test`,
+`## Dependency Direction`, `## Package Layout`, `## Skills`, and
+`## Audit Output` sections in `AGENTS.md`. If you found any of them there
+in Step 1, their values now live in `context.md`, so ask once:
 
-Write to `.agents/skills/README.md`.
+> `AGENTS.md` still has the lodestar sections from an older setup. The
+> skills now read `.agents/lodestar/context.md` instead. Remove those
+> sections from `AGENTS.md`? (yes / leave them)
+
+If yes, remove only those sections (plus the `## Lodestar` section if
+`ENFORCEMENT_MODE` is `skills-only`) and leave the rest of `AGENTS.md`
+untouched. If they decline, say that `AGENTS.md` now holds a second,
+unread copy of the layout and that `context.md` is the one that counts.
 
 ## Step 4.5 — `.fallowrc.json` for the audit's fallow seed
 
@@ -192,7 +244,7 @@ If the user opts in, write `.fallowrc.json` from `fallowrc.md` beside this
 JSON inside a fenced block). Substitute:
 
 - One `boundaries.zones[]` entry per row in the `## Package Layout` table
-  in `AGENTS.md`. The zone `name` is the package name from the table.
+  in `context.md`. The zone `name` is the package name from the table.
   Use the literal path glob from the table as the `patterns` value
   (wrapping bare directory paths to `<path>/**`). For a row with a glob
   like `apps/*/src`, prefer `"autoDiscover": ["apps"]` so each app
@@ -247,7 +299,9 @@ accuracy. If they decline, skip. If they opt in, read
 ## Step 5 — Confirm
 
 Print a one-line summary of each file written or updated (including
-`.fallowrc.json` if Step 4.5 ran).
+`.fallowrc.json` if Step 4.5 ran), and which `ENFORCEMENT_MODE` was used —
+say plainly whether `AGENTS.md` was edited (`full`) or left alone
+(`skills-only`).
 Ask: "Does this look right? If so, run the `lodestar-audit`
 skill to scan the codebase and produce action-item files in
 `docs/audit/<run-id>/`. If the layout itself feels off, run

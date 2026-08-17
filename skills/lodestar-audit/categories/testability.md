@@ -4,7 +4,7 @@ Makes code unit-testable without changing observable behaviour. **High risk** �
 touches constructor signatures and module structure.
 
 This audit is structure-agnostic. The detectors below run across every
-package in AGENTS.md `## Package Layout`. The previous role-aware
+package in `context.md` `## Package Layout`. The previous role-aware
 "concrete infra imports inside core/shared only" rule has been retired —
 without a fixed role mapping, the audit can't tell which package is
 "core" or "shared". A general "concrete-implementation-coupling" detector
@@ -15,6 +15,7 @@ of problem from a different angle.
 ## What counts as a violation
 
 ### A. Module-level side effects
+
 A function call, event listener registration, DB connection, or subscription
 at module scope (not inside a function/class body). Triggers on `import`,
 making tests order-dependent and slow.
@@ -23,19 +24,20 @@ The grep below matches any line at column 0 whose first identifier
 character is followed by a `(`. Decorators, IIFEs, top-level type guards
 that happen to look like calls, and assignment-of-function-result
 patterns all hit. **Default `requires_decision: true` for every A
-finding sourced from the grep fallback.** Hits in files whose AGENTS.md
+finding sourced from the grep fallback.** Hits in files whose `context.md`
 Responsibility names infra / boot / wiring should be flagged
 `requires_decision: true` regardless of detector — those side effects
 may be intentional composition-root calls.
 
 ### B. Mutable module-level state
+
 `let` (or `var`) at module scope outside test files. Creates implicit
 global state that pollutes tests.
 
 ## Detection
 
 All commands below use placeholders resolved from the `## Package Layout`
-table in `AGENTS.md` (see references/discover.md). Substitute before running.
+table in `context.md` (see references/discover.md). Substitute before running.
 
 ```bash
 # A — calls at module scope (heuristic; review required)
@@ -44,7 +46,7 @@ grep -rEn "^[a-zA-Z_].*\(" <all_pkg_roots> --include="*.ts" \
 
 # Event listeners and connection openers at module scope.
 #   A composition-root file that opens a connection at module scope is
-#   sometimes legitimate. Use the Responsibility column from AGENTS.md
+#   sometimes legitimate. Use the Responsibility column from context.md
 #   `## Package Layout` to judge: a package whose responsibility names
 #   "DB", "queue", "infra", "adapters", or similar may legitimately do
 #   this — emit those findings with requires_decision: true rather than
@@ -67,7 +69,7 @@ grep -rEn "^(let|var) " <all_pkg_roots> --include="*.ts" \
 - **A** —
   1. Wrap the side effect in an `init()` function or a class constructor.
   2. Call it explicitly from the composition root (whichever package's
-     responsibility is "compose / wire / boot", per AGENTS.md).
+     responsibility is "compose / wire / boot", per `context.md`).
   3. Confirm the file can be imported in a test without triggering the
      side effect.
 
@@ -83,7 +85,7 @@ grep -rEn "^(let|var) " <all_pkg_roots> --include="*.ts" \
 - Run `<test>` (full suite) after each commit — race conditions and test
   pollution often surface here.
 - Mark `requires_decision: true` and stop if:
-  - The file is in a package whose AGENTS.md responsibility describes
+  - The file is in a package whose `context.md` responsibility describes
     infrastructure bootstrapping (e.g. "opens DB connection", "registers
     queue subscribers") — the side effect may be intentional.
   - A module-level variable is written from multiple unrelated call sites.

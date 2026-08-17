@@ -205,14 +205,23 @@ export function resolveSource(cwd = process.cwd()) {
   return isPackageRoot(cwd) ? "." : INSTALL_SPEC;
 }
 
+// "universal" is the skills CLI's own pseudo-agent id — it always targets
+// `.agents/skills/`. Always requesting it (on top of whatever real agents
+// were chosen) guarantees a real, non-symlinked copy lands at
+// `.agents/skills/<skill>/` regardless of which client-specific agent(s)
+// the user picked. Without this, e.g. a Claude-only or Kiro-only pick
+// copies straight into `.claude/skills/` or `.kiro/skills/` with no
+// `.agents/skills/` copy at all, breaking the fixed path
+// `.agents/lodestar/context.md` points at for `principles.md`.
 export function buildSkillsAddArgs(selection) {
+  const agents = [...new Set([...selection.agents, "universal"])];
   const args = [
     "add",
     selection.source,
     "--skill",
     ...selection.skills,
     "-a",
-    ...selection.agents,
+    ...agents,
     "-y",
   ];
   if (selection.global) args.push("-g");

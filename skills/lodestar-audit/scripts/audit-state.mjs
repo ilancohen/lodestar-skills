@@ -87,12 +87,12 @@ export function inProgressRuns(auditRoot, date) {
     });
 }
 
-export function parsePackageLayout(agentsText) {
-  const tableStart = agentsText.search(/^## Package Layout\s*$/m);
+export function parsePackageLayout(contextText) {
+  const tableStart = contextText.search(/^## Package Layout\s*$/m);
   if (tableStart === -1) {
-    throw new Error("AGENTS.md is missing ## Package Layout");
+    throw new Error(".agents/lodestar/context.md is missing ## Package Layout");
   }
-  const rest = agentsText.slice(tableStart);
+  const rest = contextText.slice(tableStart);
   const nextHeading = rest.search(/\n## /);
   const section = nextHeading === -1 ? rest : rest.slice(0, nextHeading);
   const rows = [];
@@ -138,10 +138,10 @@ export function responsibilityProblem(row) {
   return null;
 }
 
-export function parseCommands(agentsText) {
+export function parseCommands(contextText) {
   const commands = {};
   for (const name of ["typecheck", "lint", "test"]) {
-    const match = agentsText.match(
+    const match = contextText.match(
       new RegExp(`\\|\\s*${name}\\s*\\|\\s*([^|]+)\\|`, "i"),
     );
     if (match) commands[name] = match[1].trim();
@@ -149,10 +149,10 @@ export function parseCommands(agentsText) {
   return commands;
 }
 
-export function parseDirection(agentsText) {
-  const heading = agentsText.search(/^## Dependency Direction\s*$/m);
+export function parseDirection(contextText) {
+  const heading = contextText.search(/^## Dependency Direction\s*$/m);
   if (heading === -1) return [];
-  const rest = agentsText.slice(heading);
+  const rest = contextText.slice(heading);
   const next = rest.search(/\n## /);
   const section = next === -1 ? rest : rest.slice(0, next);
   const chain = section.match(/([A-Za-z0-9._/-]+(?:\s*→\s*[A-Za-z0-9._/-]+)+)/);
@@ -397,23 +397,22 @@ function cmdResolveRun(flags) {
 
 function cmdValidateInput(flags) {
   const root = flags.root || process.cwd();
-  const agentsPath = path.join(root, "AGENTS.md");
-  if (!fs.existsSync(agentsPath)) {
-    fail("AGENTS.md is missing. Run lodestar-setup first.", 2);
+  const contextPath = path.join(root, ".agents", "lodestar", "context.md");
+  if (!fs.existsSync(contextPath)) {
+    fail(
+      ".agents/lodestar/context.md is missing. Run lodestar-setup first.",
+      2,
+    );
   }
-  const skillsReadme = path.join(root, ".agents", "skills", "README.md");
-  if (!fs.existsSync(skillsReadme)) {
-    fail(".agents/skills/README.md is missing. Run lodestar-setup first.", 2);
-  }
-  const agentsText = fs.readFileSync(agentsPath, "utf8");
+  const contextText = fs.readFileSync(contextPath, "utf8");
   let packages;
   try {
-    packages = parsePackageLayout(agentsText);
+    packages = parsePackageLayout(contextText);
   } catch (error) {
     fail(error.message, 2);
   }
-  const commands = parseCommands(agentsText);
-  const direction = parseDirection(agentsText);
+  const commands = parseCommands(contextText);
+  const direction = parseDirection(contextText);
   const detected = detectPkgManager(root);
   printJson({
     packages,

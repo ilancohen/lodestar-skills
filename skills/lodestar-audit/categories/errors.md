@@ -31,7 +31,7 @@ These should return `Result<T, E>`.
 ## Detection
 
 All commands below use placeholders resolved from the `## Package Layout`
-table in `AGENTS.md` (see references/discover.md). Substitute before running.
+table in `context.md` (see references/discover.md). Substitute before running.
 
 ### Linter probe (best-effort, run once before greps)
 
@@ -92,7 +92,7 @@ grep -rEn "throw new (Error|NotFound|Validation|Unauthorized)" \
   2. Rethrow with context: `throw new AppError('message', { cause: e })`.
   3. Convert to a `Result` (use item B's recipe).
 - **B** — define `Result<T, E>` once in the shared types package (per
-  AGENTS.md `## Package Layout`) if not yet present:
+  `context.md` `## Package Layout`) if not yet present:
   ```ts
   type Result<T, E = string> = { ok: true; value: T } | { ok: false; error: E };
   ```

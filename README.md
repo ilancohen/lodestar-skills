@@ -3,104 +3,109 @@
     <span style="display: inline-block; translate: 0 -0.25em;">Lodestar</span>
 </h1>
 
-A portable suite of four Agent Skills for documenting, auditing, reviewing,
-and improving software architecture:
+Four skills that document your codebase's architecture, find where it breaks
+the rules, and fix those spots — with your say-so at every step.
 
-- `lodestar-setup` — document a repository's commands, package responsibilities,
-  dependency direction, and engineering principles.
-- `lodestar-audit` — discover principle violations and write self-contained action
-  items without modifying application source.
-- `lodestar-fix` — triage and apply those action items with explicit scope and
-  verification gates.
-- `lodestar-architecture` — review the package layout itself and optionally
-  propose alternatives.
+- **`lodestar-setup`** — writes down how your repo is built: commands,
+  packages, and the rules to follow. It all goes in one file,
+  `.agents/lodestar/context.md`, which is the only file the other three
+  skills read.
+- **`lodestar-audit`** — scans for rule-breaking and writes up each one as a
+  standalone action item. Doesn't touch your code.
+- **`lodestar-fix`** — applies those action items, one scoped change at a
+  time, checking its work as it goes.
+- **`lodestar-architecture`** — a second opinion on the package layout
+  itself. Advisory only, never edits code.
 
-## Requirements
+Run them in that order. `lodestar-setup` first, always.
 
-- A skills-compatible coding agent.
-- Git.
-- Node.js 22 or later for package checks and bundled skill scripts.
-- pnpm 11 for this suite's own commands. Target repositories may use
-  pnpm, npm, or yarn — skills detect the lockfile and ask if it is
-  unclear.
-- A POSIX-compatible shell for remaining skill command recipes.
-  Suite checks run on Windows under bash (CI: `ubuntu-latest`,
-  `macos-latest`, and `windows-latest` with `shell: bash`) — not native
-  PowerShell or cmd. Skill recipes are POSIX-first; a few places include
-  PowerShell equivalents (for example `principles/fallow-seed.md` and
-  `lodestar-fix` Step 3.7).
-- [Fallow](https://docs.fallow.tools) **^3.15.0** (combined schema 10) in the
-  target repository for `lodestar-audit`. Same major, at least 3.15.0. Install
-  with that repo's package manager, e.g. `pnpm add -D fallow@^3.15.0` (or
-  `npm install --save-dev` / `yarn add -D`).
+## The rules it checks for
+
+Full definitions: [`skills/lodestar-setup/principles.md`](skills/lodestar-setup/principles.md).
+
+- [Separation of Concerns](skills/lodestar-setup/principles.md#separation-of-concerns-soc) — one reason to change per module
+- [DRY](skills/lodestar-setup/principles.md#dry) — extract on the second occurrence
+- [Single Source of Truth](skills/lodestar-setup/principles.md#single-source-of-truth-ssot) — each fact has one home
+- [YAGNI](skills/lodestar-setup/principles.md#yagni) — only what the current task needs
+- [CQS](skills/lodestar-setup/principles.md#cqs-command-query-separation) — query or command, never both
+- [Tell Don't Ask](skills/lodestar-setup/principles.md#tell-dont-ask) — push behavior toward the data
+- [Parse Don't Validate](skills/lodestar-setup/principles.md#parse-dont-validate) — brand at the boundary, trust inside
+- [Rule of Three](skills/lodestar-setup/principles.md#rule-of-three) — abstract only at the third use
+- [Prefer Proven Libraries](skills/lodestar-setup/principles.md#prefer-proven-libraries-avoid-nih) — don't reimplement solved problems
+- [Ubiquitous Language](skills/lodestar-setup/principles.md#ubiquitous-language) — one term, one concept
+
+## Before you install
+
+- A coding agent that supports Agent Skills, plus Git.
+- **Node.js 22+** — for package checks and the bundled scripts.
+- **pnpm, npm, or yarn** in the target repo — skills detect it from the
+  lockfile, and ask if that's unclear. (This suite itself is built with
+  pnpm; that's unrelated to what your project uses.)
+- A POSIX-ish shell (macOS, Linux, or Windows via bash/WSL — plain
+  PowerShell/cmd isn't supported for most steps).
+- [Fallow](https://docs.fallow.tools) **^3.15.0**, only if you'll run
+  `lodestar-audit`. Install it in the target repo: `pnpm add -D fallow@^3.15.0`
+  (or the npm/yarn equivalent).
 
 ## Install
-
-Project scope is the default. The skills write project-specific configuration
-and audit output.
-
-**Skills CLI** (works with any agent the [skills CLI](https://github.com/vercel-labs/skills) supports):
 
 ```bash
 npx skills add ilancohen/lodestar-skills
 ```
 
-**Lodestar installer** (detects your agents, pre-selects them plus all four
-skills; Enter accepts, space toggles):
+That's the normal path — it detects your agent, pre-selects all four skills,
+Enter to confirm. A few more ways to run it:
 
-```bash
-npx github:ilancohen/lodestar-skills
-```
-
-| Intent       | Example                                                          |
-| ------------ | ---------------------------------------------------------------- |
-| One agent    | `npx skills add ilancohen/lodestar-skills --skill '*' -a cursor` |
-| Skip prompts | `npx skills add ilancohen/lodestar-skills --skill '*' -y`        |
-| From a clone | `node scripts/install.mjs` (or `-y` / `-a cursor`)               |
+| Want to...           | Run                                                                           |
+| -------------------- | ----------------------------------------------------------------------------- |
+| Pick one agent       | `npx skills add ilancohen/lodestar-skills --skill '*' -a cursor -a universal` |
+| Skip the prompts     | `npx skills add ilancohen/lodestar-skills --skill '*' -y`                     |
+| Install from a clone | `node scripts/install.mjs` (same `-y` / `-a cursor` flags)                    |
 
 Agent ids: `cursor`, `claude-code`, `codex`, `gemini-cli`, `github-copilot`,
-`kiro-cli`. See the
-[skills CLI supported agents](https://github.com/vercel-labs/skills#supported-agents)
+`kiro-cli` — see the [skills CLI's supported agents](https://github.com/vercel-labs/skills#supported-agents)
 for the full list.
 
-See [UPGRADING.md](UPGRADING.md) for updates, version pinning, and rollback.
+Every install (via `node scripts/install.mjs` or the plain `npx skills add`
+command above) always also requests the CLI's `universal` pseudo-agent, so a
+real copy of each skill — `principles.md` included — lands at the fixed path
+`.agents/skills/<skill-name>/`, no matter which client agent(s) you picked.
+`lodestar-setup` points `.agents/lodestar/context.md` at that fixed path. If
+you hand-craft an `-a` list yourself, add `-a universal` too, or
+`lodestar-setup`'s reference to `principles.md` may not resolve.
 
-Copying or symlinking `skills/` by hand is a legacy path, not the normal
-install method.
+Don't want the CLI? Each agent also has a native plugin:
 
-### Native plugins
+- Cursor — `plugin.json`
+- Claude Code — `.claude-plugin/plugin.json`
+- Codex — `.codex-plugin/plugin.json`
+- Gemini CLI — `gemini-extension.json`
 
-Prefer a native plugin only when you do not want the skills CLI:
+Updating, pinning a version, or rolling back? See [UPGRADING.md](UPGRADING.md).
 
-- Cursor — `plugin.json` (Agent Plugins 1.0)
-- Claude Code — `.claude-plugin/plugin.json` (discovers root `skills/` by
-  convention)
-- Codex — `.codex-plugin/plugin.json` declares `"skills": "./skills/"`
-- Gemini CLI — `gemini-extension.json` (discovers root `skills/` by
-  convention, same as Claude Code)
+## Using it
 
-Adapters do not copy skill logic. Convention-based clients rely on the
-root `skills/` layout holding the four canonical skills.
+Skills don't activate on their own — you have to invoke them by name
+(`/lodestar-setup`, `$lodestar-setup`, or however your agent's UI picks skills).
 
-## Use
+1. Run `lodestar-setup` once, in the target repo. It writes
+   `.agents/lodestar/context.md` — your package layout, dependency
+   direction, and build commands — which is the only file the other skills
+   read. It also asks whether principles should apply to every task
+   automatically (full suite: a short pointer section is added to
+   `AGENTS.md`) or only when you explicitly run a lodestar skill
+   (skills-only: `AGENTS.md` is left alone). Either way it documents your
+   layout and configures Fallow.
+2. Run `lodestar-audit`. It writes to `docs/audit/<run-id>/`.
+3. Read the index it produces and decide what to act on.
+4. Run `lodestar-fix` when you want it to actually change code.
+5. Run `lodestar-architecture` separately, only if the package layout itself
+   feels wrong.
 
-Skills load **only when you invoke them by name**. They do not auto-activate
-from related conversation. Syntax varies by client: `/lodestar-setup`,
-`$lodestar-setup`, or picking the skill in the client's skills UI.
+## Contributing
 
-Run the workflow in this order:
-
-1. Invoke `lodestar-setup` once in the target repository.
-2. Invoke `lodestar-audit` to produce `docs/audit/<run-id>/`.
-3. Review the generated index and decisions.
-4. Invoke `lodestar-fix` only when you want source changes.
-5. Invoke `lodestar-architecture` separately when the package layout itself
-   needs review.
-
-## Development
-
-Read [AGENTS.md](AGENTS.md) and
-[CONTRIBUTING.md](CONTRIBUTING.md) before changing the suite. Run:
+Read [AGENTS.md](AGENTS.md) and [CONTRIBUTING.md](CONTRIBUTING.md) first.
+Then:
 
 ```bash
 pnpm check
@@ -110,10 +115,10 @@ pnpm dlx skills add . --list
 
 ## Status
 
-Initial standalone extraction: `0.1.0`. First published release: `0.2.0`.
+`0.1.0` was the first standalone cut of this suite. `0.2.0` was the first
+published release.
 
-Trigger phrases and expected outcomes live in [`docs/evals.md`](docs/evals.md)
-as a manual checklist.
+Manual test checklist: [`docs/evals.md`](docs/evals.md).
 
 ## License
 

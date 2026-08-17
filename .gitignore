@@ -7,6 +7,11 @@ coverage/
 
 .lodestar-backup/
 
+# This repo develops the suite; it does not apply the suite to itself. A
+# local install for smoke-testing lands here and must not be committed.
+/.agents/skills/
+/.agents/lodestar/
+
 # Kept locally for contributor reference; purged from git history before
 # the repo went public (internal planning/audit docs, not suite output).
 /docs/plans/

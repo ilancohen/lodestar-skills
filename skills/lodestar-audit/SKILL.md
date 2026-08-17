@@ -11,7 +11,7 @@ license: MIT
 compatibility: Requires git, a POSIX-compatible shell, Node.js, and Fallow ^3.15.0 (combined schema 10) installed in the target project or available on PATH. Designed for JavaScript/TypeScript repositories.
 metadata:
   author: Ilan Cohen
-  version: "0.2.0"
+  version: "0.3.0"
 ---
 
 You are running a lodestar audit. **Discover** and
@@ -29,7 +29,8 @@ path to that file.
 ## Structure model
 
 This audit is **structure-agnostic**. It does not assume roles like
-`core`, `api`, or `ui`. It uses two things from `AGENTS.md`:
+`core`, `api`, or `ui`. It uses two things from
+`.agents/lodestar/context.md`:
 
 1. `## Package Layout` — package names, paths, aliases, and a one-sentence
    responsibility per package.
@@ -57,10 +58,10 @@ Never overwrite a previous run. Output stays under `docs/audit/<RUN_ID>/`.
 
 ## Preconditions
 
-If any of these is missing, **stop** and tell the user to run `lodestar-setup`:
-
-- `AGENTS.md`
-- `.agents/skills/README.md`
+If `.agents/lodestar/context.md` is missing, **stop** and tell the user to
+run `lodestar-setup`. That file is the only repo context this skill reads;
+do not fall back to `AGENTS.md` even if it happens to hold a layout table
+from an older setup.
 
 Then run:
 
@@ -76,27 +77,28 @@ characters, `TODO`/`TBD`/`???`/`one sentence`, or a bare noun like
 If `pkgManager` is null, ask which of npm, yarn, or pnpm this repository
 uses before any install or `dlx`/`npx` command. Do not guess.
 
-Read `.agents/skills/README.md` for project-specific principles. Read
-`AGENTS.md` for commands, direction, and the layout table.
+Read `.agents/lodestar/context.md` for commands, direction, and the layout
+table, then follow its link to
+`.agents/skills/lodestar-setup/principles.md` for the principles content.
 
 ---
 
 ## Categories
 
 Read the category sub-doc before scanning that category. Read
-`principles/fallow-seed.md` once before Discover.
+`categories/fallow-seed.md` once before Discover.
 
 | Category      | Sub-doc                     | Risk        | Detection style               |
 | ------------- | --------------------------- | ----------- | ----------------------------- |
-| `imports`     | `principles/imports.md`     | low         | mechanical (Fallow preferred) |
-| `types`       | `principles/types.md`       | low         | mechanical                    |
-| `boundaries`  | `principles/boundaries.md`  | medium–high | mechanical                    |
-| `errors`      | `principles/errors.md`      | high        | mechanical                    |
-| `testability` | `principles/testability.md` | high        | mechanical                    |
-| `soc-yagni`   | `principles/soc-yagni.md`   | low–high    | mixed                         |
-| `dry`         | `principles/dry.md`         | low–medium  | mixed                         |
-| `ssot`        | `principles/ssot.md`        | low–medium  | mechanical                    |
-| `styling`     | `principles/styling.md`     | low–medium  | mechanical                    |
+| `imports`     | `categories/imports.md`     | low         | mechanical (Fallow preferred) |
+| `types`       | `categories/types.md`       | low         | mechanical                    |
+| `boundaries`  | `categories/boundaries.md`  | medium–high | mechanical                    |
+| `errors`      | `categories/errors.md`      | high        | mechanical                    |
+| `testability` | `categories/testability.md` | high        | mechanical                    |
+| `soc-yagni`   | `categories/soc-yagni.md`   | low–high    | mixed                         |
+| `dry`         | `categories/dry.md`         | low–medium  | mixed                         |
+| `ssot`        | `categories/ssot.md`        | low–medium  | mechanical                    |
+| `styling`     | `categories/styling.md`     | low–medium  | mechanical                    |
 
 Known blind spots (copy into `INDEX.md`): coverage floor unless `<test>`
 emits coverage; wide-diff DRY as `dry.C` advisory only; Rule of Three
@@ -132,7 +134,7 @@ Do not scan before those confirmations.
 Follow [references/discover.md](references/discover.md). Summary:
 
 1. Resolve the package set from `validate-input` JSON.
-2. Run the Fallow seed from `principles/fallow-seed.md`. If Fallow is
+2. Run the Fallow seed from `categories/fallow-seed.md`. If Fallow is
    missing or invalid, **stop**. Do not write findings.
 3. Mechanical pass in category order, then semantic pass.
 4. Merge with `node scripts/audit-state.mjs merge-findings`.

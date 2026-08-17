@@ -64,7 +64,7 @@ Risk: low.
 ## Detection
 
 All commands below use placeholders resolved per row of the `## Package
-Layout` table in `AGENTS.md` (see references/discover.md). Substitute the
+Layout` table in `context.md` (see references/discover.md). Substitute the
 real path globs before running. Only packages whose path glob contains
 UI source (TSX, JSX, CSS, SCSS) are scanned — skip pure type / DB /
 domain packages.
@@ -195,7 +195,7 @@ grep -rln ":root" <pkg_root> --include="*.css" --include="*.scss"
 - For B: the token's canonical home is one file. Do not declare the
   same token in two packages — if multiple packages need it, the
   canonical home is whichever package they both can reach per the
-  dependency direction in `AGENTS.md`.
+  dependency direction in `context.md`.
 - For C: extraction must preserve every property in the shared class
   body. If the two bodies are similar but not identical, this is _not_
   a C finding — record it under `dry.B` for semantic review.

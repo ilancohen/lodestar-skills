@@ -20,7 +20,7 @@ subtype #6 uses the grep heuristic below.
    exported from the source package's `index.ts`.
 
 3. **Circular import** — `A` imports `B` and `B` imports `A`. The lower-
-   level package (per the dependency direction in AGENTS.md) should not
+   level package (per the dependency direction in `context.md`) should not
    import from the higher-level one.
 
 4. **`export *` barrel** — `index.ts` re-exports everything from a sub-module
@@ -30,7 +30,7 @@ subtype #6 uses the grep heuristic below.
    consumer (used only inside the package, or not used at all).
 
 6. **Wrong-direction dependency** — an import that violates the dependency
-   direction declared in `AGENTS.md` (e.g. with direction
+   direction declared in `context.md` (e.g. with direction
    `web → server → core → shared`, `core` may not import from `server`,
    and `shared` may not import from anywhere). Includes both intra-monorepo
    alias imports and relative imports crossing package boundaries.
@@ -54,7 +54,7 @@ subtype #6 uses the grep heuristic below.
 ## Detection
 
 All commands below use placeholders resolved per row of the `## Package
-Layout` table in `AGENTS.md` (see references/discover.md). Substitute the
+Layout` table in `context.md` (see references/discover.md). Substitute the
 real path globs and import aliases before running.
 
 ### Preferred: fallow seed
@@ -95,7 +95,7 @@ node scripts/source-scan.mjs --recipe barrel-reexport --root <pkg_root>
 #   Symbols with zero hits outside P are over-exports.
 
 # 6 — direction grep fallback when neither fallow nor check:deps is available
-#   Parse the dependency direction from AGENTS.md (e.g. web → server → core → shared).
+#   Parse the dependency direction from context.md (e.g. web → server → core → shared).
 #   For each package P in the chain, the allowed import sources are P itself
 #   and every package to its right. For each `from '<alias>'` import in P,
 #   check that <alias> resolves to an allowed package. Anything else is a
@@ -140,7 +140,7 @@ generated action-item title cleaner.
 - #2 — add the symbol to `index.ts` of the source package; do not change the
   implementation.
 - #3 — invert the dependency, or extract the shared piece to the package
-  nominated for shared code (see AGENTS.md `## Package Layout`). This may
+  nominated for shared code (see `context.md` `## Package Layout`). This may
   require a logic decision — flag `requires_decision: true`.
 - #4 — replace `export * from './x'` with explicit named re-exports.
 - #5 — remove the export from `index.ts`. If the symbol is used in tests

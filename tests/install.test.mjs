@@ -114,7 +114,7 @@ test("-y argv uses defaults", () => {
         source: ".",
         ...selection,
       }),
-      ["add", ".", "--skill", ...SKILLS, "-a", "kiro-cli", "-y"],
+      ["add", ".", "--skill", ...SKILLS, "-a", "kiro-cli", "universal", "-y"],
     );
   } finally {
     fs.rmSync(cwd, { recursive: true, force: true });
@@ -148,6 +148,7 @@ test("--agent and --skill override defaults", () => {
         "lodestar-audit",
         "-a",
         "claude-code",
+        "universal",
         "-y",
         "--copy",
       ],
@@ -218,6 +219,7 @@ test("runInstall -y does not need a TTY", async () => {
       ...SKILLS,
       "-a",
       "cursor",
+      "universal",
       "-y",
       "--copy",
     ]);

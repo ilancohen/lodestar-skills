@@ -10,7 +10,7 @@ license: MIT
 compatibility: Requires git and the target repository's declared typecheck and test commands. Shell examples assume a POSIX-compatible environment.
 metadata:
   author: Ilan Cohen
-  version: "0.2.0"
+  version: "0.3.0"
 ---
 
 You are running `lodestar-fix`. The job is to **triage** and **execute** the
@@ -37,7 +37,8 @@ Required contents:
 
 If any are missing, stop and ask the user to run `lodestar-audit` first.
 
-Capture from `AGENTS.md`:
+Capture from `.agents/lodestar/context.md` (the file `lodestar-setup`
+writes; `AGENTS.md` is not read):
 
 - `<typecheck>`, `<lint>`, `<test>` — the build commands used to verify
   each fix. If any is missing, stop and ask the user to re-run
@@ -309,5 +310,6 @@ unstarted), skip this step and leave the run in place.
   preserve it in the commit history.
 - **Stop conditions:**
   - The run directory has no `INDEX.md` or no action-item files.
-  - `<typecheck>` or `<test>` is not declared in `AGENTS.md`.
+  - `<typecheck>` or `<test>` is not declared in
+    `.agents/lodestar/context.md`.
   - The user says stop.

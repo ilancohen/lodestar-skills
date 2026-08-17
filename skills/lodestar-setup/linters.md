@@ -34,7 +34,7 @@ output directly and produces definitive findings with no
 'boundaries/element-types': ['error', {
   default: 'disallow',
   rules: [
-    // Mirror the dependency direction from AGENTS.md:
+    // Mirror the dependency direction from .agents/lodestar/context.md:
     // e.g. { from: 'web', allow: ['server'] },
     //       { from: 'server', allow: ['core'] }, ...
   ]

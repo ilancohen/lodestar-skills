@@ -12,14 +12,14 @@ skills UI). Ambient task language must not load them.
 Should trigger:
 
 - "Run lodestar-setup in this repository."
-- "Initialize lodestar-setup. Keep the deployment section already in AGENTS.md."
+- "Initialize lodestar-setup. Keep the deployment section already in AGENTS.md untouched."
 - "You stopped after listing packages. Finish lodestar-setup and write the config files."
 - `/lodestar-setup`
 
 Near-miss (should not trigger):
 
 - "We just installed the lodestar skills. Document our packages and agent guidance."
-- "We added a billing package. Refresh AGENTS.md and the skill README without auditing."
+- "We added a billing package. Refresh the lodestar context file without auditing."
 - "We switched from npm to pnpm. Update the lodestar setup files."
 - "Set up engineering principles but ask me to confirm package responsibilities before writing."
 - "Wire up the agent engineering docs for this monorepo the way the principles suite expects."
@@ -27,7 +27,7 @@ Near-miss (should not trigger):
 
 Expected outcomes (once explicitly invoked):
 
-- Consent before writes; touch only `AGENTS.md` and `.agents/skills/README.md` (plus optional Fallow/linter with consent); never edit `packages/**` / `src/**`. Do not write `CLAUDE.md` or `.github/copilot-instructions.md`. Ask separately before adding `.audit-fallow-seed.json` / `.fallow/` to `.gitignore`; if declined, still write `.fallowrc.json` and note the skip.
+- `.agents/lodestar/context.md` is always written — it is the only file the other three skills read (Package Layout, Dependency Direction, Build & Test). No layout table, command table, or skills index may be written into `AGENTS.md`. Step 2.5 asks the full-suite-vs-skills-only question: `full` appends only a short `## Lodestar` pointer section to `AGENTS.md`, `skills-only` leaves `AGENTS.md` completely untouched. Neither answer may skip Package Layout, Fallow, or linter setup. If an older setup left lodestar sections in `AGENTS.md`, Step 4.1 asks once before removing them. `principles.md` itself is never copied or edited — `context.md` links to the fixed path `.agents/skills/lodestar-setup/principles.md`, which every install (via `scripts/install.mjs` or `npx skills add`) guarantees exists by always also requesting the CLI's `universal` target. Never edit `packages/**` / `src/**`. Do not write `CLAUDE.md` or `.github/copilot-instructions.md`. Ask separately before adding `.audit-fallow-seed.json` / `.fallow/` to `.gitignore`; if declined, still write `.fallowrc.json` and note the skip.
 - Refresh after structure or package-manager change without auditing or redesigning architecture.
 - Redirect redesign requests to `lodestar-architecture`.
 
@@ -52,7 +52,7 @@ Expected outcomes (once explicitly invoked):
 
 - Discovery + plan under `docs/audit/`; no application source edits.
 - Honor category subsets and pause after `findings.md` when asked.
-- Stop and point at `lodestar-setup` / Fallow when `AGENTS.md` (Package Layout) or `.agents/skills/README.md` is missing. Missing `CLAUDE.md` is not a blocker.
+- Stop and point at `lodestar-setup` / Fallow when `.agents/lodestar/context.md` is missing or has no Package Layout. An `AGENTS.md` that still carries an old layout table must not be used as a fallback. Missing `CLAUDE.md` or `.agents/skills/README.md` is not a blocker.
 
 ## lodestar-fix
 
@@ -90,7 +90,7 @@ Near-miss: violation hunt, applying audit items, documenting current layout, sta
 - "Describe this repository's package architecture for a new engineer. Do not suggest changes."
 - "Review the package layout before a large refactor and propose at most two alternatives."
 - "The architecture feels wrong. Review the documented layout with evidence."
-- "Review the architecture. AGENTS.md has no Package Layout table."
+- "Review the architecture. The lodestar context file has no Package Layout table."
 - "Does our dependency direction still match the code? Advisory only."
 - "Write the architecture-review report for this monorepo."
 
@@ -98,4 +98,4 @@ Expected outcomes (once explicitly invoked):
 
 - Ask describe vs suggest once; write under `docs/architecture-review/`; never edit application source.
 - At most two evidence-mapped alternatives with trade-offs when asked to suggest.
-- Stop and point at `lodestar-setup` when Package Layout / Dependency Direction is missing from `AGENTS.md`. Missing `CLAUDE.md` or `.agents/skills/README.md` is not a blocker.
+- Stop and point at `lodestar-setup` when Package Layout / Dependency Direction is missing from `.agents/lodestar/context.md`. Missing `AGENTS.md`, `CLAUDE.md`, or `.agents/skills/README.md` is not a blocker.
