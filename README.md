@@ -1,6 +1,6 @@
 <h1>
     <img src="assets/logo.svg" alt="" width="40" height="40" style="position: relative" />
-    <span>Lodestar</span>
+    <span style="display: inline-block; translate: 0 -0.25em;">Lodestar</span>
 </h1>
 
 A portable suite of four Agent Skills for documenting, auditing, reviewing,
