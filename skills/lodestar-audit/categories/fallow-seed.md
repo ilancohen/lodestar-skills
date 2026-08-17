@@ -88,7 +88,7 @@ clone detectors alongside it.
 
 For `check.boundary_violations` to fire, the repo must have a `.fallowrc.json`
 whose zones match the `## Package Layout` table in `context.md`. The setup
-skill writes this file (Step 4.5 of `lodestar-setup`) using the repo's
+skill writes this file (Step 6 of `lodestar-setup`) using the repo's
 own package names as zone names — there is no canonical role mapping.
 
 If `.fallowrc.json` is absent, fallow still produces useful output for

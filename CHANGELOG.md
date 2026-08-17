@@ -2,7 +2,15 @@
 
 All notable changes to this project will be documented here.
 
-## [0.3.0] - unreleased
+## [0.3.1] - 2026-08-17
+
+### Changed
+
+- `lodestar-setup` steps renumbered to contiguous integers (former 2.5 → 3,
+  4.1 → 5, 4.5 → 6, 4.6 → 7, Confirm → 8). The old "principles.md stays
+  where it is" step is folded into Write the files.
+
+## [0.3.0] - 2026-08-17
 
 ### Changed
 

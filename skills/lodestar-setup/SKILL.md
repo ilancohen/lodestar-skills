@@ -14,7 +14,7 @@ license: MIT
 compatibility: Requires filesystem write access and a POSIX-compatible shell for optional Fallow setup. Supports npm, pnpm, and yarn repositories.
 metadata:
   author: Ilan Cohen
-  version: "0.3.0"
+  version: "0.3.1"
 ---
 
 Write the agent-neutral config the lodestar skills need. The one file that
@@ -76,7 +76,7 @@ Read only what's needed to fill in the template placeholders:
   content. Older installs kept the layout table and command table in
   `AGENTS.md` — if you find them there, reuse those values for
   `context.md` and then strip those sections from `AGENTS.md` (see
-  Step 4.1).
+  Step 5).
 
 Stop there. Do not read tsconfig deeply, explore individual packages, check
 for issue trackers, or investigate test frameworks beyond the scripts.
@@ -104,7 +104,7 @@ Do not ask separate questions about coverage, branded types, or violations,
 and do not ask whether the layout is "right" — that's `lodestar-architecture`'s
 job, not setup's.
 
-## Step 2.5 — Choose how principles get enforced
+## Step 3 — Choose how principles get enforced
 
 `.agents/lodestar/context.md` gets written either way — the other three
 skills require it and won't run without it. What's optional is whether
@@ -123,31 +123,29 @@ the rest of setup, so ask about it on its own:
 >   when invoked; nothing applies the principles unprompted.
 
 Record the answer as `ENFORCEMENT_MODE` (`full` or `skills-only`) for
-Step 4.1. This choice does not affect any other step — the layout table,
-Fallow (Step 4.5), and linting (Step 4.6) run the same way regardless,
+Step 5. This choice does not affect any other step — the layout table,
+Fallow (Step 6), and linting (Step 7) run the same way regardless,
 since `lodestar-audit` needs them whether or not principles are
 auto-enforced.
-
-## Step 3 — `principles.md` stays where it is
-
-`principles.md` (beside this `SKILL.md`) is the single source of truth for
-the principles content. Every install of this suite — regardless of which
-agent(s) it was installed for — always also lands a real copy at the fixed
-path `.agents/skills/lodestar-setup/principles.md` (the install tooling
-requests the skills CLI's `universal` target for exactly this reason). Do
-not copy, inline, or edit its content into any other file, and do not write
-agent-specific files (`CLAUDE.md`, `.github/copilot-instructions.md`, or
-similar) — `.agents/lodestar/context.md` just links to it.
-
-This means no placeholder substitution step is needed here: `principles.md`
-references `.agents/lodestar/context.md`'s `## Build & Test` and
-`## Package Layout` tables by name instead of embedding literal commands,
-so it reads correctly untouched, in every consuming repo.
 
 ## Step 4 — Write the files
 
 Use the templates beside this `SKILL.md`. Fill every `[bracketed
 placeholder]` with real values. Announce each file before writing it.
+
+`principles.md` (beside this `SKILL.md`) is not one of them. It is the
+single source of truth for the principles content, and every install of
+this suite — regardless of which agent(s) it was installed for — always
+also lands a real copy at the fixed path
+`.agents/skills/lodestar-setup/principles.md` (the install tooling requests
+the skills CLI's `universal` target for exactly this reason). Do not copy,
+inline, or edit its content into any other file, and do not write
+agent-specific files (`CLAUDE.md`, `.github/copilot-instructions.md`, or
+similar) — `.agents/lodestar/context.md` just links to it. No placeholder
+substitution is needed either: `principles.md` references
+`.agents/lodestar/context.md`'s `## Build & Test` and `## Package Layout`
+tables by name instead of embedding literal commands, so it reads correctly
+untouched, in every consuming repo.
 
 ### .agents/lodestar/context.md
 
@@ -175,7 +173,7 @@ other three skills require it.
 ### AGENTS.md — only in `full` mode
 
 If `ENFORCEMENT_MODE` is `skills-only`, **do not touch `AGENTS.md`**. Skip
-to Step 4.1.
+to Step 5.
 
 If it is `full`, take the `## Lodestar` section from `agents-md.md` and
 append it to `AGENTS.md`, or replace an existing `## Lodestar` section with
@@ -193,7 +191,7 @@ placeholders: it is a signpost to `.agents/lodestar/context.md` and
 `principles.md` for anyone browsing `.agents/skills/`. No skill reads it.
 Skip it if a README already exists there with other content.
 
-## Step 4.1 — Clean up a pre-0.3 install
+## Step 5 — Clean up a pre-0.3 install
 
 Older versions of this skill put the `## Build & Test`,
 `## Dependency Direction`, `## Package Layout`, `## Skills`, and
@@ -209,7 +207,7 @@ If yes, remove only those sections (plus the `## Lodestar` section if
 untouched. If they decline, say that `AGENTS.md` now holds a second,
 unread copy of the layout and that `context.md` is the one that counts.
 
-## Step 4.5 — `.fallowrc.json` for the audit's fallow seed
+## Step 6 — `.fallowrc.json` for the audit's fallow seed
 
 The audit skill **requires** [fallow](https://docs.fallow.tools) as the
 primary graph-based detector for `imports`, `dry`, and `soc-yagni`. When
@@ -281,7 +279,7 @@ Every zone should report `file_count > 0`. A contract failure or a
 zero-file zone means the config or Package Layout glob must be fixed
 before continuing. Delete the temp JSON after reading it.
 
-## Step 4.6 — (Optional) Linting rules for higher-accuracy audit findings
+## Step 7 — (Optional) Linting rules for higher-accuracy audit findings
 
 The lodestar-audit skill runs an opportunistic linter probe when detecting
 `types` (#1, #3), `errors` (A, B), and `boundaries.B` violations. Enabling
@@ -296,10 +294,10 @@ Ask once whether they want to tighten ESLint / Biome rules for audit
 accuracy. If they decline, skip. If they opt in, read
 [linters.md](linters.md) and apply only the rules they confirm.
 
-## Step 5 — Confirm
+## Step 8 — Confirm
 
 Print a one-line summary of each file written or updated (including
-`.fallowrc.json` if Step 4.5 ran), and which `ENFORCEMENT_MODE` was used —
+`.fallowrc.json` if Step 6 ran), and which `ENFORCEMENT_MODE` was used —
 say plainly whether `AGENTS.md` was edited (`full`) or left alone
 (`skills-only`).
 Ask: "Does this look right? If so, run the `lodestar-audit`
