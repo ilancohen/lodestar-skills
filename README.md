@@ -1,6 +1,5 @@
 <h1>
-  <span style="position: relative; display: inline-block; width: 40px; height: 40px; vertical-align: middle; margin-right: 0.45em">
-    <img src="assets/logo-white.svg" alt="" width="40" height="40" style="position: absolute; transform: scale(1.3); opacity: 0.5;"/>
+  <span style="position: relative; display: inline-block; width: 40px; height: 40px; vertical-align: middle; margin-right: 0.25em">
     <img src="assets/logo.svg" alt="" width="40" height="40" style="position: relative" />
   </span>Lodestar
 </h1>
