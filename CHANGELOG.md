@@ -63,7 +63,7 @@ testability → dry → styling`).
 - Implementation roadmap, package validation, and CI.
 - Canonical `VERSION` source and install/upgrade docs.
 - Installer TUI (`@clack/prompts`) pre-selects detected agents and all
-  four skills; Enter accepts the defaults. `pnpm dlx github:ilancohen/lodestar-skills`.
+  four skills; Enter accepts the defaults. `npx github:ilancohen/lodestar-skills`.
 
 ### Fixed
 

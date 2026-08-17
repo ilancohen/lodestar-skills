@@ -1,4 +1,9 @@
-# Lodestar
+<h1>
+  <span style="position: relative; display: inline-block; width: 40px; height: 40px; vertical-align: middle; margin-right: 0.45em">
+    <img src="assets/logo-white.svg" alt="" width="40" height="40" style="position: absolute; transform: scale(1.3); opacity: 0.5;"/>
+    <img src="assets/logo.svg" alt="" width="40" height="40" style="position: relative" />
+  </span>Lodestar
+</h1>
 
 A portable suite of four Agent Skills for documenting, auditing, reviewing,
 and improving software architecture:
@@ -36,15 +41,10 @@ and improving software architecture:
 Project scope is the default. The skills write project-specific configuration
 and audit output.
 
-Use whichever command matches tools you already have. All of these install
-the suite into the current repository.
-
 **Skills CLI** (works with any agent the [skills CLI](https://github.com/vercel-labs/skills) supports):
 
 ```bash
 npx skills add ilancohen/lodestar-skills
-# or:  pnpm dlx skills add ilancohen/lodestar-skills
-# or:  yarn dlx skills add ilancohen/lodestar-skills
 ```
 
 **Lodestar installer** (detects your agents, pre-selects them plus all four
@@ -52,12 +52,7 @@ skills; Enter accepts, space toggles):
 
 ```bash
 npx github:ilancohen/lodestar-skills
-# or:  pnpm dlx github:ilancohen/lodestar-skills
-# or:  yarn dlx github:ilancohen/lodestar-skills
 ```
-
-Prefer the package manager already used in the target repo. If none or more
-than one lockfile is present, pick one — do not guess.
 
 | Intent       | Example                                                          |
 | ------------ | ---------------------------------------------------------------- |

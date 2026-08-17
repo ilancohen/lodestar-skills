@@ -3,13 +3,10 @@
 Default to **project scope**. These skills write repository-specific config
 and `docs/audit/` output.
 
-Use the consuming repository's package manager (`pnpm dlx`, `npx`, or
-`yarn dlx`). Examples below use pnpm.
-
 ## Install
 
 ```bash
-pnpm dlx skills add ilancohen/lodestar-skills
+npx skills add ilancohen/lodestar-skills
 ```
 
 Enter accepts detected agents and all four skills. That is the normal
@@ -18,13 +15,13 @@ install path.
 Per-agent example:
 
 ```bash
-pnpm dlx skills add ilancohen/lodestar-skills --skill '*' -a cursor
+npx skills add ilancohen/lodestar-skills --skill '*' -a cursor
 ```
 
 Scripts that must not prompt:
 
 ```bash
-pnpm dlx skills add ilancohen/lodestar-skills --skill '*' -y
+npx skills add ilancohen/lodestar-skills --skill '*' -y
 ```
 
 ## Update
@@ -32,19 +29,19 @@ pnpm dlx skills add ilancohen/lodestar-skills --skill '*' -y
 From the consuming repository:
 
 ```bash
-pnpm dlx skills add ilancohen/lodestar-skills
+npx skills add ilancohen/lodestar-skills
 ```
 
 Non-interactive:
 
 ```bash
-pnpm dlx skills add ilancohen/lodestar-skills --skill '*' -y
+npx skills add ilancohen/lodestar-skills --skill '*' -y
 ```
 
 Pin to a release:
 
 ```bash
-pnpm dlx skills add ilancohen/lodestar-skills@v0.2.0 --skill '*' -y
+npx skills add ilancohen/lodestar-skills@v0.2.0 --skill '*' -y
 ```
 
 ## Rollback
@@ -52,7 +49,7 @@ pnpm dlx skills add ilancohen/lodestar-skills@v0.2.0 --skill '*' -y
 Re-run the install command against a prior tag:
 
 ```bash
-pnpm dlx skills add ilancohen/lodestar-skills@<prior-tag> --skill '*' -y
+npx skills add ilancohen/lodestar-skills@<prior-tag> --skill '*' -y
 ```
 
 Confirm installed metadata reports the rolled-back version in each
