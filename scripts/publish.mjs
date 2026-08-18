@@ -96,6 +96,7 @@ export function publish(spec, options = {}) {
 function parseArgs(argv) {
   const flags = { spec: null, dryRun: false };
   for (const arg of argv) {
+    if (arg === "--") continue;
     if (arg === "--dry-run") flags.dryRun = true;
     else if (arg.startsWith("-")) {
       throw new Error(`unknown flag ${arg}`);
