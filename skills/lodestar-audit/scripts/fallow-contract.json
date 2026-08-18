@@ -2,8 +2,7 @@
   "schema_version": 10,
   "tool_version": "3.15.0",
   "last_good_version": "3.16.0",
-  "install_current": "pnpm add -D fallow@^3.15.0",
-  "notes": "Accept Fallow ^3.15.0 (same major, at least 3.15.0). schema_version values are floors, not equality targets: a higher schema passes when every field the audit reads is still present, and the accepted version/schema pair is recorded in the target repo's .agents/lodestar/fallow-compat.json. Combined envelopes baseline schema_version 10; dupes envelopes baseline schema_version 8.",
+  "notes": "Accept Fallow ^3.15.0 (same major, at least 3.15.0). schema_version values are floors, not equality targets: a higher schema passes when every field the audit reads is still present, and the accepted version/schema pair is recorded in the target repo's .agents/lodestar/fallow-compat.json. Combined envelopes baseline schema_version 10; dupes envelopes baseline schema_version 8. Install commands are not stored here: pkg-manager.mjs builds them per package manager from tool_version, and remediation() puts the right one in every failure message.",
   "fixture_repo": "tests/fixtures/repos/fallow-contract",
   "envelope_fixtures": {
     "baseline": "tests/fixtures/fallow-envelopes/v3.15.0",
