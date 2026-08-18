@@ -67,7 +67,7 @@ Read only what that file names. Do not survey the repo.
 Follow [references/02-confirm.md](references/02-confirm.md).
 Consent gates (one round each): correct the summary; excluded-path
 candidates; audit-scope question (skip when not git, or when
-`## Audit Scope` already exists).
+`## Audit Configuration` already has `mode`).
 
 ## Step 3 — Confirm which conventions the repo already follows
 
@@ -78,7 +78,8 @@ ask a second conventions question.
 ## Step 3a — Confirm how lodestar-fix commits
 
 Follow [references/03a-commit-policy.md](references/03a-commit-policy.md).
-Consent: commit policy, once. Write `## Git` in both enforcement modes.
+Consent: commit policy, once. Write git keys in `## Audit Configuration`
+in both enforcement modes.
 
 ## Step 4 — Choose how principles get enforced
 

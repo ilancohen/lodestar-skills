@@ -131,29 +131,6 @@ Notes for the table:
 - Do not drop a `Scannable: no` row. The audit lists it as a known
   blind spot rather than omitting it.
 
-## Excluded Paths
-
-Globs the audit does not treat as hand-written source. **Absent means
-default:** no extra exclusions, and tests match `*.spec.*` / `*.test.*`
-plus `*.d.ts` (today's `source-scan` behavior). A pre-existing file
-without this section is unchanged.
-
-**Not audited** — generated, vendored, and build output. Skipped entirely
-by every detector and by Fallow `ignorePatterns`.
-
-- `[e.g. packages/db/generated/**]` — Prisma client
-- `[e.g. **/*.gen.ts]` — GraphQL codegen
-
-**Test files** — skipped by default. Detectors that want tests pass
-`--include-tests`. Replaces the hardcoded `*.spec.*` / `*.test.*` match
-when this list is present.
-
-- `[e.g. **/*.test.ts]` — vitest
-- `[e.g. **/__tests__/**]` — colocated tests
-
-One glob per bullet, with a one-line reason. Do not restate Fallow's
-built-in ignores (`**/dist/**`, `**/*.d.ts`, `node_modules`).
-
 ## Conventions
 
 Which of a short list of style conventions this repo actually follows.
@@ -185,97 +162,92 @@ A repo that throws typed errors and uses Tailwind would set
 `result-types` to `no` and `design-tokens` to `no`; the other rows stay
 at their defaults.
 
-## Audit Settings
+## Audit Configuration
 
-How the audit runs — not the repo's style (that's `## Conventions`).
-**Absent means default:** every category, output under `docs/audit`,
-Fallow required. Setup writes this section at those defaults and does
-not ask about it. `lodestar-audit` may offer to persist a category
-subset here after a run.
+How the audit and `lodestar-fix` behave. **Absent means default:** every
+category, output under `docs/audit`, Fallow required, `mode: all`, ask
+each session before committing, no extra exclusions. Setup writes this
+section at those defaults and does not ask about categories, output-root,
+or fallow. `lodestar-audit` may offer to persist a category subset here
+after a run.
 
-| Setting       | Value        | Notes                                                                                                                                                                |
-| ------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `categories`  | `all`        | `all`, or a comma-separated list of category names (`imports`, `types`, …)                                                                                           |
-| `output-root` | `docs/audit` | Where audit runs land (`<output-root>/<RUN_ID>/`). Relative, no `..`.                                                                                                |
-| `fallow`      | `required`   | `required` (default) stops the audit if Fallow is missing or out of range. `optional` continues with grep-only detectors and lists unchecked subtypes in `INDEX.md`. |
-
-Architecture reports derive from the same root so the two stay together:
-`docs/audit` → `docs/architecture-review`; any other root →
-`<output-root>/architecture-review`.
-
-Unknown keys are ignored. A typo in a known value is an error at audit
-time, not a silent default.
-
-## Audit Scope
-
-Which findings become action items. Discovery still scans the whole
-repo and writes every finding into `findings.md`; this section does
-not narrow the scan. **Absent means
-`mode: all`:** a file with no `## Audit Scope` section expands every
-finding, exactly as today.
-
-| Key             | Value          | Notes                                                                                                            |
-| --------------- | -------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `mode`          | `all`          | `all` expands every finding. `changed-since` expands only findings that touch code changed since `baseline-ref`. |
-| `baseline-ref`  | `[commit sha]` | The adoption commit. Required when `mode: changed-since`.                                                        |
-| `baseline-date` | `[YYYY-MM-DD]` | Human-readable capture date. Informational; never parsed.                                                        |
-
-`mode: changed-since` without a resolvable `baseline-ref` is an error
-at audit time, not a silent fallback to `all`. Out-of-scope findings
-stay in `findings.md` and are counted as a backlog in `INDEX.md`.
-
-Unknown keys are ignored. A typo in a known value is an error at audit
-time, not a silent default.
-
-## Git
-
-How `lodestar-fix` commits. **Absent means default:** ask each session,
-today's subject and trailer, no protected branches, dirty trees allowed.
-A pre-existing file without this section is unchanged.
+Discovery still scans the whole repo; `mode` only decides which findings
+become action items.
 
 | Key              | Value                | Notes                                                                                                                        |
 | ---------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `categories`     | `all`                | `all`, or a comma-separated list of category names (`imports`, `types`, …)                                                   |
+| `output-root`    | `docs/audit`         | Where audit runs land (`<output-root>/<RUN_ID>/`). Relative, no `..`.                                                        |
+| `fallow`         | `required`           | `required` stops if Fallow is missing or out of range. `optional` continues with grep-only detectors.                        |
+| `mode`           | `all`                | `all` expands every finding. `changed-since` expands only findings that touch code changed since `baseline-ref`.             |
+| `baseline-ref`   | `[commit sha]`       | Required when `mode: changed-since`. Omit the row when `mode` is `all`.                                                      |
+| `baseline-date`  | `[YYYY-MM-DD]`       | Human-readable capture date. Informational; never parsed.                                                                    |
 | `commits`        | `ask`                | `ask` keeps today's question. `per-item` commits without asking. `never` never asks and never commits — edits stay unstaged. |
 | `subject-format` | `<category>: <slug>` | Must contain `<slug>`. Also substitutes `<category>`.                                                                        |
 | `trailer`        | `Closes <item>.`     | Body line. `none` for no trailer. `<item>` is the action-item path.                                                          |
 | `protected`      | `none`               | Branches `lodestar-fix` refuses to commit on. Comma-separated names, or `none`.                                              |
 | `require-clean`  | `no`                 | `yes` refuses to start with a dirty working tree.                                                                            |
 
+Architecture reports derive from the same root: `docs/audit` →
+`docs/architecture-review`; any other root →
+`<output-root>/architecture-review`.
+
+`mode: changed-since` without a resolvable `baseline-ref` is an error
+at audit time, not a silent fallback to `all`. Out-of-scope findings
+stay in `findings.md` and are counted as a backlog in `INDEX.md`.
+
 Unknown keys are ignored. A typo in a known value, or a `subject-format`
 with no `<slug>`, is an error at audit time, not a silent default.
 
-Setup detects, then asks once with the table pre-filled: commitlint
-(`commitlint.config.*`, `.commitlintrc*`, `package.json` `commitlint`;
-use its type list — `fix` → `fix(<category>): <slug>`, else `chore` or
-the first type); last ~20 `git log --format=%s` subjects (Conventional
-Commits → same shape; a leading ticket ID has no placeholder — they
-can prefix the template); hooks (`.husky/`, `lefthook.y*ml`, non-sample
-`.git/hooks`; grep prettier / biome / `eslint --fix`); current branch
-(`main`/`master` → propose for `protected`). Defaults otherwise:
-`commits: ask`, trailer `Closes <item>.`, `require-clean: no`.
+Setup detects commit policy, then asks once with the table pre-filled:
+commitlint (`commitlint.config.*`, `.commitlintrc*`, `package.json`
+`commitlint`; use its type list — `fix` → `fix(<category>): <slug>`,
+else `chore` or the first type); last ~20 `git log --format=%s`
+subjects; hooks (`.husky/`, `lefthook.y*ml`, non-sample `.git/hooks`);
+current branch (`main`/`master` → propose for `protected`). Defaults
+otherwise: `commits: ask`, trailer `Closes <item>.`, `require-clean:
+no`.
 
-## Principles
+### Excluded Paths
+
+Globs the audit does not treat as hand-written source. Nested here
+because a glob list is not key/value. **Absent means default:** no extra
+exclusions, and tests match `*.spec.*` / `*.test.*` plus `*.d.ts`.
+
+**Not audited** — generated, vendored, and build output. Skipped entirely
+by every detector and by Fallow `ignorePatterns`.
+
+- `[e.g. packages/db/generated/**]` — Prisma client
+- `[e.g. **/*.gen.ts]` — GraphQL codegen
+
+**Test files** — skipped by default. Detectors that want tests pass
+`--include-tests`. Replaces the hardcoded `*.spec.*` / `*.test.*` match
+when this list is present.
+
+- `[e.g. **/*.test.ts]` — vitest
+- `[e.g. **/__tests__/**]` — colocated tests
+
+One glob per bullet, with a one-line reason. Do not restate Fallow's
+built-in ignores (`**/dist/**`, `**/*.d.ts`, `node_modules`).
+
+## Reference
 
 The principles, TypeScript rules, testability and error-handling rules,
 anti-pattern reference, and pre-commit checklist live in
 `.agents/skills/lodestar-setup/principles.md`. That file is the single
 source of truth — do not copy its content here.
 
-## Skills
-
 The following skills are available. To use one, read its `SKILL.md` and follow it.
 
 | Skill               | File                                            | When to use                                                                                   |
 | ------------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | Setup               | `.agents/skills/lodestar-setup/SKILL.md`        | Re-scaffold or refresh this file                                                              |
-| Audit               | `.agents/skills/lodestar-audit/SKILL.md`        | Scan the codebase and emit action-item files under the `output-root` in `## Audit Settings`   |
+| Audit               | `.agents/skills/lodestar-audit/SKILL.md`        | Scan the codebase and emit action-item files under the `output-root` in Audit Configuration   |
 | Fix audit items     | `.agents/skills/lodestar-fix/SKILL.md`          | Triage and apply fixes from an audit run                                                      |
 | Review architecture | `.agents/skills/lodestar-architecture/SKILL.md` | Get an advisory second opinion on the layout above; optionally have it propose an alternative |
 
-## Audit Output
-
 The audit skill writes one self-contained `.md` file per violation into
-`<output-root>/<run-id>/` (see `## Audit Settings`; default
+`<output-root>/<run-id>/` (see `output-root` above; default
 `docs/audit/<run-id>/`). Each file is independently fixable — hand it
 to an LLM with a prompt like:
 

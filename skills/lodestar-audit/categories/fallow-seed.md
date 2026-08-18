@@ -2,7 +2,7 @@
 
 [`fallow`](https://docs.fallow.tools) is a Rust-native codebase-intelligence
 tool for TS/JS that builds a project-wide module graph in milliseconds. It is
-**required** unless `## Audit Settings` records `fallow: optional`. Several
+**required** unless `## Audit Configuration` records `fallow: optional`. Several
 detection categories have no viable alternative — `imports.unused-file`,
 `imports.unused-dependency`, and `imports.unresolved-import` are fallow-only,
 and the accuracy of several other categories degrades significantly without it.
@@ -118,7 +118,7 @@ For `check.boundary_violations` to fire, the repo must have a `.fallowrc.json`
 whose zones match the `## Package Layout` table in `context.md`. The setup
 skill writes this file (Step 7 of `lodestar-setup`) using the repo's
 own package names as zone names — there is no canonical role mapping.
-Setup also writes `ignorePatterns` from `## Excluded Paths`. Fallow's
+Setup also writes `ignorePatterns` from `### Excluded Paths`. Fallow's
 schema excludes those files from analysis entirely, so `dupes` and
 `health` honor the list without a second copy in `duplicates.ignore` /
 `health.ignore`. Do not restate Fallow's built-in ignores (`**/dist/**`,

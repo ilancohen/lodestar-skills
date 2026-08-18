@@ -858,19 +858,39 @@ export function architectureOutputRoot(outputRoot) {
   return `${normalized}/architecture-review`;
 }
 
-export function parseAuditSettings(contextText) {
-  const settings = {
-    categories: [...CATEGORIES],
-    outputRoot: DEFAULT_OUTPUT_ROOT,
-    fallow: "required",
-  };
-  const heading = contextText.search(/^## Audit Settings\s*$/m);
-  if (heading === -1) return settings;
+export const PRE09_SECTION_HEADINGS = [
+  "Audit Settings",
+  "Audit Scope",
+  "Git",
+  "Excluded Paths",
+  "Principles",
+  "Skills",
+  "Audit Output",
+];
 
+export function rejectPre09Context(contextText) {
+  const found = PRE09_SECTION_HEADINGS.filter((name) =>
+    new RegExp(`^## ${name}\\s*$`, "m").test(contextText),
+  );
+  if (!found.length) return;
+  throw new Error(
+    `.agents/lodestar/context.md uses the pre-0.9 section layout (found: ${found
+      .map((name) => `## ${name}`)
+      .join(", ")}). Re-run lodestar-setup to regenerate it. There is no migration.`,
+  );
+}
+
+function auditConfigurationSection(contextText) {
+  rejectPre09Context(contextText);
+  const heading = contextText.search(/^## Audit Configuration\s*$/m);
+  if (heading === -1) return null;
   const rest = contextText.slice(heading);
   const next = rest.search(/\n## /);
-  const section = next === -1 ? rest : rest.slice(0, next);
+  return next === -1 ? rest : rest.slice(0, next);
+}
 
+function configurationRows(section) {
+  const rows = {};
   for (const line of section.split(/\r?\n/)) {
     if (!line.startsWith("|")) continue;
     const cells = line
@@ -880,28 +900,44 @@ export function parseAuditSettings(contextText) {
     if (cells.length < 2) continue;
     if (/^-+$/.test(cells[0].replace(/:/g, "-"))) continue;
     const key = stripTicks(cells[0]);
-    if (!key || /^setting$/i.test(key)) continue;
-    const raw = stripTicks(cells[1]);
-    if (key === "categories") {
-      settings.categories = parseCategorySetting(raw);
-    } else if (key === "output-root") {
-      settings.outputRoot = parseOutputRootSetting(raw);
-    } else if (key === "fallow") {
-      settings.fallow = parseFallowSetting(raw);
-    }
+    if (!key || /^(key|setting)$/i.test(key)) continue;
+    rows[key] = stripTicks(cells[1]);
+  }
+  return rows;
+}
+
+export function parseAuditSettings(contextText) {
+  const settings = {
+    categories: [...CATEGORIES],
+    outputRoot: DEFAULT_OUTPUT_ROOT,
+    fallow: "required",
+  };
+  const section = auditConfigurationSection(contextText);
+  if (!section) return settings;
+  const rows = configurationRows(section);
+  if (rows.categories !== undefined) {
+    settings.categories = parseCategorySetting(rows.categories);
+  }
+  if (rows["output-root"] !== undefined) {
+    settings.outputRoot = parseOutputRootSetting(rows["output-root"]);
+  }
+  if (rows.fallow !== undefined) {
+    settings.fallow = parseFallowSetting(rows.fallow);
   }
   return settings;
 }
 
 export function parseExcludedPaths(contextText) {
   const result = { excludedPaths: [], testGlobs: [] };
-  const heading = contextText.search(/^## Excluded Paths\s*$/m);
-  if (heading === -1) return result;
-  const rest = contextText.slice(heading);
-  const next = rest.search(/\n## /);
-  const section = next === -1 ? rest : rest.slice(0, next);
+  const section = auditConfigurationSection(contextText);
+  if (!section) return result;
+  const sub = section.search(/^### Excluded Paths\s*$/m);
+  if (sub === -1) return result;
+  const rest = section.slice(sub);
+  const next = rest.search(/\n### /);
+  const excludedSection = next === -1 ? rest : rest.slice(0, next);
   let bucket = "excludedPaths";
-  for (const line of section.split(/\r?\n/)) {
+  for (const line of excludedSection.split(/\r?\n/)) {
     const bullet = line.match(/^\s*[-*]\s+`([^`]+)`/);
     if (bullet) {
       result[bucket].push(bullet[1]);
@@ -929,13 +965,13 @@ function parseCategorySetting(raw) {
     .filter(Boolean);
   if (!names.length) {
     throw new Error(
-      "## Audit Settings has an empty `categories` value. Expected `all` or a comma-separated list of category names.",
+      "## Audit Configuration has an empty `categories` value. Expected `all` or a comma-separated list of category names.",
     );
   }
   const unknown = names.filter((name) => !CATEGORIES.includes(name));
   if (unknown.length) {
     throw new Error(
-      `## Audit Settings has unknown categor${unknown.length === 1 ? "y" : "ies"}: ${unknown
+      `## Audit Configuration has unknown categor${unknown.length === 1 ? "y" : "ies"}: ${unknown
         .map((name) => `\`${name}\``)
         .join(", ")}.`,
     );
@@ -946,18 +982,18 @@ function parseCategorySetting(raw) {
 function parseFallowSetting(raw) {
   if (raw === "required" || raw === "optional") return raw;
   throw new Error(
-    `## Audit Settings has an invalid value for \`fallow\`: \`${raw}\`. Expected required or optional.`,
+    `## Audit Configuration has an invalid value for \`fallow\`: \`${raw}\`. Expected required or optional.`,
   );
 }
 
 function parseOutputRootSetting(raw) {
   if (!raw) {
-    throw new Error("## Audit Settings has an empty `output-root`.");
+    throw new Error("## Audit Configuration has an empty `output-root`.");
   }
   const segments = raw.split(/[/\\]/);
   if (path.isAbsolute(raw) || raw.startsWith("~") || segments.includes("..")) {
     throw new Error(
-      `## Audit Settings has an invalid \`output-root\`: \`${raw}\`. Expected a relative path with no \`..\`.`,
+      `## Audit Configuration has an invalid \`output-root\`: \`${raw}\`. Expected a relative path with no \`..\`.`,
     );
   }
   return raw.replace(/\/$/, "");
@@ -981,32 +1017,19 @@ export function parseGit(contextText) {
     protected: [...GIT_DEFAULTS.protected],
     requireClean: GIT_DEFAULTS.requireClean,
   };
-  const heading = contextText.search(/^## Git\s*$/m);
-  if (heading === -1) return git;
-
-  const rest = contextText.slice(heading);
-  const next = rest.search(/\n## /);
-  const section = next === -1 ? rest : rest.slice(0, next);
-
-  for (const line of section.split(/\r?\n/)) {
-    if (!line.startsWith("|")) continue;
-    const cells = line
-      .split("|")
-      .slice(1, -1)
-      .map((cell) => cell.trim());
-    if (cells.length < 2) continue;
-    if (/^-+$/.test(cells[0].replace(/:/g, "-"))) continue;
-    const key = stripTicks(cells[0]);
-    if (!key || /^key$/i.test(key)) continue;
-    const raw = stripTicks(cells[1]);
-    if (key === "commits") git.commits = parseGitCommits(raw);
-    else if (key === "subject-format") {
-      git.subjectFormat = parseGitSubjectFormat(raw);
-    } else if (key === "trailer") git.trailer = parseGitTrailer(raw);
-    else if (key === "protected") git.protected = parseGitProtected(raw);
-    else if (key === "require-clean") {
-      git.requireClean = parseGitRequireClean(raw);
-    }
+  const section = auditConfigurationSection(contextText);
+  if (!section) return git;
+  const rows = configurationRows(section);
+  if (rows.commits !== undefined) git.commits = parseGitCommits(rows.commits);
+  if (rows["subject-format"] !== undefined) {
+    git.subjectFormat = parseGitSubjectFormat(rows["subject-format"]);
+  }
+  if (rows.trailer !== undefined) git.trailer = parseGitTrailer(rows.trailer);
+  if (rows.protected !== undefined) {
+    git.protected = parseGitProtected(rows.protected);
+  }
+  if (rows["require-clean"] !== undefined) {
+    git.requireClean = parseGitRequireClean(rows["require-clean"]);
   }
   return git;
 }
@@ -1017,36 +1040,21 @@ const SCOPE_MODES = new Set(["all", "changed-since"]);
 
 export function parseAuditScope(contextText) {
   const scope = { mode: SCOPE_DEFAULTS.mode };
-  const heading = contextText.search(/^## Audit Scope\s*$/m);
-  if (heading === -1) return scope;
-
-  const rest = contextText.slice(heading);
-  const next = rest.search(/\n## /);
-  const section = next === -1 ? rest : rest.slice(0, next);
-
-  for (const line of section.split(/\r?\n/)) {
-    if (!line.startsWith("|")) continue;
-    const cells = line
-      .split("|")
-      .slice(1, -1)
-      .map((cell) => cell.trim());
-    if (cells.length < 2) continue;
-    if (/^-+$/.test(cells[0].replace(/:/g, "-"))) continue;
-    const key = stripTicks(cells[0]);
-    if (!key || /^key$/i.test(key)) continue;
-    const raw = stripTicks(cells[1]);
-    if (key === "mode") scope.mode = parseScopeMode(raw);
-    else if (key === "baseline-ref") {
-      const ref = parseOptionalScopeValue(raw);
-      if (ref) scope.baselineRef = ref;
-    } else if (key === "baseline-date") {
-      const date = parseOptionalScopeValue(raw);
-      if (date) scope.baselineDate = date;
-    }
+  const section = auditConfigurationSection(contextText);
+  if (!section) return scope;
+  const rows = configurationRows(section);
+  if (rows.mode !== undefined) scope.mode = parseScopeMode(rows.mode);
+  if (rows["baseline-ref"] !== undefined) {
+    const ref = parseOptionalScopeValue(rows["baseline-ref"]);
+    if (ref) scope.baselineRef = ref;
+  }
+  if (rows["baseline-date"] !== undefined) {
+    const date = parseOptionalScopeValue(rows["baseline-date"]);
+    if (date) scope.baselineDate = date;
   }
   if (scope.mode === "changed-since" && !scope.baselineRef) {
     throw new Error(
-      "## Audit Scope has `mode: changed-since` but no `baseline-ref`.",
+      "## Audit Configuration has `mode: changed-since` but no `baseline-ref`.",
     );
   }
   return scope;
@@ -1055,7 +1063,7 @@ export function parseAuditScope(contextText) {
 function parseScopeMode(raw) {
   if (SCOPE_MODES.has(raw)) return raw;
   throw new Error(
-    `## Audit Scope has an invalid value for \`mode\`: \`${raw}\`. Expected all or changed-since.`,
+    `## Audit Configuration has an invalid value for \`mode\`: \`${raw}\`. Expected all or changed-since.`,
   );
 }
 
@@ -1072,7 +1080,7 @@ function resolveBaselineRef(root, ref) {
   const result = gitAt(root, ["rev-parse", "--verify", `${ref}^{commit}`]);
   if (result.status !== 0) {
     throw new Error(
-      `## Audit Scope \`baseline-ref\` \`${ref}\` does not resolve. History was probably rewritten (force-push or rebase). Re-run lodestar-setup or edit the ref in context.md.`,
+      `## Audit Configuration \`baseline-ref\` \`${ref}\` does not resolve. History was probably rewritten (force-push or rebase). Re-run lodestar-setup or edit the ref in context.md.`,
     );
   }
   return result.stdout.trim();
@@ -1113,17 +1121,17 @@ export function listChangedFiles(root, since, excludedPaths = []) {
 function parseGitCommits(raw) {
   if (GIT_COMMITS.has(raw)) return raw;
   throw new Error(
-    `## Git has an invalid value for \`commits\`: \`${raw}\`. Expected ask, per-item, or never.`,
+    `## Audit Configuration has an invalid value for \`commits\`: \`${raw}\`. Expected ask, per-item, or never.`,
   );
 }
 
 function parseGitSubjectFormat(raw) {
   if (!raw) {
-    throw new Error("## Git has an empty `subject-format`.");
+    throw new Error("## Audit Configuration has an empty `subject-format`.");
   }
   if (!raw.includes("<slug>")) {
     throw new Error(
-      `## Git has an invalid \`subject-format\`: \`${raw}\`. It must contain \`<slug>\`.`,
+      `## Audit Configuration has an invalid \`subject-format\`: \`${raw}\`. It must contain \`<slug>\`.`,
     );
   }
   return raw;
@@ -1132,7 +1140,7 @@ function parseGitSubjectFormat(raw) {
 function parseGitTrailer(raw) {
   if (!raw) {
     throw new Error(
-      "## Git has an empty `trailer`. Use `none` for no trailer.",
+      "## Audit Configuration has an empty `trailer`. Use `none` for no trailer.",
     );
   }
   return raw;
@@ -1151,7 +1159,7 @@ function parseGitProtected(raw) {
 function parseGitRequireClean(raw) {
   if (raw === "yes" || raw === "no") return raw;
   throw new Error(
-    `## Git has an invalid value for \`require-clean\`: \`${raw}\`. Expected yes or no.`,
+    `## Audit Configuration has an invalid value for \`require-clean\`: \`${raw}\`. Expected yes or no.`,
   );
 }
 
@@ -1671,6 +1679,11 @@ function cmdValidateInput(flags) {
     );
   }
   const contextText = fs.readFileSync(contextPath, "utf8");
+  try {
+    rejectPre09Context(contextText);
+  } catch (error) {
+    fail(error.message, 2);
+  }
   let packages;
   try {
     packages = parsePackageLayout(contextText);

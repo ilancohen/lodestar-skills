@@ -19,7 +19,7 @@ Basis: observed import graph, captured 2026-08-18.
 | ------- | ---- | ----- | ----------------------------------- | --------- | ----------------- |
 | app     | src  | n/a   | HTTP routes and request validation  | yes       | index.ts, server  |
 
-## Git
+## Audit Configuration
 
 | Key              | Value                      | Notes |
 | ---------------- | -------------------------- | ----- |

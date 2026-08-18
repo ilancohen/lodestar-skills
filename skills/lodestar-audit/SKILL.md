@@ -12,7 +12,7 @@ license: MIT
 compatibility: >-
   Requires git, a POSIX-compatible shell, Node.js, and Fallow ^3.15.0
   (combined schema 10 or newer) installed in the target project or
-  available on PATH unless Audit Settings records fallow optional.
+  available on PATH unless Audit Configuration records fallow optional.
   Designed for JavaScript/TypeScript repositories. npm, pnpm, yarn, and
   Bun are detected from lockfiles; any other manager works when recorded
   in context.md. Deno and Bazel are not supported.
@@ -46,7 +46,7 @@ This audit is **structure-agnostic**. It does not assume roles like
 3. `## Conventions` — which style conventions the repo follows. Detectors
    skip at a row's skip value (see the Categories table). A missing
    section means every default.
-4. `## Audit Settings` — optional category subset, `output-root`
+4. `## Audit Configuration` — optional category subset, `output-root`
    (default `docs/audit`), and `fallow` (default `required`).
 
 Detectors run package-by-package. Kind-of-code rules use the
@@ -93,7 +93,7 @@ missing Package Layout, placeholder Responsibilities (shorter than 20
 characters, `TODO`/`TBD`/`???`/`one sentence`, or a bare noun like
 `core`), a `Scannable: yes` row with zero TypeScript or JavaScript
 files, an unparseable `## Conventions` value, and an unparseable
-`## Audit Settings` value.
+`## Audit Configuration` value.
 
 Then, unless the user is resuming an existing run, run:
 
@@ -202,7 +202,7 @@ writing or merging `findings.md`.
    is all nine, ask: "Proceed? (yes / pick a subset)". Wait.
    After they pick a subset (this run, or confirming a stored subset),
    ask once: "Write this subset into `.agents/lodestar/context.md`
-   `## Audit Settings` so later runs default to it? (yes / no — this
+   `## Audit Configuration` so later runs default to it? (yes / no — this
    run uses it either way)". On yes, replace the `categories` row; do
    not change `output-root`. Do not ask when they chose all nine, or
    when the stored subset already matches. This edits `context.md`, not
@@ -245,7 +245,7 @@ Follow [references/discover.md](references/discover.md). Summary:
 
 Discovery never modifies application source. The only filesystem writes
 are `<output-root>/<RUN_ID>/`, an optional consented edit of
-`.agents/lodestar/context.md` `## Audit Settings`, and the transient
+`.agents/lodestar/context.md` `## Audit Configuration`, and the transient
 `.audit-fallow-seed.json`
 (delete it after Phase 1).
 
@@ -281,7 +281,7 @@ testability → dry → styling`.
 ## Rules
 
 - **Read-only.** Never modify application source. Writes: `<output-root>/`,
-  an optional consented `## Audit Settings` edit, plus transient
+  an optional consented `## Audit Configuration` edit, plus transient
   `.audit-fallow-seed.json`.
 - **Consent first.** Category subset and Phase 2 start are questions.
   Wait for answers.

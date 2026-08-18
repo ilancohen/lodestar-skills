@@ -34,7 +34,7 @@ or API request shape will hit. Flag findings with
 type is a domain entity (e.g. `domain/`, `entities/`, `model/`), and
 explicitly skip hits in obvious boundary-shape files (`*.dto.ts`,
 `*.request.ts`, `*.response.ts`). Generated client files belong in
-`## Excluded Paths` — do not keep a second local skip list.
+`### Excluded Paths` — do not keep a second local skip list.
 
 ### B. Misplaced business logic
 
@@ -104,7 +104,7 @@ table in `context.md`. Substitute before running.
 Where `<pkg_root>` appears, iterate over every **scannable** row.
 Honor `excludedPaths` / `testGlobs` from `validate-input` on every
 scan; the local `*.request.ts` / `*.response.ts` skip stays, but
-generated-client skips defer to `## Excluded Paths`.
+generated-client skips defer to `### Excluded Paths`.
 
 ```bash
 # A — raw primitives for domain IDs

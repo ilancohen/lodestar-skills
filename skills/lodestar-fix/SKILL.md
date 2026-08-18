@@ -43,8 +43,8 @@ If any are missing, stop and ask the user to run `lodestar-audit` first.
 Capture from the same `validate-input` payload:
 
 - `outputRoot` — where audit runs land.
-- `git` — commit policy. Every key is populated; a missing `## Git`
-  section yields today's defaults (`commits: ask`, subject
+- `git` — commit policy. Every key is populated; a missing git row in
+  `## Audit Configuration` yields today's defaults (`commits: ask`, subject
   `<category>: <slug>`, trailer `Closes <item>.`, no protected
   branches, `require-clean: no`).
 
@@ -126,10 +126,10 @@ surface first (Step 4 — Resuming).
 Set `AUTO_COMMIT` from `sessionCommits` (the Step 1 override, not the
 raw `git.commits` payload):
 
-- `per-item` — `AUTO_COMMIT = yes`. Say so: `## Git` has
+- `per-item` — `AUTO_COMMIT = yes`. Say so: `## Audit Configuration` has
   `commits: per-item`, so each item is committed without asking.
 - `never` — `AUTO_COMMIT = no`. Say so (protected-branch override or
-  `## Git` `commits: never`): edits stay unstaged. Do not ask.
+  `## Audit Configuration` `commits: never`): edits stay unstaged. Do not ask.
 - `ask` — ask today's question:
 
 > Auto-commit each item as it's completed? (yes — one git commit per
@@ -309,7 +309,7 @@ lodestar-fix session complete on <output-root>/<RUN_ID>/.
   skipped:    N
   remaining:  N
 
-Commit policy: <ask | per-item | never> (from ## Git, or session
+Commit policy: <ask | per-item | never> (from ## Audit Configuration, or session
 override on a protected branch).
 
 Of the deferred items, M hit scope-creep limits, N were rejected by a

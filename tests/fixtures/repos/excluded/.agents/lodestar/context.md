@@ -18,7 +18,9 @@ Basis: observed import graph, captured 2026-08-18.
 | ------- | ----------------- | ---------- | ----------------------------------------- |
 | core    | packages/core/src | @repo/core | Domain entities and use cases for billing |
 
-## Excluded Paths
+## Audit Configuration
+
+### Excluded Paths
 
 **Not audited** — generated output.
 

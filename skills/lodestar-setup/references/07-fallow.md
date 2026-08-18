@@ -2,7 +2,7 @@
 
 The audit skill **requires** [fallow](https://docs.fallow.tools) as the
 primary graph-based detector for `imports`, `dry`, and `soc-yagni`
-unless `## Audit Settings` records `fallow: optional`. Configured, it
+unless `## Audit Configuration` records `fallow: optional`. Configured, it
 also supplies wrong-direction findings. Without `.fallowrc.json`,
 boundaries fall back to a heuristic grep.
 
@@ -74,7 +74,7 @@ fenced block). Substitute:
 - One `boundaries.rules[]` per scannable package. `allow` = every
   package reachable from `from` (including cycle partners); acyclic
   chain → everything to the right; tail gets `allow: []`.
-- `ignorePatterns`: one per `## Excluded Paths` glob. Skip Fallow
+- `ignorePatterns`: one per `### Excluded Paths` glob. Skip Fallow
   built-ins. `dupes`/`health` honor it; `extends` replaces arrays.
 
 Write to `.fallowrc.json`. Then ask:

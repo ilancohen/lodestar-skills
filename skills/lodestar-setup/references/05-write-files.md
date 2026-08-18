@@ -24,36 +24,39 @@ This is the load-bearing file. Start from `context-md.md`. Fill in:
 - The Conventions table — the five keys from Step 3, with the confirmed
   values. Use the skip-value polarity from the template (`barrel-exports:
 yes` means barrels are allowed).
-- The Audit Settings table — defaults (`categories: all`, `output-root:
-docs/audit`, `fallow: required`). Do not ask about these. If the user later persists a
+- The Audit Configuration table — defaults (`categories: all`,
+  `output-root: docs/audit`, `fallow: required`) plus Step 2 scope
+  (`mode: all` with no baseline rows, or `mode: changed-since` plus
+  `baseline-ref` and `baseline-date`) and Step 3a git keys. Do not ask
+  about categories, output-root, or fallow. If the user later persists a
   category subset from `lodestar-audit`, leave that row as they wrote it
-  on a re-run unless they ask to reset it.
-- The Audit Scope table — Step 2. `mode: all` with no baseline rows, or
-  `mode: changed-since` plus `baseline-ref` (the captured sha) and
-  `baseline-date` (today). If the section already exists, leave it.
-- Excluded Paths — Step 2 globs; replace wholesale; insert between
-  Package Layout and Conventions if missing. Git table — Step 3a.
+  on a re-run unless they ask to reset it. If `mode` rows already exist,
+  leave them — the baseline does not move on a re-run.
+- Excluded Paths — Step 2 globs as `### Excluded Paths` under Audit
+  Configuration; replace wholesale.
 
-Leave the `## Principles` and `## Skills` sections as the template has
-them — the principles link must stay pointed at
-`.agents/skills/lodestar-setup/principles.md`.
+Leave the `## Reference` section as the template has it — the principles
+link must stay pointed at `.agents/skills/lodestar-setup/principles.md`.
 
-If the file already exists, replace `## Build & Test`,
-`## Dependency Direction`, `## Package Layout`, `## Conventions`,
-`## Excluded Paths`, and `## Git`; leave other user content. If
-`## Conventions` is missing (a pre-0.5 file), insert it between
-`## Package Layout` and `## Principles`. If `## Audit Settings` is
-missing, insert it between `## Conventions` and `## Principles` with
-the defaults above. If it already exists, leave it — a stored category
-subset or output-root must survive a setup re-run. Missing `## Audit
-Scope` → insert between `## Audit Settings` and `## Git` (or
-`## Principles`); if present, leave it. Missing `## Git` → insert after
-`## Audit Scope` when present, else between `## Audit Settings` and
-`## Principles`.
+If the file already exists and still has pre-0.9 headings (`## Audit
+Settings`, `## Audit Scope`, `## Git`, `## Excluded Paths`,
+`## Principles`, `## Skills`, `## Audit Output`), rewrite from the
+template — those files fail the parser until regenerated. If it is
+already the 0.9 shape, replace `## Build & Test`,
+`## Dependency Direction`, `## Package Layout`, and `## Conventions`;
+leave other user content. Do **not** replace `## Audit Configuration`
+wholesale: refresh git keys (`commits`, `subject-format`, `trailer`,
+`protected`, `require-clean`) and `### Excluded Paths` from this run;
+leave `categories`, `output-root`, `fallow`, `mode`, `baseline-ref`,
+and `baseline-date` if those rows are present (unless the user asks to
+reset them). Missing `## Conventions` → insert between
+`## Package Layout` and `## Audit Configuration`. Missing
+`## Audit Configuration` → insert after `## Conventions` (or
+`## Package Layout`) with the defaults above.
 
 Create the `.agents/lodestar/` directory if needed, and write to
 `.agents/lodestar/context.md`. Write it in both enforcement modes —
-Conventions, Audit Scope, and Git included.
+Conventions and Audit Configuration included.
 
 ### AGENTS.md — only in `full` mode
 

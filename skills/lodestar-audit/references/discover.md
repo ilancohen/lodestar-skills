@@ -14,8 +14,8 @@ Use `node scripts/audit-state.mjs validate-input --root <repo>`. It
 returns `packages`, `direction` (acyclic chain order, empty when cyclic),
 `directionGraph` (`chain`, `edges`, `cyclic`, `reachability`),
 `conventions` (every key present; defaults filled when `## Conventions`
-is missing or a row is missing), `scope` (`mode: all` when `## Audit
-Scope` is missing; `changed-since` includes a resolved `baselineRef`),
+is missing or a row is missing), `scope` (`mode: all` when `mode` is
+absent from `## Audit Configuration`; `changed-since` includes a resolved `baselineRef`),
 `commands`,
 `pkgManager`, `run`, `pkgManagerAmbiguous`, `pkgManagerLockfiles`,
 `pkgManagerProvenance` (`lockfile` / `context.md` / `none`),
@@ -80,7 +80,7 @@ Phase 1.
 If Fallow is missing, out of the supported range, or the envelope fails
 the contract:
 
-- `fallow: required` (default, including a missing `## Audit Settings`
+- `fallow: required` (default, including a missing `## Audit Configuration`
   section) — **stop** before writing findings.
 - `fallow: optional` — continue with grep-only detectors. Do not write
   a seed file. Record for `INDEX.md` that these subtypes were **not

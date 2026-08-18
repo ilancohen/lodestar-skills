@@ -27,6 +27,7 @@ import {
   renderFindings,
   parseGit,
   parseAuditScope,
+  rejectPre09Context,
   SCOPE_DEFAULTS,
   parsePackageLayout,
   parseLayoutSource,
@@ -693,7 +694,9 @@ test("parseExcludedPaths defaults to empty lists when the section is absent", ()
 });
 
 test("parseExcludedPaths reads both glob lists", () => {
-  const parsed = parseExcludedPaths(`## Excluded Paths
+  const parsed = parseExcludedPaths(`## Audit Configuration
+
+### Excluded Paths
 
 **Not audited** — generated output.
 
@@ -713,7 +716,9 @@ test("parseExcludedPaths reads both glob lists", () => {
 });
 
 test("parseExcludedPaths does not treat bullet reasons as headings", () => {
-  const parsed = parseExcludedPaths(`## Excluded Paths
+  const parsed = parseExcludedPaths(`## Audit Configuration
+
+### Excluded Paths
 
 **Not audited** — generated output.
 
@@ -739,7 +744,9 @@ test("validate-input fails when a yes row is entirely excluded generated code", 
 | ------- | ---- | ----- | -------------- |
 | db | packages/db/src | @repo/db | Database client and generated Prisma types |
 
-## Excluded Paths
+## Audit Configuration
+
+### Excluded Paths
 
 **Not audited**
 
@@ -764,7 +771,9 @@ test("validate-input emits excludedPaths and testGlobs", () => {
 | ------- | ---- | ----- | -------------- |
 | core | packages/core/src | @repo/core | Domain entities and use cases for billing |
 
-## Excluded Paths
+## Audit Configuration
+
+### Excluded Paths
 
 **Not audited**
 
@@ -893,7 +902,7 @@ test("validate-input rejects a bad conventions value", () => {
 
 function auditSettingsMarkdown(rows) {
   const lines = [
-    "## Audit Settings",
+    "## Audit Configuration",
     "",
     "| Setting | Value | Notes |",
     "| ------- | ----- | ----- |",
@@ -908,6 +917,17 @@ test("parseAuditSettings defaults when the section is absent", () => {
   assert.deepEqual(parsed.categories, CATEGORIES);
   assert.equal(parsed.outputRoot, DEFAULT_OUTPUT_ROOT);
   assert.equal(parsed.fallow, "required");
+});
+
+test("pre-0.9 section names fail closed with a re-run-setup remedy", () => {
+  assert.throws(
+    () => parseAuditSettings("## Audit Settings\n\n| Setting | Value |\n"),
+    /pre-0.9 section layout.*## Audit Settings.*Re-run lodestar-setup/,
+  );
+  assert.throws(
+    () => rejectPre09Context("## Principles\n\nSee principles.md.\n"),
+    /no migration/,
+  );
 });
 
 test("parseAuditSettings parses fallow optional", () => {
@@ -1079,7 +1099,7 @@ test("validate-input reports opted-out conventions and custom output-root", () =
 
 function gitMarkdown(rows) {
   const lines = [
-    "## Git",
+    "## Audit Configuration",
     "",
     "| Key | Value | Notes |",
     "| --- | ----- | ----- |",
@@ -1305,7 +1325,7 @@ test("validate-input bun fixture detects bun from the lockfile", () => {
 
 function scopeMarkdown(rows) {
   const lines = [
-    "## Audit Scope",
+    "## Audit Configuration",
     "",
     "| Key | Value | Notes |",
     "| --- | ----- | ----- |",
@@ -1405,7 +1425,7 @@ test("changed-files includes rename and untracked, excludes deletion", () => {
   );
   fs.writeFileSync(
     path.join(contextDir, "context.md"),
-    `${base}\n## Excluded Paths\n\n- \`**/generated/**\` — generated\n`,
+    `${base}\n## Audit Configuration\n\n### Excluded Paths\n\n- \`**/generated/**\` — generated\n`,
   );
   fs.writeFileSync(path.join(tmp, "kept.ts"), "a\n");
   fs.writeFileSync(path.join(tmp, "renamed-from.ts"), "b\n");
@@ -1763,7 +1783,9 @@ test("derive-direction honors Excluded Paths", () => {
 | core    | packages/core/src | @repo/core | Domain entities and use cases for billing |
 | api     | packages/api/src  | @repo/api  | HTTP routes and request validation        |
 
-## Excluded Paths
+## Audit Configuration
+
+### Excluded Paths
 
 **Not audited**
 

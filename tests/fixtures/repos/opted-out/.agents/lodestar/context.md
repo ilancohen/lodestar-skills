@@ -35,13 +35,12 @@ core → api
 | `design-tokens`  | `no`   | the whole `styling` category                                |
 | `coverage-floor` | `none` | the Testability coverage floor and the pre-commit checklist |
 
-## Audit Settings
+## Audit Configuration
 
-| Setting       | Value     | Notes |
+| Key           | Value     | Notes |
 | ------------- | --------- | ----- |
-| `categories`  | `all`     |       |
 | `output-root` | `docs/qa` |       |
 
-## Principles
+## Reference
 
 See `.agents/skills/lodestar-setup/principles.md`.

@@ -26,12 +26,12 @@ Do not ask about conventions (Step 3) or commit policy (Step 3a) here.
 Do not ask whether the layout is "right" — that's
 `lodestar-architecture`'s job, not setup's.
 Then a second confirmation: excluded-path candidates with evidence,
-one round to add/remove (empty allowed). Write `## Excluded Paths`
-from that answer in both enforcement modes.
+one round to add/remove (empty allowed). Write `### Excluded Paths`
+under `## Audit Configuration` from that answer in both enforcement modes.
 
 Then the audit-scope question. Show the four numbers. Skip the question
-when the repo is not git (`mode: all`) or `## Audit Scope` already
-exists (leave it — the baseline does not move on a re-run).
+when the repo is not git (`mode: all`) or `## Audit Configuration` already
+has `mode` (leave it — the baseline does not move on a re-run).
 Recommend `changed-since` when files ≥ 80 **and** churn < 0.30;
 otherwise `all`. Always show the numbers.
 

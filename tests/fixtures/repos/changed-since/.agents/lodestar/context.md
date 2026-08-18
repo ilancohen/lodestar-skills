@@ -1,7 +1,7 @@
 # Fixture
 
 A long-lived repo that adopted lodestar at a captured commit. Used to
-exercise `## Audit Scope` `mode: changed-since`.
+exercise `## Audit Configuration` `mode: changed-since`.
 
 ## Build & Test
 
@@ -24,7 +24,7 @@ core → api
 | core    | packages/core/src | @repo/core | Domain entities and use cases for billing |
 | api     | packages/api/src  | @repo/api  | HTTP routes and request validation        |
 
-## Audit Scope
+## Audit Configuration
 
 | Key             | Value                                      | Notes |
 | --------------- | ------------------------------------------ | ----- |

@@ -52,7 +52,7 @@ Read only what's needed to fill in the template placeholders:
   - `coverage-floor`: a coverage threshold in the test runner config the
     Build & Test `test` script already points at (vitest / jest / c8
     `coverage.thresholds` or equivalent).
-- **Commit policy** — detect per `context-md.md` `## Git` (commitlint,
+- **Commit policy** — detect per `context-md.md` `## Audit Configuration` (commitlint,
   `git log`, hooks, current branch). Record paths, not a judgment.
 - **Audit-scope measurements** — no source reading. No `.git` → record
   that and skip to `mode: all` with no question. Else four commands:

@@ -12,7 +12,7 @@ node scripts/audit-state.mjs resolve-run --root <repo>
 ```
 
 That command never overwrites an existing run directory. It reads
-`output-root` from `context.md` `## Audit Settings` (default
+`output-root` from `context.md` `## Audit Configuration` (default
 `docs/audit`) and returns `outputRoot`, `architectureRoot`, and `path`.
 Examples below use `<output-root>` for that value.
 
