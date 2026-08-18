@@ -18,7 +18,7 @@ test("this suite repo is pnpm", () => {
 });
 
 function tempRoot() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), "ep-pm-"));
+  return fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-pm-"));
 }
 
 test("detects a single lockfile", () => {

@@ -70,7 +70,7 @@ export function which(name, root = process.cwd()) {
   return null;
 }
 
-export function tempDir(prefix = "ep-skills") {
+export function tempDir(prefix = "lodestar-skills") {
   return fs.mkdtempSync(path.join(os.tmpdir(), `${prefix}-`));
 }
 

@@ -8,7 +8,7 @@ import { checkPackage } from "../scripts/check_package.mjs";
 import { setVersion } from "../scripts/set_version.mjs";
 
 function copyRepo() {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "ep-pkg-"));
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-pkg-"));
   const walk = (from, to) => {
     fs.mkdirSync(to, { recursive: true });
     for (const entry of fs.readdirSync(from, { withFileTypes: true })) {

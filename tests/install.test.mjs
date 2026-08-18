@@ -23,8 +23,8 @@ function emptyEnv() {
 }
 
 test("cwd marker detects cursor", () => {
-  const cwd = tempDir("ep-install-cwd-");
-  const home = tempDir("ep-install-home-");
+  const cwd = tempDir("lodestar-install-cwd-");
+  const home = tempDir("lodestar-install-home-");
   try {
     fs.mkdirSync(path.join(cwd, ".cursor"));
     assert.deepEqual(detectAgents({ cwd, home, env: emptyEnv() }), ["cursor"]);
@@ -35,8 +35,8 @@ test("cwd marker detects cursor", () => {
 });
 
 test("env-only detection", () => {
-  const cwd = tempDir("ep-install-cwd-");
-  const home = tempDir("ep-install-home-");
+  const cwd = tempDir("lodestar-install-cwd-");
+  const home = tempDir("lodestar-install-home-");
   try {
     assert.deepEqual(
       detectAgents({
@@ -53,8 +53,8 @@ test("env-only detection", () => {
 });
 
 test("home-only detection", () => {
-  const cwd = tempDir("ep-install-cwd-");
-  const home = tempDir("ep-install-home-");
+  const cwd = tempDir("lodestar-install-cwd-");
+  const home = tempDir("lodestar-install-home-");
   try {
     fs.mkdirSync(path.join(home, ".codex"));
     assert.deepEqual(detectAgents({ cwd, home, env: emptyEnv() }), ["codex"]);
@@ -65,8 +65,8 @@ test("home-only detection", () => {
 });
 
 test("union of cwd, home, and env", () => {
-  const cwd = tempDir("ep-install-cwd-");
-  const home = tempDir("ep-install-home-");
+  const cwd = tempDir("lodestar-install-cwd-");
+  const home = tempDir("lodestar-install-home-");
   try {
     fs.mkdirSync(path.join(cwd, ".claude"));
     fs.mkdirSync(path.join(home, ".cursor"));
@@ -84,9 +84,27 @@ test("union of cwd, home, and env", () => {
   }
 });
 
+test("defaultSelection pre-selects all four skills", () => {
+  const cwd = tempDir("lodestar-install-cwd-");
+  const home = tempDir("lodestar-install-home-");
+  try {
+    const selection = defaultSelection({ cwd, home, env: emptyEnv() });
+    assert.deepEqual(selection.skills, [
+      "lodestar-setup",
+      "lodestar-audit",
+      "lodestar-fix",
+      "lodestar-architecture",
+    ]);
+    assert.equal(selection.skills.length, 4);
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});
+
 test("defaultSelection falls back to cursor when nothing is detected", () => {
-  const cwd = tempDir("ep-install-cwd-");
-  const home = tempDir("ep-install-home-");
+  const cwd = tempDir("lodestar-install-cwd-");
+  const home = tempDir("lodestar-install-home-");
   try {
     const selection = defaultSelection({ cwd, home, env: emptyEnv() });
     assert.deepEqual(selection.agents, ["cursor"]);
@@ -100,8 +118,8 @@ test("defaultSelection falls back to cursor when nothing is detected", () => {
 });
 
 test("-y argv uses defaults", () => {
-  const cwd = tempDir("ep-install-cwd-");
-  const home = tempDir("ep-install-home-");
+  const cwd = tempDir("lodestar-install-cwd-");
+  const home = tempDir("lodestar-install-home-");
   try {
     fs.mkdirSync(path.join(cwd, ".kiro"));
     const args = parseInstallArgs(["-y"]);
@@ -131,8 +149,8 @@ test("--agent and --skill override defaults", () => {
     "lodestar-setup",
     "lodestar-audit",
   ]);
-  const cwd = tempDir("ep-install-cwd-");
-  const home = tempDir("ep-install-home-");
+  const cwd = tempDir("lodestar-install-cwd-");
+  const home = tempDir("lodestar-install-home-");
   try {
     fs.mkdirSync(path.join(cwd, ".cursor"));
     const selection = resolveSelection(args, { cwd, home, env: emptyEnv() });
@@ -186,7 +204,7 @@ test("empty selection is rejected", () => {
 
 test("resolveSource is . inside this package and the install spec elsewhere", () => {
   assert.equal(resolveSource(ROOT), ".");
-  const cwd = tempDir("ep-install-cwd-");
+  const cwd = tempDir("lodestar-install-cwd-");
   try {
     assert.equal(resolveSource(cwd), INSTALL_SPEC);
   } finally {
@@ -195,8 +213,8 @@ test("resolveSource is . inside this package and the install spec elsewhere", ()
 });
 
 test("runInstall -y does not need a TTY", async () => {
-  const cwd = tempDir("ep-install-cwd-");
-  const home = tempDir("ep-install-home-");
+  const cwd = tempDir("lodestar-install-cwd-");
+  const home = tempDir("lodestar-install-home-");
   try {
     fs.mkdirSync(path.join(cwd, ".cursor"));
     const calls = [];

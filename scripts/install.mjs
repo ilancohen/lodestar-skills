@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Interactive installer. Defaults = detected agents + all skills + project. */
+/** Interactive installer. Defaults = detected agents + all four skills + project. */
 
 import { SKILLS, isMain } from "./lib.mjs";
 import { runSkillsCli } from "./skills-cli.mjs";
@@ -16,12 +16,14 @@ export const HELP = `Usage: node scripts/install.mjs [options]
 
   -y, --yes            Skip prompts; detected agents and all skills
   -a, --agent <id>     Target agent (repeatable; '*' for all)
-  -s, --skill <name>   Skill to install (repeatable; '*' for all)
+  -s, --skill <name>   Skill to install (repeatable; '*' for all).
+                       Default: all four skills
   -g, --global         Install to user directories
   --copy               Copy files instead of symlinking
   -h, --help           Show this help
 
 Enter keeps the pre-selected defaults. Space toggles.
+Skills default to all four; the picker only appears if you pass --skill.
 `;
 
 async function promptSelection(defaults, args) {
@@ -46,13 +48,16 @@ async function promptSelection(defaults, args) {
     required: true,
   });
   quit(agents);
-  const skills = await multiselect({
-    message: "Skills",
-    options: SKILLS.map((name) => ({ value: name, label: name })),
-    initialValues: args.skills ?? defaults.skills,
-    required: true,
-  });
-  quit(skills);
+  let skills = args.skills ?? defaults.skills;
+  if (args.skills) {
+    skills = await multiselect({
+      message: "Skills",
+      options: SKILLS.map((name) => ({ value: name, label: name })),
+      initialValues: args.skills,
+      required: true,
+    });
+    quit(skills);
+  }
   const scope = await select({
     message: "Scope",
     options: [

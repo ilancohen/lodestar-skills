@@ -91,7 +91,7 @@ export function atomicWrite(filePath, contents) {
   }
 }
 
-export function tempDir(prefix = "ep-skills") {
+export function tempDir(prefix = "lodestar-skills") {
   return fs.mkdtempSync(path.join(os.tmpdir(), `${prefix}-`));
 }
 

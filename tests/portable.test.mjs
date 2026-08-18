@@ -28,7 +28,7 @@ function run(script, args, cwd = ROOT) {
 }
 
 test("source-scan finds explicit any and ignores tests", () => {
-  const tmp = tempDir("ep-scan-");
+  const tmp = tempDir("lodestar-scan-");
   try {
     fs.mkdirSync(path.join(tmp, "src"));
     fs.writeFileSync(
@@ -48,7 +48,7 @@ test("source-scan finds explicit any and ignores tests", () => {
 });
 
 test("source-scan handles paths with spaces and CRLF", () => {
-  const parent = tempDir("ep-scan-");
+  const parent = tempDir("lodestar-scan-");
   const tmp = path.join(parent, "my repo");
   try {
     fs.mkdirSync(path.join(tmp, "src"), { recursive: true });
@@ -115,14 +115,14 @@ test("resolve-bin finds node and fails closed on missing bins", () => {
   assert.ok(which("node", ROOT));
   const missing = run(
     path.join(ROOT, "skills/lodestar-setup/scripts/resolve-bin.mjs"),
-    ["definitely-not-a-bin-ep-skills", "--root", ROOT],
+    ["definitely-not-a-bin-lodestar-skills", "--root", ROOT],
   );
   assert.equal(missing.status, 2);
-  assert.match(missing.stderr, /definitely-not-a-bin-ep-skills/);
+  assert.match(missing.stderr, /definitely-not-a-bin-lodestar-skills/);
 });
 
 test("tempDir uses the platform temporary directory", () => {
-  const dir = tempDir("ep-tmp-");
+  const dir = tempDir("lodestar-tmp-");
   try {
     assert.equal(path.dirname(dir), os.tmpdir());
   } finally {
@@ -131,7 +131,7 @@ test("tempDir uses the platform temporary directory", () => {
 });
 
 test("localBin prefers .cmd over the POSIX shim on Windows", () => {
-  const tmp = tempDir("ep-bin-");
+  const tmp = tempDir("lodestar-bin-");
   try {
     const binDir = path.join(tmp, "node_modules", ".bin");
     fs.mkdirSync(binDir, { recursive: true });
