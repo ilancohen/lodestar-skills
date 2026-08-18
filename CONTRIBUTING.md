@@ -6,6 +6,10 @@ The canonical skill implementations live under `skills/`. Product manifests
 and client adapters are thin references only — they must not duplicate
 workflow logic.
 
+`lodestar-setup` step procedures live in
+`skills/lodestar-setup/references/`. `SKILL.md` is the dispatcher — do
+not copy procedure back into it.
+
 This suite uses **pnpm**. In a consuming repository, use that repo's
 npm / yarn / pnpm / Bun setup; ask if the lockfile does not make it obvious.
 
