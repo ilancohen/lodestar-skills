@@ -64,7 +64,10 @@ Phase 2 — PLAN         →  <output-root>/<RUN_ID>/INDEX.md + NNN-….md files
 `findings.md` is the seam. Discover writes finding blocks only — the
 same set under every scope. Plan expands in-scope findings into action
 items. A human may edit `findings.md` between phases, including flipping
-`in_scope`. Both phases are restartable with the same `<RUN_ID>`.
+`in_scope`. Both phases are restartable with the same `<RUN_ID>`. The first run
+under a scope is the working set; `INDEX.md`'s Backlog says how much is
+left and where; a later session promotes one category or package at a
+time without re-discovering.
 
 Never overwrite a previous run. Output stays under
 `<output-root>/<RUN_ID>/` (`outputRoot` from `validate-input` /
@@ -163,6 +166,14 @@ writing or merging `findings.md`.
 2. If `inProgress` is non-empty, ask: "Resume that run? (yes / start a
    fresh run)". Resume with
    `resolve-run --root <repo> --resume <RUN_ID>`.
+   If `inProgress` is empty, look at the latest run directory under
+   `outputRoot` (not only today's date). When `INDEX.md` exists and
+   `findings.md` has any `in_scope: false` (or `## Backlog` total >
+   0), offer: "Promote a backlog slice on `<RUN_ID>`? (yes / start a
+   fresh run)". On yes: `--resume` that id, **skip Discover**, flip
+   `in_scope: true` on the chosen slice (one category, one package, or
+   all), re-run Plan only. Do not re-merge. Do not ask the Discover
+   consent questions.
 3. Print: "Output → `<output-root>/<RUN_ID>/`."
 4. List categories. If `validate-input`'s `categories` is a subset of
    the nine (not all of them), present that subset as the default:
@@ -176,8 +187,17 @@ writing or merging `findings.md`.
    not change `output-root`. Do not ask when they chose all nine, or
    when the stored subset already matches. This edits `context.md`, not
    application source.
-5. After Discover, ask: "Proceed to Phase 2 now? (yes / pause)". If
+5. If `validate-input` `scope.mode` is `changed-since`, present it as
+   the default and offer to widen **this run only** (do not write the
+   answer to `context.md`): keep the baseline / expand every finding /
+   expand the backlog for one category / expand the backlog for one
+   package. Widen-all → omit `--changed-files`. One category or package
+   → after merge, flip those findings to `in_scope: true` before Phase
+   2. A one-run widening is not a policy change.
+6. After Discover, ask: "Proceed to Phase 2 now? (yes / pause)". If
    pause, stop. The run stays resumable.
+
+Skip steps 4–6 and Discover when step 2 chose promote.
 
 Do not scan before those confirmations.
 
@@ -220,9 +240,11 @@ Follow [references/plan.md](references/plan.md). Summary:
 <output-root>/<RUN_ID>`.
 2. Group **in-scope** findings (`in_scope: true`) by `scope_unit`. Write
    `<output-root>/<RUN_ID>/<NNN>-<category>-<slug>.md` from
-   `templates/action-item.md`. Number `001…0NN` with no gaps. Skip files
-   that already exist. Out-of-scope findings are counted in `INDEX.md`
-   Backlog, never dropped.
+   `templates/action-item.md`. First Plan: number `001…0NN` with no
+   gaps. Promotion: skip any finding that already has a
+   `*-<category>-<slug>.md`; new files take IDs from `max(NNN)+1`.
+   Out-of-scope findings are counted in `INDEX.md` Backlog, never
+   dropped.
 3. Validate each file for placeholder leaks.
 4. Write `INDEX.md` from `templates/index.md`. Fill Known blind spots
    from the list in Categories above, plus this run's gated skips,
@@ -256,13 +278,16 @@ testability → dry → styling`.
 - **`requires_decision: true`** is the default for semantic findings.
 - **Don't fix.** Don't propose layout changes; mention
   `lodestar-architecture` in `notes:` if needed.
-- **Restartable.** Interrupted runs resume from checkpoints. Past runs
-  are never modified.
+- **Restartable.** Interrupted runs resume from checkpoints. Past run
+  directories are never replaced. Promoting a backlog slice may append
+  `NNN-*.md` files and rewrite `INDEX.md` in that same run.
 
 ---
 
 ## Re-running
 
 Load [references/resume.md](references/resume.md). Invoke again; resume
-from the last checkpoint. To re-run Plan only, keep `findings.md` and
-delete `NNN-….md` plus `INDEX.md` first.
+from the last checkpoint. To re-run Plan from scratch after editing
+`findings.md`, delete `NNN-….md` plus `INDEX.md` first. To **promote a
+backlog slice**, keep those files: skip Discover, flip `in_scope` on
+the slice, re-run Plan so new files append and `INDEX.md` is rewritten.

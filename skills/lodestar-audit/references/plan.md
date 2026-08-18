@@ -15,8 +15,9 @@ in-scope set by `scope_unit`:
 - Otherwise one action item per finding.
 
 Assign action-item IDs as `001`, `002`, … over the files actually
-written (category table order then file path). No gaps — a scoped run's
-`001…0NN` is the working set, not a sparse subset of all findings.
+written on the **first** Plan (category table order then file path). No
+gaps. On promotion, skip findings that already have a matching
+`*-<category>-<slug>.md`; assign new IDs from `max(existing NNN)+1`.
 Action-item IDs are independent of finding IDs.
 
 Category order for files and INDEX (must match `lodestar-fix`):
@@ -34,8 +35,13 @@ rules, and acceptance check from `categories/<category>.md` with real
 
 Slugs are kebab-case, at most five words.
 
-If that path already exists from an interrupted Plan, skip it. Do not
-overwrite.
+If that path already exists from an interrupted Plan **or a prior
+promotion**, skip it. Do not overwrite.
+
+When promoting a backlog slice onto a finished run, continue IDs from
+the highest existing `NNN` so the new files append. Then rewrite
+`INDEX.md` (Backlog counts must match remaining `in_scope: false`
+findings).
 
 After each file, run
 `node scripts/audit-state.mjs validate-output --path <file>`.

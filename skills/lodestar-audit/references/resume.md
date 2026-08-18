@@ -41,7 +41,11 @@ Returns:
 - `restart-discover` — no `findings.md`
 - `resume-discover` — incomplete categories remain
 - `plan` — Discover complete, Plan not finished
-- `done` — `INDEX.md` exists and Discover is complete
+- `plan` — Discover complete, Plan not finished
+- `done` — `INDEX.md` exists and Discover is complete. If `findings.md`
+  still has `in_scope: false` findings, Phase 2 may run again to
+  promote a slice — do not treat `done` as a stop when the user asked
+  to promote.
 
 Findings are deduplicated and re-IDed. Partial work is kept.
 
@@ -68,6 +72,19 @@ the failed category.
 | During finding merge | `recover`, then `merge-findings` again |
 | After checkpoint | skip completed categories |
 | During Plan | skip existing `NNN-*.md`, continue |
+| Done, backlog remains | flip the slice's `in_scope`, Plan only — do not Discover |
 
-To re-run Plan after editing `findings.md`, delete `NNN-*.md` and
-`INDEX.md` in that run directory only.
+To re-run Plan from scratch after editing `findings.md`, delete
+`NNN-*.md` and `INDEX.md` in that run directory only. To promote a
+backlog slice, do **not** delete them — see below.
+
+## Promote a backlog slice
+
+Do not re-run Discover. Keep `findings.md`. Flip `in_scope: true` on
+the slice to promote (one category, one package, or every finding),
+then re-run Phase 2. Existing `NNN-*.md` files are skipped, so
+promotion is additive. Numbering continues from the highest existing
+ID (`003` on disk → next file is `004`). Rewrite `INDEX.md` so the
+Backlog table matches what remains out of scope.
+
+This is how old code is chipped away: cheap, no second scan.
