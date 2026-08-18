@@ -10,7 +10,9 @@ import {
   assignIds,
   dedupeFindings,
   findPlaceholders,
+  isWrongDirectionImport,
   nextRunId,
+  parseDirection,
   parseFindings,
   parsePackageLayout,
   sortFindings,
@@ -19,6 +21,7 @@ import {
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SCRIPT = path.join(ROOT, "skills/lodestar-audit/scripts/audit-state.mjs");
 const VALID = path.join(ROOT, "tests/fixtures/repos/valid");
+const CYCLIC = path.join(ROOT, "tests/fixtures/repos/cyclic");
 const PLACEHOLDER = path.join(ROOT, "tests/fixtures/repos/placeholder");
 const CLEAN = path.join(ROOT, "tests/fixtures/audit-runs/clean/findings.md");
 const HEAVY = path.join(
@@ -47,6 +50,51 @@ function sha(filePath) {
     .update(fs.readFileSync(filePath))
     .digest("hex");
 }
+
+test("parseDirection acyclic chain preserves reachability", () => {
+  const parsed = parseDirection(
+    "## Dependency Direction\n\ncore → api → shared\n\n## Package Layout",
+  );
+  assert.deepEqual(parsed.chain, ["core", "api", "shared"]);
+  assert.equal(parsed.cyclic, false);
+  assert.deepEqual(parsed.reachability.core, ["core", "api", "shared"]);
+  assert.deepEqual(parsed.reachability.api, ["api", "shared"]);
+  assert.deepEqual(parsed.reachability.shared, ["shared"]);
+});
+
+test("parseDirection reads cyclic edge lists", () => {
+  const parsed = parseDirection(
+    "## Dependency Direction\n\n- core → api (2 imports) [cycle]\n- api → core (1 import) [cycle]\n\nThe graph is cyclic.\n\n## Package Layout",
+  );
+  assert.equal(parsed.chain, null);
+  assert.equal(parsed.cyclic, true);
+  assert.equal(parsed.edges.length, 2);
+  assert.deepEqual(parsed.reachability.core, ["core", "api"]);
+  assert.deepEqual(parsed.reachability.api, ["api", "core"]);
+});
+
+test("documented cycle edges are not wrong-direction imports", () => {
+  const parsed = parseDirection(
+    "## Dependency Direction\n\n- core → api (2 imports) [cycle]\n- api → core (1 import) [cycle]\n\n## Package Layout",
+  );
+  assert.equal(isWrongDirectionImport("core", "api", parsed), false);
+  assert.equal(isWrongDirectionImport("api", "core", parsed), false);
+});
+
+test("acyclic upward imports are wrong-direction", () => {
+  const parsed = parseDirection("## Dependency Direction\n\ncore → api\n\n## Package Layout");
+  assert.equal(isWrongDirectionImport("api", "core", parsed), true);
+  assert.equal(isWrongDirectionImport("core", "api", parsed), false);
+});
+
+test("validate-input returns directionGraph for cyclic fixture", () => {
+  const result = run(["validate-input", "--root", CYCLIC]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.direction.length, 0);
+  assert.equal(payload.directionGraph.cyclic, true);
+  assert.equal(payload.directionGraph.edges.length, 2);
+});
 
 test("nextRunId skips taken dates", () => {
   assert.equal(nextRunId([], "2026-08-10"), "2026-08-10");

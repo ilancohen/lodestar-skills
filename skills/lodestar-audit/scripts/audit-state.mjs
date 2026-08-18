@@ -151,13 +151,194 @@ export function parseCommands(contextText) {
 
 export function parseDirection(contextText) {
   const heading = contextText.search(/^## Dependency Direction\s*$/m);
-  if (heading === -1) return [];
+  if (heading === -1) {
+    return {
+      chain: [],
+      edges: [],
+      cyclic: false,
+      reachability: {},
+    };
+  }
   const rest = contextText.slice(heading);
   const next = rest.search(/\n## /);
   const section = next === -1 ? rest : rest.slice(0, next);
-  const chain = section.match(/([A-Za-z0-9._/-]+(?:\s*→\s*[A-Za-z0-9._/-]+)+)/);
-  if (!chain) return [];
-  return chain[1].split(/\s*→\s*/).map((part) => part.trim());
+
+  const bulletEdges = parseEdgeBullets(section);
+  if (bulletEdges.length) {
+    const packages = collectPackagesFromEdges(bulletEdges);
+    const cyclic =
+      bulletEdges.some((edge) => edge.cycle) || hasDirectedCycle(bulletEdges);
+    return {
+      chain: null,
+      edges: bulletEdges,
+      cyclic,
+      reachability: buildReachabilityFromEdges(packages, bulletEdges),
+    };
+  }
+
+  const chain = parseChain(section);
+  if (chain.length) {
+    const edges = chainToEdges(chain);
+    return {
+      chain,
+      edges,
+      cyclic: false,
+      reachability: buildReachabilityFromChain(chain),
+    };
+  }
+
+  return {
+    chain: [],
+    edges: [],
+    cyclic: false,
+    reachability: {},
+  };
+}
+
+function parseEdgeBullets(section) {
+  const edges = [];
+  for (const line of section.split(/\r?\n/)) {
+    const match = line.match(
+      /^-\s+([A-Za-z0-9._/-]+)\s*→\s*([A-Za-z0-9._/-]+)/,
+    );
+    if (!match) continue;
+    const from = match[1].trim();
+    const to = match[2].trim();
+    const countMatch = line.match(/\((\d+)\s+import/i);
+    edges.push({
+      from,
+      to,
+      count: countMatch ? Number(countMatch[1]) : undefined,
+      cycle: /\[cycle\]/i.test(line),
+    });
+  }
+  return edges;
+}
+
+function parseChain(section) {
+  const fenceMatch = section.match(/```[^\n]*\n([^`]+)```/);
+  if (fenceMatch) {
+    const chainLine = fenceMatch[1].trim().split(/\r?\n/)[0];
+    const chainMatch = chainLine.match(
+      /^([A-Za-z0-9._/-]+(?:\s*→\s*[A-Za-z0-9._/-]+)+)\s*$/,
+    );
+    if (chainMatch) {
+      return chainMatch[1].split(/\s*→\s*/).map((part) => part.trim());
+    }
+  }
+  for (const line of section.split(/\r?\n/)) {
+    if (line.startsWith("-")) continue;
+    const chainMatch = line.match(
+      /^([A-Za-z0-9._/-]+(?:\s*→\s*[A-Za-z0-9._/-]+)+)\s*$/,
+    );
+    if (chainMatch) {
+      return chainMatch[1].split(/\s*→\s*/).map((part) => part.trim());
+    }
+  }
+  return [];
+}
+
+function chainToEdges(chain) {
+  const edges = [];
+  for (let i = 0; i < chain.length - 1; i += 1) {
+    edges.push({ from: chain[i], to: chain[i + 1] });
+  }
+  return edges;
+}
+
+function collectPackagesFromEdges(edges) {
+  const names = new Set();
+  for (const edge of edges) {
+    names.add(edge.from);
+    names.add(edge.to);
+  }
+  return [...names];
+}
+
+function buildReachabilityFromChain(chain) {
+  const reachability = {};
+  for (let i = 0; i < chain.length; i += 1) {
+    reachability[chain[i]] = chain.slice(i);
+  }
+  return reachability;
+}
+
+function buildReachabilityFromEdges(packages, edges) {
+  const reachability = {};
+  for (const pkg of packages) {
+    reachability[pkg] = reachableFrom(pkg, edges);
+  }
+  return reachability;
+}
+
+function reachableFrom(start, edges) {
+  const allowed = new Set([start]);
+  const queue = [start];
+  while (queue.length) {
+    const current = queue.pop();
+    for (const edge of edges) {
+      if (edge.from !== current || allowed.has(edge.to)) continue;
+      allowed.add(edge.to);
+      queue.push(edge.to);
+    }
+  }
+  const rest = [...allowed].filter((name) => name !== start).sort();
+  return [start, ...rest];
+}
+
+function hasDirectedCycle(edges) {
+  const nodes = collectPackagesFromEdges(edges);
+  const visiting = new Set();
+  const visited = new Set();
+  const adjacency = new Map(nodes.map((name) => [name, []]));
+  for (const edge of edges) {
+    adjacency.get(edge.from).push(edge.to);
+  }
+  function visit(node) {
+    if (visited.has(node)) return false;
+    if (visiting.has(node)) return true;
+    visiting.add(node);
+    for (const next of adjacency.get(node) || []) {
+      if (visit(next)) return true;
+    }
+    visiting.delete(node);
+    visited.add(node);
+    return false;
+  }
+  for (const node of nodes) {
+    if (visit(node)) return true;
+  }
+  return false;
+}
+
+export function isDocumentedCycleEdge(from, to, edges) {
+  return (
+    edges.some((edge) => edge.from === from && edge.to === to) &&
+    edges.some((edge) => edge.from === to && edge.to === from)
+  );
+}
+
+export function isWrongDirectionImport(from, to, directionGraph) {
+  if (!from || !to || from === to) return false;
+  const edges = directionGraph.edges || [];
+  if (isDocumentedCycleEdge(from, to, edges)) return false;
+  return canReach(edges, to, from);
+}
+
+function canReach(edges, start, end) {
+  if (start === end) return true;
+  const visited = new Set([start]);
+  const queue = [start];
+  while (queue.length) {
+    const current = queue.pop();
+    for (const edge of edges) {
+      if (edge.from !== current || visited.has(edge.to)) continue;
+      if (edge.to === end) return true;
+      visited.add(edge.to);
+      queue.push(edge.to);
+    }
+  }
+  return false;
 }
 
 export function aliasPrefix(packages) {
@@ -412,11 +593,12 @@ function cmdValidateInput(flags) {
     fail(error.message, 2);
   }
   const commands = parseCommands(contextText);
-  const direction = parseDirection(contextText);
+  const directionGraph = parseDirection(contextText);
   const detected = detectPkgManager(root);
   printJson({
     packages,
-    direction,
+    direction: directionGraph.chain ?? [],
+    directionGraph,
     commands,
     pkgManager: detected.pkgManager,
     run: detected.run,

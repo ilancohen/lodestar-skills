@@ -19,9 +19,8 @@ subtype #6 uses the grep heuristic below.
 2. **Missing re-export** — an external consumer needs something that isn't
    exported from the source package's `index.ts`.
 
-3. **Circular import** — `A` imports `B` and `B` imports `A`. The lower-
-   level package (per the dependency direction in `context.md`) should not
-   import from the higher-level one.
+3. **Circular import** — `A` imports `B` and `B` imports `A`. Documented
+   cycle edges in `context.md` surface here, not as wrong-direction (#6).
 
 4. **`export *` barrel** — `index.ts` re-exports everything from a sub-module
    without naming what's exported.
@@ -29,11 +28,14 @@ subtype #6 uses the grep heuristic below.
 5. **Over-broad API surface** — an `index.ts` export that has no external
    consumer (used only inside the package, or not used at all).
 
-6. **Wrong-direction dependency** — an import that violates the dependency
-   direction declared in `context.md` (e.g. with direction
-   `web → server → core → shared`, `core` may not import from `server`,
-   and `shared` may not import from anywhere). Includes both intra-monorepo
-   alias imports and relative imports crossing package boundaries.
+6. **Wrong-direction dependency** — an import that opposes a documented edge
+   or documented path in `context.md` (e.g. with observed chain
+   `web → server → core → shared`, `server` importing `web` opposes the
+   documented `web → server` path). Includes intra-monorepo alias imports and
+   relative imports crossing package boundaries. Edges of a documented cycle
+   are documented in both directions, so they are **not** #6 findings — they
+   surface under #3 `circular-import` instead. New downward imports consistent
+   with the documented graph are not violations until `context.md` is updated.
 
 7. **Unused file** — a source file that no entry point reaches transitively.
    Detected only when the fallow seed runs (`check.unused_files[]`).
@@ -95,19 +97,21 @@ node scripts/source-scan.mjs --recipe barrel-reexport --root <pkg_root>
 #   Symbols with zero hits outside P are over-exports.
 
 # 6 — direction grep fallback when neither fallow nor check:deps is available
-#   Parse the dependency direction from context.md (e.g. web → server → core → shared).
-#   For each package P in the chain, the allowed import sources are P itself
-#   and every package to its right. For each `from '<alias>'` import in P,
-#   check that <alias> resolves to an allowed package. Anything else is a
-#   direction violation.
+#   Run `node scripts/audit-state.mjs validate-input --root <repo>` and read
+#   `directionGraph.reachability`. For each package P, allowed import targets
+#   are the packages in `reachability[P]` (self plus every package reachable
+#   from P in the documented graph). For each `from '<alias>'` import in P,
+#   check that <alias> resolves to an allowed package.
 #
-#   Concretely: iterate <packages>; for each P, build `<forbidden_aliases>`
-#   as the aliases of all packages to its left in the chain (i.e. higher
-#   layers). Then for each forbidden alias A:
+#   Wrong-direction: an import opposes a documented edge or path — i.e. the
+#   importer imports a package that can reach the importer in the documented
+#   graph, unless both directions of a documented cycle edge are recorded
+#   (those are #3, not #6). Use `directionGraph` from validate-input rather
+#   than walking a chain left-to-right.
 #
-#     grep -rn "from '<A>'" <pkg_root_of_P> --include="*.ts" --include="*.tsx"
-#
-#   Each hit is a wrong-direction import.
+#   Concretely: for importer P importing alias A (target package T), flag #6
+#   when T can reach P in the documented graph and the T↔P pair is not a
+#   documented cycle edge pair.
 ```
 
 ### Cross-tool deduplication

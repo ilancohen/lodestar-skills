@@ -11,9 +11,10 @@ is never read.
 ## Package set
 
 Use `node scripts/audit-state.mjs validate-input --root <repo>`. It
-returns `packages`, `direction`, `commands`, `pkgManager`, `run`,
-`pkgManagerAmbiguous`, `pkgManagerLockfiles`, `allPkgRoots`, and
-`aliasPrefix`.
+returns `packages`, `direction` (acyclic chain order, empty when cyclic),
+`directionGraph` (`chain`, `edges`, `cyclic`, `reachability`), `commands`,
+`pkgManager`, `run`, `pkgManagerAmbiguous`, `pkgManagerLockfiles`,
+`allPkgRoots`, and `aliasPrefix`.
 
 If `pkgManager` is `null` / `pkgManagerAmbiguous` is true, **ask the
 user** which of npm, yarn, or pnpm to use before running any install or
