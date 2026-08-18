@@ -2,11 +2,12 @@
 /**
  * Deterministic audit-state helper. Installed with lodestar-audit.
  *
- * Subcommands: resolve-run, validate-input, merge-findings,
+ * Subcommands: resolve-run, validate-input, changed-files, merge-findings,
  * validate-output, checkpoint, recover
  */
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 import { parsePkgManagerRow, resolvePkgManager } from "./pkg-manager.mjs";
 import {
   atomicWrite,
@@ -16,7 +17,7 @@ import {
   printJson,
   utcDate,
 } from "./runtime.mjs";
-import { DEFAULT_INCLUDE, walk } from "./source-scan.mjs";
+import { DEFAULT_INCLUDE, matchesGlob, walk } from "./source-scan.mjs";
 
 export { detectPkgManager, resolvePkgManager } from "./pkg-manager.mjs";
 
@@ -43,6 +44,7 @@ function usage() {
 Commands:
   resolve-run --root DIR [--date YYYY-MM-DD] [--resume RUN_ID]
   validate-input --root DIR
+  changed-files --root DIR --since REF
   merge-findings --in FILE [--in FILE ...] [--out FILE]
   validate-output --path FILE
   checkpoint --run-dir DIR --category NAME --status complete|partial --count N [--package NAME]
@@ -528,6 +530,109 @@ export function parseGit(contextText) {
   return git;
 }
 
+export const SCOPE_DEFAULTS = { mode: "all" };
+
+const SCOPE_MODES = new Set(["all", "changed-since"]);
+
+export function parseAuditScope(contextText) {
+  const scope = { mode: SCOPE_DEFAULTS.mode };
+  const heading = contextText.search(/^## Audit Scope\s*$/m);
+  if (heading === -1) return scope;
+
+  const rest = contextText.slice(heading);
+  const next = rest.search(/\n## /);
+  const section = next === -1 ? rest : rest.slice(0, next);
+
+  for (const line of section.split(/\r?\n/)) {
+    if (!line.startsWith("|")) continue;
+    const cells = line
+      .split("|")
+      .slice(1, -1)
+      .map((cell) => cell.trim());
+    if (cells.length < 2) continue;
+    if (/^-+$/.test(cells[0].replace(/:/g, "-"))) continue;
+    const key = stripTicks(cells[0]);
+    if (!key || /^key$/i.test(key)) continue;
+    const raw = stripTicks(cells[1]);
+    if (key === "mode") scope.mode = parseScopeMode(raw);
+    else if (key === "baseline-ref") {
+      const ref = parseOptionalScopeValue(raw);
+      if (ref) scope.baselineRef = ref;
+    } else if (key === "baseline-date") {
+      const date = parseOptionalScopeValue(raw);
+      if (date) scope.baselineDate = date;
+    }
+  }
+  if (scope.mode === "changed-since" && !scope.baselineRef) {
+    throw new Error(
+      "## Audit Scope has `mode: changed-since` but no `baseline-ref`.",
+    );
+  }
+  return scope;
+}
+
+function parseScopeMode(raw) {
+  if (SCOPE_MODES.has(raw)) return raw;
+  throw new Error(
+    `## Audit Scope has an invalid value for \`mode\`: \`${raw}\`. Expected all or changed-since.`,
+  );
+}
+
+function parseOptionalScopeValue(raw) {
+  if (!raw || /^\[[^\]]+\]$/.test(raw)) return "";
+  return raw;
+}
+
+function gitAt(root, args) {
+  return spawnSync("git", ["-C", root, ...args], { encoding: "utf8" });
+}
+
+function resolveBaselineRef(root, ref) {
+  const result = gitAt(root, ["rev-parse", "--verify", `${ref}^{commit}`]);
+  if (result.status !== 0) {
+    throw new Error(
+      `## Audit Scope \`baseline-ref\` \`${ref}\` does not resolve. History was probably rewritten (force-push or rebase). Re-run lodestar-setup or edit the ref in context.md.`,
+    );
+  }
+  return result.stdout.trim();
+}
+
+export function listChangedFiles(root, since, excludedPaths = []) {
+  const diff = gitAt(root, [
+    "diff",
+    "--name-status",
+    "--find-renames",
+    `${since}...HEAD`,
+  ]);
+  if (diff.status !== 0) {
+    throw new Error(
+      diff.stderr.trim() || `git diff ${since}...HEAD failed`,
+    );
+  }
+  const untracked = gitAt(root, [
+    "ls-files",
+    "--others",
+    "--exclude-standard",
+  ]);
+  if (untracked.status !== 0) {
+    throw new Error(untracked.stderr.trim() || "git ls-files failed");
+  }
+  const paths = new Set();
+  for (const line of diff.stdout.split("\n").filter(Boolean)) {
+    const parts = line.split("\t");
+    const status = parts[0][0];
+    if (status === "D") continue;
+    const filePath = status === "R" || status === "C" ? parts[2] : parts[1];
+    if (filePath) paths.add(filePath.replace(/\\/g, "/"));
+  }
+  for (const filePath of untracked.stdout.split("\n").filter(Boolean)) {
+    paths.add(filePath.replace(/\\/g, "/"));
+  }
+  return [...paths]
+    .filter((filePath) => !excludedPaths.some((glob) => matchesGlob(filePath, glob)))
+    .sort();
+}
+
 function parseGitCommits(raw) {
   if (GIT_COMMITS.has(raw)) return raw;
   throw new Error(
@@ -990,11 +1095,19 @@ function cmdValidateInput(flags) {
   let auditSettings;
   let excluded;
   let git;
+  let scope;
   try {
     conventions = parseConventions(contextText);
     auditSettings = parseAuditSettings(contextText);
     excluded = parseExcludedPaths(contextText);
     git = parseGit(contextText);
+    scope = parseAuditScope(contextText);
+    if (scope.mode === "changed-since") {
+      scope = {
+        ...scope,
+        baselineRef: resolveBaselineRef(root, scope.baselineRef),
+      };
+    }
   } catch (error) {
     fail(error.message, 2);
   }
@@ -1017,6 +1130,7 @@ function cmdValidateInput(flags) {
     excludedPaths: excluded.excludedPaths,
     testGlobs: excluded.testGlobs,
     git,
+    scope,
     commands,
     pkgManager: detected.pkgManager,
     run: detected.run,
@@ -1026,6 +1140,28 @@ function cmdValidateInput(flags) {
     allPkgRoots: scannablePackages.map((row) => row.path).join(" "),
     aliasPrefix: aliasPrefix(scannablePackages),
   });
+}
+
+function cmdChangedFiles(flags) {
+  const root = flags.root || process.cwd();
+  const since = flags.since;
+  if (!since) fail("changed-files requires --since REF", 2);
+  const contextPath = path.join(root, ".agents", "lodestar", "context.md");
+  let excludedPaths = [];
+  if (fs.existsSync(contextPath)) {
+    try {
+      excludedPaths = parseExcludedPaths(
+        fs.readFileSync(contextPath, "utf8"),
+      ).excludedPaths;
+    } catch (error) {
+      fail(error.message, 2);
+    }
+  }
+  try {
+    printJson(listChangedFiles(root, since, excludedPaths));
+  } catch (error) {
+    fail(error.message, 2);
+  }
 }
 
 function cmdMergeFindings(flags) {
@@ -1195,6 +1331,7 @@ function cmdRecover(flags) {
 const COMMANDS = {
   "resolve-run": cmdResolveRun,
   "validate-input": cmdValidateInput,
+  "changed-files": cmdChangedFiles,
   "merge-findings": cmdMergeFindings,
   "validate-output": cmdValidateOutput,
   checkpoint: cmdCheckpoint,

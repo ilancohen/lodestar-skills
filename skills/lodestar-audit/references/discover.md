@@ -14,7 +14,9 @@ Use `node scripts/audit-state.mjs validate-input --root <repo>`. It
 returns `packages`, `direction` (acyclic chain order, empty when cyclic),
 `directionGraph` (`chain`, `edges`, `cyclic`, `reachability`),
 `conventions` (every key present; defaults filled when `## Conventions`
-is missing or a row is missing), `commands`,
+is missing or a row is missing), `scope` (`mode: all` when `## Audit
+Scope` is missing; `changed-since` includes a resolved `baselineRef`),
+`commands`,
 `pkgManager`, `run`, `pkgManagerAmbiguous`, `pkgManagerLockfiles`,
 `pkgManagerProvenance` (`lockfile` / `context.md` / `none`),
 `allPkgRoots`, `aliasPrefix`, `excludedPaths`, and `testGlobs`.
@@ -60,6 +62,9 @@ Substitute placeholders literally before any detector command:
 Never run a command that still contains `<placeholder>` text. The
 Responsibility column is advisory context for judgment detectors, not a
 string to pattern-match.
+
+Every detector runs repo-wide under every scope. Scope is applied when
+findings are merged, never when files are selected.
 
 ## Fallow seed
 

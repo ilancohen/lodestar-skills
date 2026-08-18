@@ -24,6 +24,8 @@ import {
   parseExcludedPaths,
   parseFindings,
   parseGit,
+  parseAuditScope,
+  SCOPE_DEFAULTS,
   parsePackageLayout,
   sortFindings,
 } from "../skills/lodestar-audit/scripts/audit-state.mjs";
@@ -140,6 +142,7 @@ test("validate-input accepts a real layout and does not touch source", () => {
   assert.equal(payload.architectureRoot, "docs/architecture-review");
   assert.equal(payload.fallow, "required");
   assert.deepEqual(payload.git, GIT_DEFAULTS);
+  assert.deepEqual(payload.scope, SCOPE_DEFAULTS);
   assert.equal(sha(source), before);
 });
 
@@ -1033,5 +1036,125 @@ test("validate-input bun fixture detects bun from the lockfile", () => {
   assert.equal(payload.run, "bunx");
   assert.equal(payload.pkgManagerProvenance, "lockfile");
   assert.deepEqual(payload.git, GIT_DEFAULTS);
+});
+
+function scopeMarkdown(rows) {
+  const lines = [
+    "## Audit Scope",
+    "",
+    "| Key | Value | Notes |",
+    "| --- | ----- | ----- |",
+    ...rows.map(([key, value]) => `| \`${key}\` | \`${value}\` | x |`),
+    "",
+  ];
+  return lines.join("\n");
+}
+
+function gitOk(cwd, args) {
+  const result = spawnSync("git", ["-C", cwd, ...args], { encoding: "utf8" });
+  assert.equal(result.status, 0, result.stderr);
+  return result;
+}
+
+test("parseAuditScope defaults when the section is absent", () => {
+  assert.deepEqual(parseAuditScope("# Fixture\n\n## Package Layout\n"), {
+    mode: "all",
+  });
+});
+
+test("parseAuditScope parses changed-since", () => {
+  const parsed = parseAuditScope(
+    scopeMarkdown([
+      ["mode", "changed-since"],
+      ["baseline-ref", "abc1234"],
+      ["baseline-date", "2026-08-18"],
+    ]),
+  );
+  assert.deepEqual(parsed, {
+    mode: "changed-since",
+    baselineRef: "abc1234",
+    baselineDate: "2026-08-18",
+  });
+});
+
+test("parseAuditScope ignores unknown keys", () => {
+  const parsed = parseAuditScope(
+    scopeMarkdown([
+      ["mode", "all"],
+      ["extra", "nope"],
+    ]),
+  );
+  assert.deepEqual(parsed, { mode: "all" });
+});
+
+test("parseAuditScope rejects a bad mode", () => {
+  assert.throws(
+    () => parseAuditScope(scopeMarkdown([["mode", "new-only"]])),
+    /invalid value for `mode`/,
+  );
+});
+
+test("parseAuditScope rejects changed-since without a baseline-ref", () => {
+  assert.throws(
+    () => parseAuditScope(scopeMarkdown([["mode", "changed-since"]])),
+    /no `baseline-ref`/,
+  );
+});
+
+test("validate-input rejects an unresolvable baseline-ref", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-audit-"));
+  const contextDir = path.join(tmp, ".agents", "lodestar");
+  fs.mkdirSync(contextDir, { recursive: true });
+  const base = fs.readFileSync(
+    path.join(VALID, ".agents/lodestar/context.md"),
+    "utf8",
+  );
+  fs.writeFileSync(
+    path.join(contextDir, "context.md"),
+    `${base}\n${scopeMarkdown([
+      ["mode", "changed-since"],
+      ["baseline-ref", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"],
+    ])}\n`,
+  );
+  const result = run(["validate-input", "--root", tmp]);
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /does not resolve/);
+  assert.match(result.stderr, /deadbeefdeadbeefdeadbeefdeadbeefdeadbeef/);
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test("changed-files includes rename and untracked, excludes deletion", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-changed-"));
+  gitOk(tmp, ["init", "-b", "main"]);
+  gitOk(tmp, ["config", "user.email", "test@example.com"]);
+  gitOk(tmp, ["config", "user.name", "Test"]);
+  const contextDir = path.join(tmp, ".agents", "lodestar");
+  fs.mkdirSync(contextDir, { recursive: true });
+  const base = fs.readFileSync(
+    path.join(VALID, ".agents/lodestar/context.md"),
+    "utf8",
+  );
+  fs.writeFileSync(
+    path.join(contextDir, "context.md"),
+    `${base}\n## Excluded Paths\n\n- \`**/generated/**\` — generated\n`,
+  );
+  fs.writeFileSync(path.join(tmp, "kept.ts"), "a\n");
+  fs.writeFileSync(path.join(tmp, "renamed-from.ts"), "b\n");
+  fs.writeFileSync(path.join(tmp, "deleted.ts"), "c\n");
+  gitOk(tmp, ["add", "."]);
+  gitOk(tmp, ["commit", "-m", "base"]);
+  const since = gitOk(tmp, ["rev-parse", "HEAD"]).stdout.trim();
+  gitOk(tmp, ["mv", "renamed-from.ts", "renamed-to.ts"]);
+  fs.unlinkSync(path.join(tmp, "deleted.ts"));
+  fs.writeFileSync(path.join(tmp, "untracked.ts"), "d\n");
+  fs.mkdirSync(path.join(tmp, "generated"));
+  fs.writeFileSync(path.join(tmp, "generated", "skip.ts"), "e\n");
+  gitOk(tmp, ["add", "-u"]);
+  gitOk(tmp, ["commit", "-m", "change"]);
+  const result = run(["changed-files", "--root", tmp, "--since", since]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.deepEqual(payload, ["renamed-to.ts", "untracked.ts"]);
+  fs.rmSync(tmp, { recursive: true, force: true });
 });
 
