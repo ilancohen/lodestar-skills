@@ -95,6 +95,23 @@ characters, `TODO`/`TBD`/`???`/`one sentence`, or a bare noun like
 files, an unparseable `## Conventions` value, and an unparseable
 `## Audit Settings` value.
 
+Then, unless the user is resuming an existing run, run:
+
+```text
+node scripts/audit-state.mjs check-freshness --root <repo>
+```
+
+Exit 0: continue. Exit 2: print the stderr list and ask once:
+
+> `.agents/lodestar/context.md` no longer matches the repo: [list].
+> Proceed with the audit on this basis, or stop and re-run
+> `lodestar-setup` first? (proceed / stop)
+
+On stop, create no run directory. Do not run `lodestar-setup` inline.
+On proceed, pass the stdout JSON to `resolve-run` as `--drift`. A
+resumed run does not re-run `check-freshness`; it inherits the `drift`
+key recorded at creation.
+
 A package marked `Scannable: no` is listed in `INDEX.md`'s
 known-blind-spots by name and reason (`worker` — Python, not scanned).
 It is excluded from `allPkgRoots` and from every detector. In a
@@ -161,7 +178,8 @@ before writing action items. Load
 [references/output-contracts.md](references/output-contracts.md) before
 writing or merging `findings.md`.
 
-1. Run `node scripts/audit-state.mjs resolve-run --root <repo>`.
+1. Run `node scripts/audit-state.mjs resolve-run --root <repo>`
+   (add `--drift '<json>'` when Preconditions chose proceed).
    Capture `outputRoot` and `path` from the JSON.
 2. If `inProgress` is non-empty, ask: "Resume that run? (yes / start a
    fresh run)". Resume with
@@ -266,8 +284,9 @@ testability → dry → styling`.
   Wait for answers.
 - **Stop conditions:** missing setup files; `validate-input` failure
   (including a `Scannable: yes` package with zero scannable files);
-  Fallow missing or invalid when `fallow` is `required`;
-  required commands missing; the user says stop.
+  freshness drift when the user chooses stop; Fallow missing or invalid
+  when `fallow` is `required`; required commands missing; the user says
+  stop.
 - **In-scope only.** Write an action item only for `in_scope: true`.
   The backlog is reported in `INDEX.md`, never silently dropped.
 - **One concern per action item.** Split "and also…".

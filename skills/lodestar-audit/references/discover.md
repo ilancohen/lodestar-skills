@@ -32,6 +32,9 @@ known-blind-spots (`<name>` — `<language>, not scanned`).
 zero TypeScript or JavaScript files. Category sub-docs that say to
 iterate every Package Layout row mean every `scannable: yes` row.
 
+`check-freshness` already ran in Preconditions. Do not re-run it here.
+A resumed run inherits the `drift` key in `.checkpoint.json`.
+
 `conventions` keys: `result-types`, `branded-types`, `barrel-exports`,
 `design-tokens` (`yes` / `no`), and `coverage-floor` (positive integer or
 `none`). Defaults: `yes`, `yes`, `no`, `yes`, `80`. Unknown table keys

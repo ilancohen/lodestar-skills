@@ -897,6 +897,88 @@ test("resolve-run honors a custom output-root", () => {
   fs.rmSync(tmp, { recursive: true, force: true });
 });
 
+test("resolve-run --drift writes the payload and checkpoint keeps it", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-audit-"));
+  const drift = {
+    fresh: false,
+    layoutSource: "pnpm-workspace.yaml",
+    drift: [
+      {
+        fact: "missing-package",
+        recorded: "no matching row in ## Package Layout",
+        observed: "packages/worker",
+        remedy:
+          "Re-run lodestar-setup to add `packages/worker` to ## Package Layout.",
+      },
+    ],
+    skipped: [],
+  };
+  const created = run([
+    "resolve-run",
+    "--root",
+    tmp,
+    "--date",
+    "2026-08-18",
+    "--drift",
+    JSON.stringify(drift),
+  ]);
+  assert.equal(created.status, 0, created.stderr);
+  const payload = JSON.parse(created.stdout);
+  const marker = path.join(payload.path, ".checkpoint.json");
+  assert.deepEqual(JSON.parse(fs.readFileSync(marker, "utf8")).drift, drift);
+  const checkpoint = run([
+    "checkpoint",
+    "--run-dir",
+    payload.path,
+    "--category",
+    "imports",
+    "--status",
+    "complete",
+    "--count",
+    "0",
+  ]);
+  assert.equal(checkpoint.status, 0, checkpoint.stderr);
+  const after = JSON.parse(fs.readFileSync(marker, "utf8"));
+  assert.deepEqual(after.drift, drift);
+  assert.equal(after.category, "imports");
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test("resolve-run without --drift creates no drift key", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-audit-"));
+  const created = run([
+    "resolve-run",
+    "--root",
+    tmp,
+    "--date",
+    "2026-08-18",
+  ]);
+  assert.equal(created.status, 0, created.stderr);
+  const payload = JSON.parse(created.stdout);
+  assert.equal(
+    fs.existsSync(path.join(payload.path, ".checkpoint.json")),
+    false,
+  );
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test("resolve-run rejects malformed --drift", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-audit-"));
+  const result = run([
+    "resolve-run",
+    "--root",
+    tmp,
+    "--date",
+    "2026-08-18",
+    "--drift",
+    "[1]",
+  ]);
+  assert.equal(result.status, 1, result.stderr);
+  assert.match(result.stderr, /invalid --drift/);
+  assert.equal(fs.existsSync(path.join(tmp, "docs")), false);
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
 test("validate-input reports opted-out conventions and custom output-root", () => {
   const result = run(["validate-input", "--root", OPTED_OUT]);
   assert.equal(result.status, 0, result.stderr);

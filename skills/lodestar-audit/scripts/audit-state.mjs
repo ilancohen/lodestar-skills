@@ -42,7 +42,7 @@ function usage() {
   process.stderr.write(`Usage: audit-state <command> [options]
 
 Commands:
-  resolve-run --root DIR [--date YYYY-MM-DD] [--resume RUN_ID]
+  resolve-run --root DIR [--date YYYY-MM-DD] [--resume RUN_ID] [--drift JSON]
   validate-input --root DIR
   check-freshness --root DIR [--facts layout,commands]
   changed-files --root DIR --since REF
@@ -1484,7 +1484,19 @@ function cmdResolveRun(flags) {
   }
   const runId = nextRunId(existing, date);
   const runDir = path.join(auditRoot, runId);
+  let drift;
+  try {
+    drift = parseDriftFlag(flags.drift);
+  } catch (error) {
+    fail(error.message, 1);
+  }
   fs.mkdirSync(runDir, { recursive: true });
+  if (drift) {
+    atomicWrite(
+      path.join(runDir, ".checkpoint.json"),
+      `${JSON.stringify({ drift }, null, 2)}\n`,
+    );
+  }
   printJson({
     runId,
     path: runDir,
@@ -1669,6 +1681,19 @@ function parseChangedFilesFlag(raw) {
     return parsed.map(String);
   } catch (error) {
     throw new Error(`invalid --changed-files: ${error.message}`);
+  }
+}
+
+function parseDriftFlag(raw) {
+  if (raw === undefined || raw === true) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("expected a JSON object");
+    }
+    return parsed;
+  } catch (error) {
+    throw new Error(`invalid --drift: ${error.message}`);
   }
 }
 
