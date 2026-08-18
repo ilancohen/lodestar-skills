@@ -214,11 +214,11 @@ not narrow the scan. **Absent means
 `mode: all`:** a file with no `## Audit Scope` section expands every
 finding, exactly as today.
 
-| Key             | Value                          | Notes                                                                                          |
-| --------------- | ------------------------------ | ---------------------------------------------------------------------------------------------- |
-| `mode`          | `all`                          | `all` expands every finding. `changed-since` expands only findings that touch code changed since `baseline-ref`. |
-| `baseline-ref`  | `[commit sha]`                 | The adoption commit. Required when `mode: changed-since`.                                      |
-| `baseline-date` | `[YYYY-MM-DD]`                 | Human-readable capture date. Informational; never parsed.                                      |
+| Key             | Value          | Notes                                                                                                            |
+| --------------- | -------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `mode`          | `all`          | `all` expands every finding. `changed-since` expands only findings that touch code changed since `baseline-ref`. |
+| `baseline-ref`  | `[commit sha]` | The adoption commit. Required when `mode: changed-since`.                                                        |
+| `baseline-date` | `[YYYY-MM-DD]` | Human-readable capture date. Informational; never parsed.                                                        |
 
 `mode: changed-since` without a resolvable `baseline-ref` is an error
 at audit time, not a silent fallback to `all`. Out-of-scope findings
@@ -233,13 +233,13 @@ How `lodestar-fix` commits. **Absent means default:** ask each session,
 today's subject and trailer, no protected branches, dirty trees allowed.
 A pre-existing file without this section is unchanged.
 
-| Key              | Value                | Notes                                                                                          |
-| ---------------- | -------------------- | ---------------------------------------------------------------------------------------------- |
+| Key              | Value                | Notes                                                                                                                        |
+| ---------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | `commits`        | `ask`                | `ask` keeps today's question. `per-item` commits without asking. `never` never asks and never commits — edits stay unstaged. |
-| `subject-format` | `<category>: <slug>` | Must contain `<slug>`. Also substitutes `<category>`.                                          |
-| `trailer`        | `Closes <item>.`     | Body line. `none` for no trailer. `<item>` is the action-item path.                            |
-| `protected`      | `none`               | Branches `lodestar-fix` refuses to commit on. Comma-separated names, or `none`.                |
-| `require-clean`  | `no`                 | `yes` refuses to start with a dirty working tree.                                              |
+| `subject-format` | `<category>: <slug>` | Must contain `<slug>`. Also substitutes `<category>`.                                                                        |
+| `trailer`        | `Closes <item>.`     | Body line. `none` for no trailer. `<item>` is the action-item path.                                                          |
+| `protected`      | `none`               | Branches `lodestar-fix` refuses to commit on. Comma-separated names, or `none`.                                              |
+| `require-clean`  | `no`                 | `yes` refuses to start with a dirty working tree.                                                                            |
 
 Unknown keys are ignored. A typo in a known value, or a `subject-format`
 with no `<slug>`, is an error at audit time, not a silent default.

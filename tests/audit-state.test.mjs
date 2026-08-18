@@ -173,9 +173,11 @@ test("clean findings validate", () => {
 });
 
 test("renderFindings without drift matches today's header", () => {
-  const rendered = renderFindings("2026-08-10", [], [
-    ...CATEGORIES.map((category) => ({ category, count: 0 })),
-  ]);
+  const rendered = renderFindings(
+    "2026-08-10",
+    [],
+    [...CATEGORIES.map((category) => ({ category, count: 0 }))],
+  );
   assert.equal(rendered, fs.readFileSync(CLEAN, "utf8"));
 });
 
@@ -1036,13 +1038,7 @@ test("resolve-run --drift writes the payload and checkpoint keeps it", () => {
 
 test("resolve-run without --drift creates no drift key", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-audit-"));
-  const created = run([
-    "resolve-run",
-    "--root",
-    tmp,
-    "--date",
-    "2026-08-18",
-  ]);
+  const created = run(["resolve-run", "--root", tmp, "--date", "2026-08-18"]);
   assert.equal(created.status, 0, created.stderr);
   const payload = JSON.parse(created.stdout);
   assert.equal(
@@ -1456,7 +1452,10 @@ test("scoped-backlog fixture mixes in_scope and still validates", () => {
 });
 
 test("scriptNameFromCommand accepts manager run forms and skips the rest", () => {
-  assert.equal(scriptNameFromCommand("pnpm run typecheck", "pnpm"), "typecheck");
+  assert.equal(
+    scriptNameFromCommand("pnpm run typecheck", "pnpm"),
+    "typecheck",
+  );
   assert.equal(scriptNameFromCommand("pnpm test", "pnpm"), "test");
   assert.equal(scriptNameFromCommand("npm run lint", "npm"), "lint");
   assert.equal(scriptNameFromCommand("npm test", "npm"), "test");
@@ -1475,7 +1474,10 @@ test("parseLayoutSource reads the Build & Test row and ignores absence", () => {
     ),
     "pnpm-workspace.yaml",
   );
-  assert.equal(parseLayoutSource("## Build & Test\n\n| test | pnpm test |\n"), null);
+  assert.equal(
+    parseLayoutSource("## Build & Test\n\n| test | pnpm test |\n"),
+    null,
+  );
 });
 
 test("check-freshness fresh-workspace exits 0 and skips install", () => {
@@ -1498,7 +1500,9 @@ test("check-freshness names a workspace package missing from the layout table", 
   assert.equal(result.status, 2, result.stderr);
   const payload = JSON.parse(result.stdout);
   assert.equal(payload.fresh, false);
-  const missing = payload.drift.filter((item) => item.fact === "missing-package");
+  const missing = payload.drift.filter(
+    (item) => item.fact === "missing-package",
+  );
   assert.equal(missing.length, 1);
   assert.equal(missing[0].observed, "packages/worker");
   assert.match(result.stderr, /missing package: packages\/worker/);
@@ -1535,7 +1539,8 @@ test("check-freshness valid fixture skips both checks and exits 0", () => {
   assert.equal(
     payload.skipped.some(
       (item) =>
-        item.check === "missing-package" && item.reason === "no layout-source row",
+        item.check === "missing-package" &&
+        item.reason === "no layout-source row",
     ),
     true,
   );
@@ -1591,13 +1596,7 @@ test("check-freshness --facts commands does not parse Package Layout", () => {
 });
 
 test("check-freshness unknown --facts exits 1", () => {
-  const result = run([
-    "check-freshness",
-    "--root",
-    FRESH,
-    "--facts",
-    "nope",
-  ]);
+  const result = run(["check-freshness", "--root", FRESH, "--facts", "nope"]);
   assert.equal(result.status, 1, result.stderr);
   assert.match(result.stderr, /unknown --facts value: nope/);
 });

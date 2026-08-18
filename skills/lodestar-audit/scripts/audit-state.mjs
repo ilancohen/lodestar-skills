@@ -251,13 +251,7 @@ export function responsibilityProblem(row) {
   return null;
 }
 
-export const COMMAND_NAMES = [
-  "install",
-  "build",
-  "typecheck",
-  "lint",
-  "test",
-];
+export const COMMAND_NAMES = ["install", "build", "typecheck", "lint", "test"];
 
 export function parseCommands(contextText) {
   const commands = {};
@@ -288,9 +282,7 @@ export function parseLayoutSource(contextText) {
 }
 
 function posixPath(value) {
-  return String(value)
-    .replace(/\\/g, "/")
-    .replace(/\/+$/, "");
+  return String(value).replace(/\\/g, "/").replace(/\/+$/, "");
 }
 
 export function pathSitsUnder(rowPath, memberDir) {
@@ -392,9 +384,7 @@ function expandWorkspaceGlobs(root, globs) {
     }
   }
   return [...members]
-    .filter(
-      (member) => !exclude.some((glob) => matchesGlob(member, glob)),
-    )
+    .filter((member) => !exclude.some((glob) => matchesGlob(member, glob)))
     .sort();
 }
 
@@ -594,9 +584,7 @@ function parseFactsFlag(raw) {
     .map((part) => part.trim())
     .filter(Boolean);
   if (!parts.length) {
-    throw new Error(
-      "check-freshness --facts requires layout and/or commands",
-    );
+    throw new Error("check-freshness --facts requires layout and/or commands");
   }
   const facts = { layout: false, commands: false };
   for (const part of parts) {
@@ -604,9 +592,7 @@ function parseFactsFlag(raw) {
     else if (part === "commands" || part === "stale-command") {
       facts.commands = true;
     } else {
-      throw new Error(
-        `unknown --facts value: ${part}. Use layout, commands.`,
-      );
+      throw new Error(`unknown --facts value: ${part}. Use layout, commands.`);
     }
   }
   return facts;
@@ -716,18 +702,13 @@ function importCountLabel(count) {
 }
 
 function renderDirectionMarkdown(result) {
-  const lines = [
-    `Basis: observed import graph, captured ${utcDate()}.`,
-    "",
-  ];
+  const lines = [`Basis: observed import graph, captured ${utcDate()}.`, ""];
   if (!result.edges.length) {
     return `${lines.join("\n").trimEnd()}\n`;
   }
   if (result.cyclic) {
     for (const edge of result.edges) {
-      const tag = canReach(result.edges, edge.to, edge.from)
-        ? " [cycle]"
-        : "";
+      const tag = canReach(result.edges, edge.to, edge.from) ? " [cycle]" : "";
       lines.push(
         `- ${edge.from} → ${edge.to} ${importCountLabel(edge.count)}${tag}`,
       );
