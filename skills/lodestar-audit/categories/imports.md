@@ -24,6 +24,10 @@ subtype #6 uses the grep heuristic below.
 
 4. **`export *` barrel** — `index.ts` re-exports everything from a sub-module
    without naming what's exported.
+   **Gate:** skip this subtype when `conventions["barrel-exports"]` is `yes`
+   (barrels are allowed). Emit nothing. Record `imports` #4 as a
+   deliberate skip in `INDEX.md`'s known-blind-spots list — do not stay
+   silent. #2 (missing re-export) and #5 (over-broad surface) stay on.
 
 5. **Over-broad API surface** — an `index.ts` export that has no external
    consumer (used only inside the package, or not used at all).
@@ -75,7 +79,8 @@ emit findings from these slices (no shell grep needed):
 
 Subtype #1 (`cross-package-src`) is not a fallow concept — it's a coding-
 style rule. Always run the grep below for it. Subtype #4 (`export *`
-barrels) is also grep-only.
+barrels) is also grep-only, unless `conventions["barrel-exports"]` is
+`yes` — then skip it.
 
 For #5, only flag exports that originate from `<pkg_root>/index.ts`. Other
 unused exports inside a package are valid internal symbols that aren't
@@ -90,6 +95,7 @@ node scripts/source-scan.mjs --recipe cross-package-src --alias-prefix '<alias_p
 #   <alias_prefix> = the common prefix of every alias (e.g. '@repo/').
 
 # 4 — barrel re-exports (always scan — not a fallow concept)
+# Skip this grep when conventions["barrel-exports"] is yes.
 node scripts/source-scan.mjs --recipe barrel-reexport --root <pkg_root>
 
 # 5 — exports with no external consumer (per package P) — grep fallback

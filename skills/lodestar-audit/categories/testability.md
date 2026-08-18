@@ -34,6 +34,15 @@ may be intentional composition-root calls.
 `let` (or `var`) at module scope outside test files. Creates implicit
 global state that pollutes tests.
 
+### Coverage floor
+
+The floor is `conventions["coverage-floor"]` (default 80) for domain and
+shared packages. When `<test>` emits a coverage report, compare against
+that number. When the value is `none`, do not check coverage and do not
+list it in `INDEX.md`'s known-blind-spots. When it is a number and
+`<test>` does not emit coverage, list it as a known blind spot — the
+audit cannot check it.
+
 ## Detection
 
 All commands below use placeholders resolved from the `## Package Layout`

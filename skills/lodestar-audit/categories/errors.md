@@ -20,6 +20,10 @@ shutdown hook). **Default `requires_decision: true` for every A finding.**
 
 ### B. Expected failure thrown
 
+**Gate:** skip this subtype when `conventions["result-types"]` is `no`.
+Emit nothing. Record `errors` #B as a deliberate skip in `INDEX.md`'s
+known-blind-spots list — do not stay silent.
+
 Code that `throw`s for an outcome the caller is expected to handle:
 
 - `throw new Error('not found')` / `throw new NotFoundError()`
@@ -58,7 +62,7 @@ install linter packages or modify config — read-only probe only.
 From the cached output, extract violations for:
 
 - **A** (`no-floating-promises` / biome `noFloatingPromises`) → flag as swallowed-async
-- **B** (`no-throw-literal`, `prefer-promise-reject-errors` / biome equivalents) → flag as expected-failure-thrown
+- **B** (`no-throw-literal`, `prefer-promise-reject-errors` / biome equivalents) → flag as expected-failure-thrown (skip when `conventions["result-types"]` is `no`)
 
 Linter-sourced B findings do not require `requires_decision: true` by
 default (unlike grep-sourced ones). If the probe produces no output,
@@ -71,6 +75,7 @@ grep -rEn -A 4 "} catch" <all_pkg_roots> \
   | grep -B 3 "^\s*}|console\.(log|warn|error)\s*\("
 
 # B — thrown errors that look expected (use if linter probe didn't cover this)
+# Skip this grep when conventions["result-types"] is no.
 grep -rEn "throw new (Error|NotFound|Validation|Unauthorized)" \
   <all_pkg_roots> --include="*.ts"
 

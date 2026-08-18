@@ -29,12 +29,15 @@ path to that file.
 ## Structure model
 
 This audit is **structure-agnostic**. It does not assume roles like
-`core`, `api`, or `ui`. It uses two things from
+`core`, `api`, or `ui`. It uses three things from
 `.agents/lodestar/context.md`:
 
 1. `## Package Layout` — package names, paths, aliases, and a one-sentence
    responsibility per package.
 2. The declared dependency direction — allowed import direction.
+3. `## Conventions` — which style conventions the repo follows. Detectors
+   skip at a row's skip value (see the Categories table). A missing
+   section means every default.
 
 Detectors run package-by-package. Kind-of-code rules use the
 Responsibility column and path patterns, never the package name alone.
@@ -70,15 +73,21 @@ node scripts/audit-state.mjs validate-input --root <repo>
 ```
 
 If that command exits non-zero, print its error and stop. It rejects a
-missing Package Layout and placeholder Responsibilities (shorter than 20
+missing Package Layout, placeholder Responsibilities (shorter than 20
 characters, `TODO`/`TBD`/`???`/`one sentence`, or a bare noun like
-`core`).
+`core`), and an unparseable `## Conventions` value.
+
+A category or subtype gated off by `conventions` is reported as skipped
+in `INDEX.md`'s known-blind-spots, not silently absent. Discover still
+checkpoints it complete with count 0. Exception: `coverage-floor: none`
+drops the coverage-floor line from known-blind-spots and does not add a
+skip row — there is nothing to check.
 
 If `pkgManager` is null, ask which of npm, yarn, or pnpm this repository
 uses before any install or `dlx`/`npx` command. Do not guess.
 
-Read `.agents/lodestar/context.md` for commands, direction, and the layout
-table, then follow its link to
+Read `.agents/lodestar/context.md` for commands, direction, conventions,
+and the layout table, then follow its link to
 `.agents/skills/lodestar-setup/principles.md` for the principles content.
 
 ---
@@ -88,22 +97,25 @@ table, then follow its link to
 Read the category sub-doc before scanning that category. Read
 `categories/fallow-seed.md` once before Discover.
 
-| Category      | Sub-doc                     | Risk        | Detection style               |
-| ------------- | --------------------------- | ----------- | ----------------------------- |
-| `imports`     | `categories/imports.md`     | low         | mechanical (Fallow preferred) |
-| `types`       | `categories/types.md`       | low         | mechanical                    |
-| `boundaries`  | `categories/boundaries.md`  | medium–high | mechanical                    |
-| `errors`      | `categories/errors.md`      | high        | mechanical                    |
-| `testability` | `categories/testability.md` | high        | mechanical                    |
-| `soc-yagni`   | `categories/soc-yagni.md`   | low–high    | mixed                         |
-| `dry`         | `categories/dry.md`         | low–medium  | mixed                         |
-| `ssot`        | `categories/ssot.md`        | low–medium  | mechanical                    |
-| `styling`     | `categories/styling.md`     | low–medium  | mechanical                    |
+| Category      | Sub-doc                     | Risk        | Detection style               | Gated by                                              |
+| ------------- | --------------------------- | ----------- | ----------------------------- | ----------------------------------------------------- |
+| `imports`     | `categories/imports.md`     | low         | mechanical (Fallow preferred) | `#4` when `barrel-exports` is `yes`                   |
+| `types`       | `categories/types.md`       | low         | mechanical                    | `#4` when `branded-types` is `no`                     |
+| `boundaries`  | `categories/boundaries.md`  | medium–high | mechanical                    | `A` when `branded-types` is `no`                      |
+| `errors`      | `categories/errors.md`      | high        | mechanical                    | `#B` when `result-types` is `no`                      |
+| `testability` | `categories/testability.md` | high        | mechanical                    | drop coverage blind-spot when `coverage-floor` is `none` |
+| `soc-yagni`   | `categories/soc-yagni.md`   | low–high    | mixed                         | —                                                     |
+| `dry`         | `categories/dry.md`         | low–medium  | mixed                         | —                                                     |
+| `ssot`        | `categories/ssot.md`        | low–medium  | mechanical                    | —                                                     |
+| `styling`     | `categories/styling.md`     | low–medium  | mechanical                    | whole category when `design-tokens` is `no`           |
 
-Known blind spots (copy into `INDEX.md`): coverage floor unless `<test>`
-emits coverage; wide-diff DRY as `dry.C` advisory only; Rule of Three
-beyond `soc-yagni.D`; whether the documented layout is the right one
-(`lodestar-architecture`).
+Known blind spots (copy into `INDEX.md`): coverage floor when it is a
+number and `<test>` does not emit coverage; wide-diff DRY as `dry.C`
+advisory only; Rule of Three beyond `soc-yagni.D`; whether the documented
+layout is the right one (`lodestar-architecture`). Append any
+convention-gated detector this run skipped (name the category, subtype,
+and key). Do not list `coverage-floor: none` as a skip — omit that
+line entirely.
 
 ---
 
@@ -160,7 +172,10 @@ docs/audit/<RUN_ID>`.
    `docs/audit/<RUN_ID>/<NNN>-<category>-<slug>.md` from
    `templates/action-item.md`. Skip files that already exist.
 3. Validate each file for placeholder leaks.
-4. Write `INDEX.md` from `templates/index.md`.
+4. Write `INDEX.md` from `templates/index.md`. Fill Known blind spots
+   from the list in Categories above, plus this run's gated skips.
+   Drop the coverage-floor line when `conventions["coverage-floor"]` is
+   `none`.
 5. Align category order with `lodestar-fix`:
    `imports → types → ssot → soc-yagni → boundaries → errors →
 testability → dry → styling`.

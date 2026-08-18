@@ -1,5 +1,10 @@
 # Category: `styling`
 
+**Gate:** skip this whole category when `conventions["design-tokens"]` is
+`no`. Emit nothing. Checkpoint `styling` complete with count 0. Record
+the category as a deliberate skip in `INDEX.md`'s known-blind-spots
+list — do not stay silent.
+
 CSS lives in stylesheets, not inline; design tokens (colours, spacings,
 fonts, radii, z-indexes) have one canonical home and are referenced by
 name everywhere else. All detectors are **mechanical** (grep). Most
@@ -34,16 +39,17 @@ properties belong inline. Static siblings in the same object (e.g.
 
 A colour (`#xxxxxx`, `rgb(...)`, `rgba(...)`, `hsl(...)`), spacing
 (`Npx`, `Nrem`, `Nem` where N is a literal), border-radius, font-size,
-or z-index that appears in two or more places without going through a
+or z-index that appears in three or more places without going through a
 named token (CSS custom property, exported constant, or design-system
 primitive).
 
-The principle: the same literal should never appear in two files. Two
-copies of `#7c5cff` is a drift bug waiting to happen — when the brand
-colour shifts, one site updates and the other lags silently.
+The principle: the same literal should never appear in three files. Two
+copies of `#7c5cff` is not yet a finding — wait for the third, matching
+`ssot` A's 3+ cutoff. When the brand colour shifts, leftover copies lag
+silently.
 
-Risk: low-to-medium (one literal in one file is _not_ a finding — wait
-for the second occurrence; that's the SSOT cutoff).
+Risk: low-to-medium (one or two literals is _not_ a finding — wait
+for the third occurrence; that's the SSOT cutoff).
 
 ### C. Duplicated CSS class body — mechanical seed, semantic confirm
 
@@ -109,9 +115,9 @@ grep -rEn "['\"\`][0-9]+(\.[0-9]+)?(px|rem|em)['\"\`]" <pkg_root> \
 
 For each literal, count distinct occurrences across `<all_pkg_roots>`:
 
-- 1 occurrence → not a violation (the SSOT rule kicks in on the second
-  copy).
-- 2+ occurrences → emit one finding per literal, listing every site.
+- 1 or 2 occurrences → not a violation (the SSOT rule kicks in on the
+  third copy, matching `ssot` A).
+- 3+ occurrences → emit one finding per literal, listing every site.
 - Already a named token (the literal appears once, inside a `:root` /
   `tokens.css` / exported constant module) → not a violation; the token
   IS the canonical home.

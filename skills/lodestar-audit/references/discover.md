@@ -62,12 +62,17 @@ The seed never modifies source.
 
 Order: `imports`, `types`, `boundaries`, `errors`, `testability`,
 `soc-yagni` (B, C, D), `dry` (A), `ssot` (A, B, C), `styling` (A–D,
-UI-bearing packages only).
+UI-bearing packages only). Discover's scan order and Plan's output
+order differ on purpose — do not "fix" them to match.
 
 For each category:
 
-1. Open the category sub-doc.
-2. Run every Detection command. Prefer `node scripts/source-scan.mjs`
+1. Open the category sub-doc. If the whole category is gated off
+   (`design-tokens: no` → `styling`), skip every detector, emit nothing,
+   still checkpoint complete with count 0, and note the skip for
+   `INDEX.md`.
+2. Run every Detection command that is not gated off by `conventions`.
+   Prefer `node scripts/source-scan.mjs`
    recipes over POSIX `grep` pipelines. Iterate `<pkg_root>` per
    package row with repeated `--root` flags (paths may contain spaces).
 3. Drop false positives in tests (`*.spec.ts`, `*.test.ts`) unless the
@@ -76,6 +81,8 @@ For each category:
 4. Append finding objects. Do not write action-item files here.
 5. Checkpoint:
    `node scripts/audit-state.mjs checkpoint --run-dir docs/audit/<RUN_ID> --category <name> --status complete --count N`
+   A category whose gated subtypes were skipped still checkpoints here
+   (count is findings actually emitted, which may be 0).
 
 When resuming, skip categories that already have
 `## category: <name> — complete` in `findings.md`.
@@ -84,7 +91,9 @@ When resuming, skip categories that already have
 
 If a sub-agent tool exists and there are 4+ packages, spawn one
 sub-agent per package (package row, categories, principle text,
-exclusion list). Constraints: read-only, JSON findings only, no
+exclusion list, the `conventions` object, and which categories /
+subtypes this run must skip). Sub-agents skip those detectors the same
+way the inline loop does. Constraints: read-only, JSON findings only, no
 `findings.md` writes, no nested spawns, no Fallow re-run. Inline loop
 is canonical when fan-out is unavailable.
 

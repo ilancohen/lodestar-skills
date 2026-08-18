@@ -21,6 +21,10 @@ If neither signal is present, the audit flags the finding with
 
 ### A. Branded primitives missing
 
+**Gate:** skip this subtype when `conventions["branded-types"]` is `no`.
+Emit nothing. Record `boundaries` A as a deliberate skip in `INDEX.md`'s
+known-blind-spots list — do not stay silent.
+
 Domain identifiers, monetary amounts, and validated strings typed as raw
 `string` / `number`. Risk: medium.
 
@@ -94,6 +98,7 @@ Where `<pkg_root>` appears, iterate over every row.
 
 ```bash
 # A — raw primitives for domain IDs
+# Skip this grep when conventions["branded-types"] is no.
 grep -rEn "(id|Id): string|(price|amount): number|slug: string" \
   <all_pkg_roots> --include="*.ts"
 

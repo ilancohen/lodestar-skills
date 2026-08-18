@@ -22,6 +22,9 @@ Layout`. If no such package exists, this is a layout question — emit
 4. **Brand violation** — a domain identifier, monetary amount, or validated
    string typed as raw `string` / `number` (handled in `boundaries.md`,
    but mention here if you see it crossing a type boundary).
+   **Gate:** skip this subtype when `conventions["branded-types"]` is `no`.
+   Emit nothing. Record `types` #4 as a deliberate skip in `INDEX.md`'s
+   known-blind-spots list — do not stay silent.
 
 ## Detection
 
