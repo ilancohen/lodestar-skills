@@ -50,13 +50,19 @@ A `context.md` with no `## Conventions` section keeps every default.
 Nothing else is opt-out: unguarded `any`, module-level side effects, CQS,
 and the rest stay on.
 
+Setup observes the repo rather than assuming `packages/` and `apps/`: it
+records layout, entry points, generated-code exclusions, and how
+`lodestar-fix` should commit.
+
 ## Before you install
 
 - A coding agent that supports Agent Skills, plus Git.
 - **Node.js 22+** — for package checks and the bundled scripts.
-- **pnpm, npm, or yarn** in the target repo — skills detect it from the
-  lockfile, and ask if that's unclear. (This suite itself is built with
-  pnpm; that's unrelated to what your project uses.)
+- **pnpm, npm, yarn, or Bun** in the target repo — skills detect it from
+  the lockfile, and ask if that's unclear. Any other manager works when
+  recorded in `.agents/lodestar/context.md`. Deno, Bazel, and repos with
+  no TypeScript or JavaScript are not supported. (This suite itself is
+  built with pnpm; that's unrelated to what your project uses.)
 - A POSIX-ish shell (macOS, Linux, or Windows via bash/WSL — plain
   PowerShell/cmd isn't supported for most steps).
 - [Fallow](https://docs.fallow.tools) **^3.15.0**, only if you'll run
@@ -107,8 +113,8 @@ Skills don't activate on their own — you have to invoke them by name
 
 1. Run `lodestar-setup` once, in the target repo. It writes
    `.agents/lodestar/context.md` — your package layout, dependency
-   direction, build commands, and which conventions you already follow —
-   which is the only file the other skills read. It also asks whether
+   direction, build commands, exclusions, conventions, and commit
+   policy — which is the only file the other skills read. It also asks whether
    principles should apply to every task automatically (full suite: a
    short pointer section is added to `AGENTS.md`) or only when you
    explicitly run a lodestar skill (skills-only: `AGENTS.md` is left

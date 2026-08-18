@@ -2,6 +2,43 @@
 
 All notable changes to this project will be documented here.
 
+## [0.6.0] - 2026-08-18
+
+### Fixed
+
+- **Non-TS repos no longer look clean.** Setup stops before writing
+  anything when the repo has no TypeScript or JavaScript, and names the
+  languages it found. A mixed repo keeps unscannable packages as
+  `Scannable: no` rows; the audit lists them as not scanned instead of
+  producing an empty `findings.md`.
+
+### Added
+
+- **`context.md` `## Excluded Paths`.** Setup proposes generated and
+  test globs with evidence; every detector and Fallow `ignorePatterns`
+  skip them. Absent means today's `*.spec.*` / `*.test.*` / `*.d.ts`
+  behavior.
+
+- **Observed layout.** Setup finds whatever declares the workspace
+  (`pnpm-workspace.yaml`, `package.json` workspaces, Nx / Turbo / Lerna
+  as hints), records entry points from `exports`, and supports a
+  single-package repo (empty graph; `imports` #6 and `boundaries` B
+  listed as not applicable).
+
+- **Other toolchains.** Bun is detected from `bun.lock` / `bun.lockb`.
+  An unrecognized manager is a `pkg-manager` row in `context.md` that
+  wins over lockfile detection. Deno and Bazel are unsupported.
+
+- **`context.md` `## Git`.** Whether `lodestar-fix` commits (`ask` /
+  `per-item` / `never`), the subject and trailer templates, protected
+  branches, and `require-clean`. Absent means today's ask-each-session
+  behavior. A rejecting hook defers the item and leaves the edits.
+
+### Changed
+
+- **Backward compatible.** A `context.md` with none of the new sections
+  or columns parses as today. Pre-0.6 files need no migration.
+
 ## [0.5.0] - 2026-08-18
 
 ### Added

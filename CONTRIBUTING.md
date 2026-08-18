@@ -7,7 +7,7 @@ and client adapters are thin references only — they must not duplicate
 workflow logic.
 
 This suite uses **pnpm**. In a consuming repository, use that repo's
-npm / yarn / pnpm setup; ask if the lockfile does not make it obvious.
+npm / yarn / pnpm / Bun setup; ask if the lockfile does not make it obvious.
 
 ## Pre-commit checklist
 

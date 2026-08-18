@@ -1,0 +1,7 @@
+{
+  "name": "app",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server.ts"
+  }
+}

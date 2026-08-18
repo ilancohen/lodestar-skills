@@ -35,6 +35,10 @@ const VALID = path.join(ROOT, "tests/fixtures/repos/valid");
 const OPTED_OUT = path.join(ROOT, "tests/fixtures/repos/opted-out");
 const CYCLIC = path.join(ROOT, "tests/fixtures/repos/cyclic");
 const PLACEHOLDER = path.join(ROOT, "tests/fixtures/repos/placeholder");
+const SINGLE = path.join(ROOT, "tests/fixtures/repos/single-package");
+const POLYGLOT = path.join(ROOT, "tests/fixtures/repos/polyglot");
+const EXCLUDED = path.join(ROOT, "tests/fixtures/repos/excluded");
+const BUN = path.join(ROOT, "tests/fixtures/repos/bun");
 const CLEAN = path.join(ROOT, "tests/fixtures/audit-runs/clean/findings.md");
 const HEAVY = path.join(
   ROOT,
@@ -983,5 +987,51 @@ test("commit-message prints today's default from an action item", () => {
     result.stdout,
     "imports: cross-package\n\nCloses docs/audit/2026-08-18/001-imports-cross-package.md.\n",
   );
+});
+
+test("validate-input single-package fixture: empty graph, entries, git, pkg-manager", () => {
+  const result = run(["validate-input", "--root", SINGLE]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.packages.length, 1);
+  assert.deepEqual(payload.packages[0].entryPoints, ["index.ts", "server"]);
+  assert.deepEqual(payload.direction, []);
+  assert.deepEqual(payload.directionGraph.edges, []);
+  assert.equal(payload.pkgManager, "pixi");
+  assert.equal(payload.pkgManagerProvenance, "context.md");
+  assert.equal(payload.git.commits, "never");
+  assert.equal(payload.git.subjectFormat, "fix(<category>): <slug>");
+  assert.equal(payload.git.trailer, "none");
+  assert.deepEqual(payload.git.protected, ["main"]);
+  assert.equal(payload.git.requireClean, "yes");
+});
+
+test("validate-input polyglot fixture omits the Go package from allPkgRoots", () => {
+  const result = run(["validate-input", "--root", POLYGLOT]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.packages.length, 2);
+  assert.equal(payload.packages[1].scannable, "no");
+  assert.equal(payload.packages[1].language, "Go");
+  assert.equal(payload.allPkgRoots, "packages/core/src");
+});
+
+test("validate-input excluded fixture emits globs and still finds hand-written source", () => {
+  const result = run(["validate-input", "--root", EXCLUDED]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.deepEqual(payload.excludedPaths, ["**/generated/**"]);
+  assert.deepEqual(payload.testGlobs, ["**/__tests__/**"]);
+  assert.ok(payload.packages[0].scannableCount >= 1);
+});
+
+test("validate-input bun fixture detects bun from the lockfile", () => {
+  const result = run(["validate-input", "--root", BUN]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.pkgManager, "bun");
+  assert.equal(payload.run, "bunx");
+  assert.equal(payload.pkgManagerProvenance, "lockfile");
+  assert.deepEqual(payload.git, GIT_DEFAULTS);
 });
 
