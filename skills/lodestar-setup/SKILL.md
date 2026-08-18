@@ -14,7 +14,7 @@ license: MIT
 compatibility: Requires filesystem write access and a POSIX-compatible shell for optional Fallow setup. Supports npm, pnpm, and yarn repositories.
 metadata:
   author: Ilan Cohen
-  version: "0.3.1"
+  version: "0.4.0"
 ---
 
 Write the agent-neutral config the lodestar skills need. The one file that
@@ -34,11 +34,14 @@ repository, not locations of this installed skill.
 ## What this skill does — and does not do
 
 - **Does**: discover the packages that already exist, document each one
-  (name, path, alias, one-sentence responsibility), capture the declared
-  dependency direction, and write the config files agents read.
+  (name, path, alias, one-sentence responsibility), record the observed
+  package import graph, and write the config files agents read.
 - **Does not**: force the repo's packages into a fixed list of roles
   (`core`, `api`, `ui`, etc.). The audit operates on whatever packages
   this skill documents.
+- **Does not**: write an intended or target dependency direction, even when
+  the observed graph is cyclic. If the user wants a proposed layout, point
+  them at `lodestar-architecture` and stop.
 - **Does not**: propose, suggest, or critique an alternative layout.
   If the user asks for that, point them at `lodestar-architecture` and
   stop — do not silently start a layout review.
@@ -67,9 +70,11 @@ Read only what's needed to fill in the template placeholders:
     quick scan of its top-level exports. Keep it short and concrete
     ("HTTP routes and request validation", "domain entities and use
     cases", "DB and queue adapters").
-- **Dependency direction** — infer from imports between packages. If
-  ambiguous or undocumented, ask the user once (Step 2) — don't guess
-  silently.
+- **Dependency direction** — build the package-level edge list (which
+  packages import which, with a rough count), then check for cycles.
+  Acyclic → topological order as a chain. Cyclic → record the edges and
+  the cycle; do not order them. If the observation is ambiguous, ask the
+  user once in Step 2 — do not guess silently or infer a target layout.
 - **Existing files** — check whether `.agents/lodestar/context.md` already
   exists, and whether `AGENTS.md` exists and already has a `## Lodestar`
   section. If they do, read them briefly so you don't overwrite unrelated
@@ -89,11 +94,16 @@ Present a single short summary:
 
 - The package manager you detected (or that you could not tell).
 - The commands you found.
-- The dependency direction you'll record (using the repo's actual
-  package names, e.g. `web → server → core → shared`).
+- The observed package import graph — acyclic chain or cyclic edge list,
+  using the repo's actual package names.
 - The Package Layout table you intend to write — one row per package,
   with name, path, alias, and the one-sentence responsibility you've
   drafted.
+
+When the graph is cyclic, state plainly that it is cyclic, show the cycle
+edges, and say they will be recorded as-is and reported by the audit as
+circular dependencies. Ask the user to correct the graph only if the
+_observation_ is wrong — do not ask them to declare a target layout.
 
 If the package manager is unclear, ask which of npm, yarn, or pnpm to
 use as part of this same confirmation. Do not proceed with install or
@@ -153,7 +163,8 @@ This is the load-bearing file. Start from `context-md.md`. Fill in:
 
 - One-sentence project description.
 - The exact commands in the Build & Test table.
-- The dependency direction, using the repo's own package names.
+- The observed import graph in whichever form applies (acyclic chain or
+  cyclic edge list), plus a `Basis:` line with the capture date.
 - The Package Layout table — one row per package discovered in Step 1.
   Use the repo's own names verbatim. Fill the Responsibility column with
   the one-sentence summary you drafted.
@@ -249,8 +260,10 @@ JSON inside a fenced block). Substitute:
   becomes its own sub-zone (sibling apps end up isolated from each
   other, which is usually what you want).
 - One `boundaries.rules[]` entry per package. The `allow` list is every
-  package to the right of `from` in the dependency direction. The
-  tail-of-chain package gets `allow: []`.
+  package reachable from `from` in the documented graph (including cycle
+  partners). For an acyclic chain this matches every package to the right
+  in the chain. The tail-of-chain package with no downward edges gets
+  `allow: []` (or only cycle partners when cyclic).
 
 Write to `.fallowrc.json`.
 
