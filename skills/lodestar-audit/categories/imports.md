@@ -73,7 +73,7 @@ entryPoints)` is true (`audit-state.mjs`): canonicalize by stripping
 ## Detection
 
 All commands below use placeholders resolved per row of the `## Package
-Layout` table in `context.md` (see references/discover.md). Substitute the
+Layout` table in `context.md`. Substitute the
 real path globs and import aliases before running.
 
 ### Preferred: fallow seed

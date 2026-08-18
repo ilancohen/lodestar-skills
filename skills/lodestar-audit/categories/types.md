@@ -20,7 +20,7 @@ Layout`. If no such package exists, this is a layout question — emit
    and no inline comment justifying it.
 
 4. **Brand violation** — a domain identifier, monetary amount, or validated
-   string typed as raw `string` / `number` (handled in `boundaries.md`,
+   string typed as raw `string` / `number` (handled in `boundaries`,
    but mention here if you see it crossing a type boundary).
    **Gate:** skip this subtype when `conventions["branded-types"]` is `no`.
    Emit nothing. Record `types` #4 as a deliberate skip in `INDEX.md`'s
@@ -29,7 +29,7 @@ Layout`. If no such package exists, this is a layout question — emit
 ## Detection
 
 All commands below use placeholders resolved from the `## Package Layout`
-table in `context.md` (see references/discover.md). Substitute before running.
+table in `context.md`. Substitute before running.
 
 ### Linter probe (best-effort, run once before greps)
 

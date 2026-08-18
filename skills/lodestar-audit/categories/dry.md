@@ -9,7 +9,7 @@ trivial to extract.
 
 Scope note: `dry` covers duplicated _behaviour_ (logic, functions, code
 blocks). Duplicated _facts_ (constants, schemas, config values) belong
-in `ssot` — see `categories/ssot.md`. The two failure modes differ:
+in `ssot`. The two failure modes differ:
 `dry` violations cause churn (the same change made twice); `ssot`
 violations cause drift (one copy updated, the other lags silently).
 
@@ -47,7 +47,7 @@ Risk: low (advisory only).
 ## Detection
 
 All commands below use placeholders resolved from the `## Package Layout`
-table in `context.md` (see references/discover.md). Substitute before running.
+table in `context.md`. Substitute before running.
 
 ### Preferred: fallow seed
 

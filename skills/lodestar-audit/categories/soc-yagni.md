@@ -55,7 +55,7 @@ or by a public package contract.
 ## Detection
 
 All commands below use placeholders resolved from the `## Package Layout`
-table in `context.md` (see references/discover.md). Substitute before running.
+table in `context.md`. Substitute before running.
 
 ### A — file/class with multiple responsibilities (semantic)
 
@@ -107,7 +107,7 @@ grep -rEn "\((true|false), *(true|false)" <all_pkg_roots> \
 ### D — single-call-site exports
 
 `check.unused_exports[]` contains only zero-reference exports, so it cannot
-seed this detector. Those entries belong to `imports.md` #5. For D, use a
+seed this detector. Those entries belong to `imports` #5. For D, use a
 per-package, per-symbol import-count loop, then confirm one-reference
 candidates with Fallow's trace envelope (`kind: "trace"`).
 
@@ -124,7 +124,7 @@ candidates with Fallow's trace envelope (`kind: "trace"`).
 #      Stdout is the validated `kind: "trace"` envelope.
 #   4. Confirmed symbols with exactly one external call site → flag.
 #      Symbols with zero external call sites → already covered by
-#      `imports.md` #5 (over-broad index).
+#      `imports` #5 (over-broad index).
 ```
 
 ## Action-item granularity

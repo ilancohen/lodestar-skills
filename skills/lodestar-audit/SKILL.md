@@ -140,7 +140,9 @@ and the layout table, then follow its link to
 ## Categories
 
 Read the category sub-doc before scanning that category. Read
-`categories/fallow-seed.md` once before Discover.
+`categories/fallow-seed.md` once before Discover. A category doc names
+sibling categories in prose; it does not load them, and it does not
+load `references/`.
 
 | Category      | Sub-doc                     | Risk        | Detection style               | Gated by                                                 |
 | ------------- | --------------------------- | ----------- | ----------------------------- | -------------------------------------------------------- |
@@ -251,7 +253,8 @@ are `<output-root>/<RUN_ID>/`, an optional consented edit of
 
 ## Plan (Phase 2)
 
-Follow [references/plan.md](references/plan.md). Summary:
+Follow [references/plan.md](references/plan.md) — grouping, numbering,
+and INDEX wording; not a hop to category docs. Summary:
 
 1. Recover with `node scripts/audit-state.mjs recover --run-dir
 <output-root>/<RUN_ID>`.

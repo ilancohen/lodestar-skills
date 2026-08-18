@@ -100,7 +100,7 @@ file whose path strongly suggests it owns the entry boundary (e.g.
 ## Detection
 
 All commands below use placeholders resolved from the `## Package Layout`
-table in `context.md` (see references/discover.md). Substitute before running.
+table in `context.md`. Substitute before running.
 Where `<pkg_root>` appears, iterate over every **scannable** row.
 Honor `excludedPaths` / `testGlobs` from `validate-input` on every
 scan; the local `*.request.ts` / `*.response.ts` skip stays, but

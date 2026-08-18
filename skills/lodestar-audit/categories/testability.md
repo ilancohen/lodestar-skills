@@ -46,7 +46,7 @@ audit cannot check it.
 ## Detection
 
 All commands below use placeholders resolved from the `## Package Layout`
-table in `context.md` (see references/discover.md). Substitute before running.
+table in `context.md`. Substitute before running.
 
 ```bash
 # A — calls at module scope (heuristic; review required)
