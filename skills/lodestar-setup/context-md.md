@@ -81,6 +81,37 @@ Notes for the table:
 - Responsibility is short and concrete — it's used by the audit to
   understand which package owns which kind of code.
 
+## Conventions
+
+Which of a short list of style conventions this repo actually follows.
+The audit skips a detector only at that row's skip value: `no` for
+`result-types`, `branded-types`, and `design-tokens`; `yes` for
+`barrel-exports` (barrels allowed); `none` for `coverage-floor`.
+**Absent means default:** a file with no `## Conventions` section, or a
+missing row, uses the default in the table below — not "every key is
+`yes`". Values written here are the only way to opt out.
+
+| Convention       | Value   | What it gates                                                 |
+| ---------------- | ------- | ------------------------------------------------------------- |
+| `result-types`   | `yes`   | `errors` #B (expected failures return `Result<T, E>`)         |
+| `branded-types`  | `yes`   | `boundaries` A, `types` #4                                    |
+| `barrel-exports` | `no`    | `imports` #4 (`export *`) — `yes` means barrels are allowed   |
+| `design-tokens`  | `yes`   | the whole `styling` category                                  |
+| `coverage-floor` | `80`    | the Testability coverage floor and the pre-commit checklist   |
+
+Keys and allowed values:
+
+- `result-types`, `branded-types`, `design-tokens`: `yes` / `no` (default `yes`)
+- `barrel-exports`: `no` / `yes` (default `no`) — `yes` means barrels are allowed
+- `coverage-floor`: a positive integer or `none` (default `80`)
+
+Unknown keys are ignored. A typo in a known value is an error at audit
+time, not a silent default.
+
+A repo that throws typed errors and uses Tailwind would set
+`result-types` to `no` and `design-tokens` to `no`; the other rows stay
+at their defaults.
+
 ## Principles
 
 The principles, TypeScript rules, testability and error-handling rules,

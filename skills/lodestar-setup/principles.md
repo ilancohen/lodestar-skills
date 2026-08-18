@@ -7,8 +7,9 @@ principles.md` regardless of which agent(s) it targets, so that link
 always resolves.
 
 This file stays untouched across installs (no placeholder substitution) —
-it references `.agents/lodestar/context.md`'s `## Build & Test` and
-`## Package Layout` tables by name for anything repo-specific.
+it references `.agents/lodestar/context.md`'s `## Build & Test`,
+`## Package Layout`, and `## Conventions` tables by name for anything
+repo-specific.
 
 The principles below are deliberately stated abstractly — they don't assume
 any particular package layout. The setup skill writes a Package Layout
@@ -103,7 +104,9 @@ guess which one you mean. If it needs a rename, rename it everywhere at once.
   `Parameters`. Reach for these before writing a new type from scratch.
 - **Branded primitives.** Domain identifiers, monetary amounts, and validated
   strings use branded types (`UserId`, `Money`, `Slug`), not raw `string` or
-  `number`. Define brands in the shared types package.
+  `number`. Define brands in the shared types package. Applies unless
+  `branded-types` is disabled in `.agents/lodestar/context.md`'s
+  `## Conventions` table.
 - **No `any`.** Use `unknown` and narrow it. Exceptions require an inline
   comment explaining why.
 
@@ -124,9 +127,10 @@ needs an internal, the test belongs in the same package.
   implementations.
 - No side effects at module load time. Nothing happens when a file is imported.
 - No mutable `let` at module scope.
-- **Coverage floor:** 80% for domain and shared packages. Route- or
-  component-level integration tests required for any package exposing an
-  HTTP API or UI surface.
+- **Coverage floor:** domain and shared packages, at the `coverage-floor`
+  recorded in `.agents/lodestar/context.md`'s `## Conventions` table.
+  Route- or component-level integration tests required for any package
+  exposing an HTTP API or UI surface.
 
 ---
 
@@ -134,7 +138,9 @@ needs an internal, the test belongs in the same package.
 
 - No empty or log-only `catch` blocks. Handle, rethrow, or convert.
 - Expected failures (`not-found`, network error, validation) return
-  `Result<T, E>` or a discriminated union — not thrown errors.
+  `Result<T, E>` or a discriminated union — not thrown errors. Applies
+  unless `result-types` is disabled in `.agents/lodestar/context.md`'s
+  `## Conventions` table.
 - Reserve thrown errors for unrecoverable programmer errors.
 
 ---
@@ -144,7 +150,7 @@ needs an internal, the test belongs in the same package.
 | Pattern                                                                       | Principle violated           |
 | ----------------------------------------------------------------------------- | ---------------------------- |
 | `import { X } from '<alias>/src/...'` (cross-package internal path)           | API surface                  |
-| `export * from './everything'` barrel                                         | API surface                  |
+| `export * from './everything'` barrel — unless `barrel-exports` in `.agents/lodestar/context.md`'s `## Conventions` table allows barrels | API surface                  |
 | Export in `index.ts` with no external consumer                                | API surface                  |
 | Business logic in a route handler or UI component                             | SoC                          |
 | Network / DOM / framework calls inside a package nominated as domain-only     | SoC                          |
@@ -189,7 +195,7 @@ Before marking any task complete:
 - [ ] No abstraction, parameter, or option added without a current caller
 - [ ] New cross-package types live in the shared types package
 - [ ] Existing types extended/composed rather than redefined
-- [ ] New domain identifiers use branded types
+- [ ] New domain identifiers use branded types — unless `branded-types` is disabled in `.agents/lodestar/context.md`'s `## Conventions` table
 - [ ] All cross-package imports go through `index.ts`
 - [ ] Nothing exported from `index.ts` that no consumer needs
 - [ ] No import crosses the dependency direction declared in `.agents/lodestar/context.md`
@@ -197,7 +203,7 @@ Before marking any task complete:
 - [ ] No side effects at module load time
 - [ ] No new mutable module-level state introduced
 - [ ] All `catch` blocks handle, rethrow, or convert — nothing swallowed
-- [ ] Expected failure paths return `Result<T, E>`, not thrown errors
+- [ ] Expected failure paths return `Result<T, E>`, not thrown errors — unless `result-types` is disabled in `.agents/lodestar/context.md`'s `## Conventions` table
 - [ ] No custom implementation where a well-maintained library already solves the problem
 - [ ] Every concept uses exactly one name, consistently, across all files touched
 - [ ] Tests written alongside the code
