@@ -51,17 +51,13 @@ repository, not locations of this installed skill.
 
 ## Step 0 — Confirm the repo is scannable
 
-Count TypeScript and JavaScript files (`source-scan`'s include list:
-`.ts` `.tsx` `.js` `.jsx` `.mjs` `.cjs`) by extension across top-level source
-directories, excluding `node_modules` and `.git`. Count only; do not
-read contents. Tally other source extensions (`.py`, `.go`, `.rs`, …)
-in the same pass so you can name languages if you stop.
+Count TS/JS files (`source-scan` include list) by extension across
+top-level source dirs, excluding `node_modules` and `.git`. Count
+only. Tally other extensions (`.py`, `.go`, `.rs`, …) in the same pass.
 
-- **Zero scannable files** → **stop**. Write nothing. Say the suite
-  audits TypeScript and JavaScript only, name the languages found with
-  counts, and say no config was written. Do not offer a partial setup.
-- **Some scannable, some not** → continue; carry per-directory counts
-  into Step 1 so unscannable rows get marked.
+- **Zero scannable files** → **stop**. Write nothing. Name the
+  languages found with counts. Do not offer a partial setup.
+- **Some scannable, some not** → continue; carry counts into Step 1.
 
 ## Step 1 — Collect the minimum required facts
 
@@ -89,6 +85,12 @@ Read only what's needed to fill in the template placeholders:
     cases", "DB and queue adapters").
   - Whether the glob contains scannable files. A row with none gets
     `Scannable: no` plus a language note (`no (Python)`). Keep the row.
+- **Excluded paths** — gitignored paths inside layout globs; codegen
+  configs (`prisma/schema.prisma`, `codegen.yml`/`ts`, `*.proto`,
+  `openapi*.y?ml`) and their output; dirs named `generated`,
+  `__generated__`, `dist`, `build`, `.next`, `.output`; `*.gen.ts` /
+  `*.generated.ts`; `@generated` / "do not edit" banners. Tests: which
+  of `*.test.*`, `*.spec.*`, `__tests__/`, `tests/` appear.
 - **Dependency direction** — build the package-level edge list (which
   packages import which, with a rough count), then check for cycles.
   Acyclic → topological order as a chain. Cyclic → record the edges and
@@ -150,6 +152,9 @@ script prefixes until that is answered.
 Ask the user to correct anything wrong. One round of feedback only.
 Do not ask about conventions here — that is Step 3. Do not ask whether
 the layout is "right" — that's `lodestar-architecture`'s job, not setup's.
+Then a second confirmation: excluded-path candidates with evidence,
+one round to add/remove (empty allowed). Write `## Excluded Paths`
+from that answer in both enforcement modes.
 
 ## Step 3 — Confirm which conventions the repo already follows
 
@@ -247,19 +252,21 @@ This is the load-bearing file. Start from `context-md.md`. Fill in:
   (`yes`, or `no (Python)`).
 - The Conventions table — the five keys from Step 3, with the confirmed
   values. Use the skip-value polarity from the template (`barrel-exports:
-  yes` means barrels are allowed).
+yes` means barrels are allowed).
 - The Audit Settings table — defaults (`categories: all`, `output-root:
-  docs/audit`, `fallow: required`). Do not ask about these. If the user later persists a
+docs/audit`, `fallow: required`). Do not ask about these. If the user later persists a
   category subset from `lodestar-audit`, leave that row as they wrote it
   on a re-run unless they ask to reset it.
+- Excluded Paths — Step 2 globs; replace wholesale; insert between
+  Package Layout and Conventions if missing.
 
 Leave the `## Principles` and `## Skills` sections as the template has
 them — the principles link must stay pointed at
 `.agents/skills/lodestar-setup/principles.md`.
 
-If the file already exists, replace the `## Build & Test`,
-`## Dependency Direction`, `## Package Layout`, and `## Conventions`
-sections and leave any other content the user added alone. If
+If the file already exists, replace `## Build & Test`,
+`## Dependency Direction`, `## Package Layout`, `## Conventions`, and
+`## Excluded Paths`; leave other user content. If
 `## Conventions` is missing (a pre-0.5 file), insert it between
 `## Package Layout` and `## Principles`. If `## Audit Settings` is
 missing, insert it between `## Conventions` and `## Principles` with
@@ -332,7 +339,7 @@ heuristic grep for direction violations.
    install over a working copy**. Go straight to `.fallowrc.json` below.
 2. If fallow is missing or outside the supported range, offer to install
    it. `resolve-bin` fails with a message that already ends in `Install a
-   compatible version with: <command>`, built for the manager it detected
+compatible version with: <command>`, built for the manager it detected
    from the lockfile — quote that command rather than composing one here,
    so the version pin and the per-manager syntax have one source. When the
    lockfile is ambiguous the message lists all three managers instead; use
@@ -355,12 +362,13 @@ heuristic grep for direction violations.
    > This repo has fallow `<found version>`, which `lodestar-audit` can't
    > use. Upgrade it with `<command>`? (yes / no — I'll print the command
    > and carry on)
+
 3. Before installing in a repo with more than one package, ask where it
    goes: the workspace root, or a named package. Adjust the quoted command
    for the answer — root is `pnpm add -D -w` / `npm install --save-dev` /
    `yarn add -D` at the root, and a named package is
    `pnpm --filter <name> add -D` / `npm install --save-dev --workspace
-   <name>` / `yarn workspace <name> add -D`. Recommend the root: a
+<name>` / `yarn workspace <name> add -D`. Recommend the root: a
    package-local install has to be verified and audited from that package.
    Do not proceed without an answer.
 4. On "yes", run the final command from items 2 and 3 of this step, then
@@ -377,6 +385,7 @@ heuristic grep for direction violations.
    root, and it should be moved to the root or put on `PATH` before the
    audit runs. Do not tell the user to point the audit's `--root` at the
    package — that would narrow the scan to that package.
+
 5. On "no", or on a failed install: print the command verbatim, say plainly
    that `lodestar-audit` will refuse to run until a compatible fallow is
    present (`fallow: required`, the default this step writes), and carry on — the `.fallowrc.json` question is asked either
@@ -406,13 +415,13 @@ JSON inside a fenced block). Substitute:
   Use the literal path glob from the table as the `patterns` value
   (wrapping bare directory paths to `<path>/**`). For a row with a glob
   like `apps/*/src`, prefer `"autoDiscover": ["apps"]` so each app
-  becomes its own sub-zone (sibling apps end up isolated from each
-  other, which is usually what you want).
+  becomes its own sub-zone.
 - One `boundaries.rules[]` entry per scannable package. The `allow` list is every
   package reachable from `from` in the documented graph (including cycle
   partners). For an acyclic chain this matches every package to the right
   in the chain. The tail-of-chain package with no downward edges gets
   `allow: []` (or only cycle partners when cyclic).
+- `ignorePatterns`: one entry per `## Excluded Paths` glob. Skip Fallow's built-in ignores. `dupes`/`health` honor it; do not mirror. `extends` replaces arrays — check the merge.
 
 Write to `.fallowrc.json`.
 

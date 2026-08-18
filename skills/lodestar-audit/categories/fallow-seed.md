@@ -118,6 +118,12 @@ For `check.boundary_violations` to fire, the repo must have a `.fallowrc.json`
 whose zones match the `## Package Layout` table in `context.md`. The setup
 skill writes this file (Step 7 of `lodestar-setup`) using the repo's
 own package names as zone names — there is no canonical role mapping.
+Setup also writes `ignorePatterns` from `## Excluded Paths`. Fallow's
+schema excludes those files from analysis entirely, so `dupes` and
+`health` honor the list without a second copy in `duplicates.ignore` /
+`health.ignore`. Do not restate Fallow's built-in ignores (`**/dist/**`,
+`**/*.d.ts`, `node_modules`). `extends` replaces array fields wholesale
+— verify the merged config, not only the file setup wrote.
 
 If `.fallowrc.json` is absent, fallow still produces useful output for
 every other field above — `check.boundary_violations` is just empty. In that
@@ -129,8 +135,8 @@ To verify the boundary config matches what the audit expects, run:
 node scripts/fallow-contract.mjs run --root <repo> --id list-boundaries --out <repo>/.audit-fallow-boundaries.json
 ```
 
-The output should list one zone per row in the Package Layout table, with
-file counts > 0 for every zone the repo actually has. A zone reporting
+The output should list one zone per **scannable** row in the Package
+Layout table, with file counts > 0 for every zone the repo actually has. A zone reporting
 zero files almost always means the path glob is wrong. Delete the temp
 JSON after reading it.
 

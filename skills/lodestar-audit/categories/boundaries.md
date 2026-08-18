@@ -33,7 +33,8 @@ or API request shape will hit. Flag findings with
 `requires_decision: true` unless the file's path makes it clear that the
 type is a domain entity (e.g. `domain/`, `entities/`, `model/`), and
 explicitly skip hits in obvious boundary-shape files (`*.dto.ts`,
-`*.request.ts`, `*.response.ts`, generated client files).
+`*.request.ts`, `*.response.ts`). Generated client files belong in
+`## Excluded Paths` — do not keep a second local skip list.
 
 ### B. Misplaced business logic
 
@@ -94,7 +95,10 @@ file whose path strongly suggests it owns the entry boundary (e.g.
 
 All commands below use placeholders resolved from the `## Package Layout`
 table in `context.md` (see references/discover.md). Substitute before running.
-Where `<pkg_root>` appears, iterate over every row.
+Where `<pkg_root>` appears, iterate over every **scannable** row.
+Honor `excludedPaths` / `testGlobs` from `validate-input` on every
+scan; the local `*.request.ts` / `*.response.ts` skip stays, but
+generated-client skips defer to `## Excluded Paths`.
 
 ```bash
 # A — raw primitives for domain IDs

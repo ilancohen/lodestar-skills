@@ -5,8 +5,9 @@ detect cross-package boundary violations.
 
 Read by `lodestar-setup` Step 7 only when the user opts in
 to fallow integration. The setup skill substitutes the placeholders below
-from the `.agents/lodestar/context.md` `## Package Layout` table and the
-observed import graph in `## Dependency Direction`.
+from the `.agents/lodestar/context.md` `## Package Layout` table, the
+observed import graph in `## Dependency Direction`, and the globs in
+`## Excluded Paths`.
 
 Do not check this template's literal `<placeholder>` form into a user
 project — the setup skill must always substitute before writing.
@@ -51,6 +52,11 @@ project — the setup skill must always substitute before writing.
     "boundary-violation": "error",
     "circular-dependencies": "error",
   },
+
+  // Globs from context.md `## Excluded Paths`. Do not restate Fallow's
+  // built-in ignores (dist, .d.ts, node_modules). dupes/health honor
+  // ignorePatterns — files are excluded from analysis entirely.
+  "ignorePatterns": ["<excluded_glob>"],
 }
 ```
 
@@ -107,10 +113,10 @@ import from each other.
 
 For a `context.md` that records a cyclic graph between `core` and `api`:
 
-| Package | Path glob             |
-| ------- | --------------------- |
-| `core`  | `packages/core/src`   |
-| `api`   | `packages/api/src`    |
+| Package | Path glob           |
+| ------- | ------------------- |
+| `core`  | `packages/core/src` |
+| `api`   | `packages/api/src`  |
 
 Observed edges (both marked `[cycle]`):
 

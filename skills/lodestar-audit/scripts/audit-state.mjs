@@ -144,10 +144,13 @@ function parseScannableCell(raw) {
   return { scannable: match[1], language: (match[2] || "").trim() };
 }
 
-export function countScannableFiles(repoRoot, pkgPath) {
+export function countScannableFiles(repoRoot, pkgPath, excludedPaths = []) {
   let count = 0;
   for (const dir of packageDirs(repoRoot, pkgPath)) {
-    count += walk(dir, DEFAULT_INCLUDE, false).length;
+    count += walk(dir, DEFAULT_INCLUDE, false, [], {
+      cwd: repoRoot,
+      excludeGlobs: excludedPaths,
+    }).length;
   }
   return count;
 }
@@ -166,12 +169,16 @@ function packageDirs(repoRoot, pkgPath) {
   return [path.join(repoRoot, ...normalized.split("/").filter(Boolean))];
 }
 
-export function attachScannableCounts(repoRoot, packages) {
+export function attachScannableCounts(repoRoot, packages, excludedPaths = []) {
   return packages.map((row) => {
     if (row.scannable === "no") {
       return { ...row, scannableCount: 0 };
     }
-    const scannableCount = countScannableFiles(repoRoot, row.path);
+    const scannableCount = countScannableFiles(
+      repoRoot,
+      row.path,
+      excludedPaths,
+    );
     if (scannableCount === 0) {
       throw new Error(
         `Package \`${row.name}\` is marked Scannable: yes but contains no TypeScript or JavaScript files under \`${row.path}\`. The glob is stale or wrong — re-run lodestar-setup, or mark the row Scannable: no if it is not a TS/JS package.`,
@@ -354,6 +361,31 @@ export function parseAuditSettings(contextText) {
     }
   }
   return settings;
+}
+
+export function parseExcludedPaths(contextText) {
+  const result = { excludedPaths: [], testGlobs: [] };
+  const heading = contextText.search(/^## Excluded Paths\s*$/m);
+  if (heading === -1) return result;
+  const rest = contextText.slice(heading);
+  const next = rest.search(/\n## /);
+  const section = next === -1 ? rest : rest.slice(0, next);
+  let bucket = "excludedPaths";
+  for (const line of section.split(/\r?\n/)) {
+    const bullet = line.match(/^\s*[-*]\s+`([^`]+)`/);
+    if (bullet) {
+      result[bucket].push(bullet[1]);
+      continue;
+    }
+    if (/^\s*\*\*Test files\b/i.test(line) || /^\s*Test files\b/i.test(line)) {
+      bucket = "testGlobs";
+      continue;
+    }
+    if (/^\s*\*\*Not audited\b/i.test(line) || /^\s*Not audited\b/i.test(line)) {
+      bucket = "excludedPaths";
+    }
+  }
+  return result;
 }
 
 function parseCategorySetting(raw) {
@@ -815,14 +847,16 @@ function cmdValidateInput(flags) {
   const directionGraph = parseDirection(contextText);
   let conventions;
   let auditSettings;
+  let excluded;
   try {
     conventions = parseConventions(contextText);
     auditSettings = parseAuditSettings(contextText);
+    excluded = parseExcludedPaths(contextText);
   } catch (error) {
     fail(error.message, 2);
   }
   try {
-    packages = attachScannableCounts(root, packages);
+    packages = attachScannableCounts(root, packages, excluded.excludedPaths);
   } catch (error) {
     fail(error.message, 2);
   }
@@ -837,6 +871,8 @@ function cmdValidateInput(flags) {
     outputRoot: auditSettings.outputRoot,
     architectureRoot: architectureOutputRoot(auditSettings.outputRoot),
     fallow: auditSettings.fallow,
+    excludedPaths: excluded.excludedPaths,
+    testGlobs: excluded.testGlobs,
     commands,
     pkgManager: detected.pkgManager,
     run: detected.run,

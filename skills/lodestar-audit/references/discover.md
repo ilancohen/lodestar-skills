@@ -16,7 +16,7 @@ returns `packages`, `direction` (acyclic chain order, empty when cyclic),
 `conventions` (every key present; defaults filled when `## Conventions`
 is missing or a row is missing), `commands`,
 `pkgManager`, `run`, `pkgManagerAmbiguous`, `pkgManagerLockfiles`,
-`allPkgRoots`, and `aliasPrefix`.
+`allPkgRoots`, `aliasPrefix`, `excludedPaths`, and `testGlobs`.
 
 Each `packages` row includes `scannable` (`yes` / `no`; default `yes`
 when the column is absent), `language` (empty unless a `no (Python)`
@@ -97,9 +97,14 @@ For each category:
    recipes over POSIX `grep` pipelines. Iterate `<pkg_root>` per
    **scannable** package row with repeated `--root` flags (paths may
    contain spaces). Skip `scannable: no` rows — do not grep them.
-3. Drop false positives in tests (`*.spec.ts`, `*.test.ts`) unless the
-   sub-doc says otherwise, generated code, `*.d.ts`, and
-   `eslint-disable`-guarded `any`.
+3. Drop false positives in tests and excluded paths from
+   `validate-input` (`excludedPaths`, `testGlobs`). Every
+   `source-scan.mjs` invocation must pass `--exclude` / `--test-glob`
+   from those lists (repeatable) and `--cwd <repo>` (the same root as
+   `validate-input`). `--include-tests` still means ignore
+   the test globs for that scan. For POSIX `grep` fallbacks, apply the
+   same globs via `--exclude-dir` / `--exclude` or filter hits
+   afterward. `*.d.ts` and `eslint-disable`-guarded `any` stay dropped.
 4. Append finding objects. Do not write action-item files here.
 5. Checkpoint:
    `node scripts/audit-state.mjs checkpoint --run-dir <output-root>/<RUN_ID> --category <name> --status complete --count N`

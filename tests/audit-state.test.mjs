@@ -19,6 +19,7 @@ import {
   parseAuditSettings,
   parseConventions,
   parseDirection,
+  parseExcludedPaths,
   parseFindings,
   parsePackageLayout,
   sortFindings,
@@ -89,7 +90,9 @@ test("documented cycle edges are not wrong-direction imports", () => {
 });
 
 test("acyclic upward imports are wrong-direction", () => {
-  const parsed = parseDirection("## Dependency Direction\n\ncore → api\n\n## Package Layout");
+  const parsed = parseDirection(
+    "## Dependency Direction\n\ncore → api\n\n## Package Layout",
+  );
   assert.equal(isWrongDirectionImport("api", "core", parsed), true);
   assert.equal(isWrongDirectionImport("core", "api", parsed), false);
 });
@@ -325,7 +328,10 @@ test("validate-input fails when a Scannable yes row has no scannable files", () 
 `);
   const result = run(["validate-input", "--root", tmp]);
   assert.equal(result.status, 2);
-  assert.match(result.stderr, /Scannable: yes but contains no TypeScript or JavaScript/);
+  assert.match(
+    result.stderr,
+    /Scannable: yes but contains no TypeScript or JavaScript/,
+  );
   fs.rmSync(tmp, { recursive: true, force: true });
 });
 
@@ -366,7 +372,109 @@ test("validate-input does not count non-scannable files matched by a glob", () =
   );
   const result = run(["validate-input", "--root", tmp]);
   assert.equal(result.status, 2);
-  assert.match(result.stderr, /Scannable: yes but contains no TypeScript or JavaScript/);
+  assert.match(
+    result.stderr,
+    /Scannable: yes but contains no TypeScript or JavaScript/,
+  );
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test("parseExcludedPaths defaults to empty lists when the section is absent", () => {
+  assert.deepEqual(parseExcludedPaths("# Fixture\n\n## Package Layout\n"), {
+    excludedPaths: [],
+    testGlobs: [],
+  });
+});
+
+test("parseExcludedPaths reads both glob lists", () => {
+  const parsed = parseExcludedPaths(`## Excluded Paths
+
+**Not audited** — generated output.
+
+- \`packages/db/generated/**\` — Prisma client
+- \`**/*.gen.ts\` — GraphQL codegen
+
+**Test files** — skipped by default.
+
+- \`**/*.test.ts\` — vitest
+- \`**/__tests__/**\` — colocated tests
+`);
+  assert.deepEqual(parsed.excludedPaths, [
+    "packages/db/generated/**",
+    "**/*.gen.ts",
+  ]);
+  assert.deepEqual(parsed.testGlobs, ["**/*.test.ts", "**/__tests__/**"]);
+});
+
+test("parseExcludedPaths does not treat bullet reasons as headings", () => {
+  const parsed = parseExcludedPaths(`## Excluded Paths
+
+**Not audited** — generated output.
+
+- \`packages/db/generated/**\` — Prisma generated test files
+- \`**/*.gen.ts\` — GraphQL codegen
+
+**Test files** — skipped by default.
+
+- \`**/*.test.ts\` — vitest test files
+`);
+  assert.deepEqual(parsed.excludedPaths, [
+    "packages/db/generated/**",
+    "**/*.gen.ts",
+  ]);
+  assert.deepEqual(parsed.testGlobs, ["**/*.test.ts"]);
+});
+
+test("validate-input fails when a yes row is entirely excluded generated code", () => {
+  const tmp = writeLayoutRepo(
+    `## Package Layout
+
+| Package | Path | Alias | Responsibility |
+| ------- | ---- | ----- | -------------- |
+| db | packages/db/src | @repo/db | Database client and generated Prisma types |
+
+## Excluded Paths
+
+**Not audited**
+
+- \`packages/db/src/generated/**\` — Prisma client
+`,
+    { "packages/db/src/generated/client.ts": "export const value = 1;\n" },
+  );
+  const generated = run(["validate-input", "--root", tmp]);
+  assert.equal(generated.status, 2);
+  assert.match(
+    generated.stderr,
+    /Scannable: yes but contains no TypeScript or JavaScript/,
+  );
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test("validate-input emits excludedPaths and testGlobs", () => {
+  const tmp = writeLayoutRepo(
+    `## Package Layout
+
+| Package | Path | Alias | Responsibility |
+| ------- | ---- | ----- | -------------- |
+| core | packages/core/src | @repo/core | Domain entities and use cases for billing |
+
+## Excluded Paths
+
+**Not audited**
+
+- \`**/generated/**\` — codegen
+
+**Test files**
+
+- \`**/__tests__/**\` — colocated tests
+`,
+    { "packages/core/src/index.ts": "export const value = 1;\n" },
+  );
+  const listed = run(["validate-input", "--root", tmp]);
+  assert.equal(listed.status, 0, listed.stderr);
+  const payload = JSON.parse(listed.stdout);
+  assert.deepEqual(payload.excludedPaths, ["**/generated/**"]);
+  assert.deepEqual(payload.testGlobs, ["**/__tests__/**"]);
   fs.rmSync(tmp, { recursive: true, force: true });
 });
 
@@ -418,7 +526,9 @@ test("parseConventions parses each key", () => {
 });
 
 test("parseConventions fills missing rows from defaults", () => {
-  const parsed = parseConventions(conventionsMarkdown([["result-types", "no"]]));
+  const parsed = parseConventions(
+    conventionsMarkdown([["result-types", "no"]]),
+  );
   assert.equal(parsed["result-types"], "no");
   assert.equal(parsed["branded-types"], "yes");
   assert.equal(parsed["barrel-exports"], "no");
@@ -517,19 +627,28 @@ test("parseAuditSettings honors a custom output-root and category subset", () =>
   );
   assert.deepEqual(parsed.categories, ["imports", "types", "ssot"]);
   assert.equal(parsed.outputRoot, "docs/qa");
-  assert.equal(architectureOutputRoot(parsed.outputRoot), "docs/qa/architecture-review");
+  assert.equal(
+    architectureOutputRoot(parsed.outputRoot),
+    "docs/qa/architecture-review",
+  );
 });
 
 test("parseAuditSettings rejects an unknown category", () => {
   assert.throws(
-    () => parseAuditSettings(auditSettingsMarkdown([["categories", "imports, nope"]])),
+    () =>
+      parseAuditSettings(
+        auditSettingsMarkdown([["categories", "imports, nope"]]),
+      ),
     /unknown category/,
   );
 });
 
 test("parseAuditSettings rejects a path with ..", () => {
   assert.throws(
-    () => parseAuditSettings(auditSettingsMarkdown([["output-root", "docs/../secret"]])),
+    () =>
+      parseAuditSettings(
+        auditSettingsMarkdown([["output-root", "docs/../secret"]]),
+      ),
     /invalid `output-root`/,
   );
 });

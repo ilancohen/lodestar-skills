@@ -90,6 +90,29 @@ Notes for the table:
 - Do not drop a `Scannable: no` row. The audit lists it as a known
   blind spot rather than omitting it.
 
+## Excluded Paths
+
+Globs the audit does not treat as hand-written source. **Absent means
+default:** no extra exclusions, and tests match `*.spec.*` / `*.test.*`
+plus `*.d.ts` (today's `source-scan` behavior). A pre-existing file
+without this section is unchanged.
+
+**Not audited** — generated, vendored, and build output. Skipped entirely
+by every detector and by Fallow `ignorePatterns`.
+
+- `[e.g. packages/db/generated/**]` — Prisma client
+- `[e.g. **/*.gen.ts]` — GraphQL codegen
+
+**Test files** — skipped by default. Detectors that want tests pass
+`--include-tests`. Replaces the hardcoded `*.spec.*` / `*.test.*` match
+when this list is present.
+
+- `[e.g. **/*.test.ts]` — vitest
+- `[e.g. **/__tests__/**]` — colocated tests
+
+One glob per bullet, with a one-line reason. Do not restate Fallow's
+built-in ignores (`**/dist/**`, `**/*.d.ts`, `node_modules`).
+
 ## Conventions
 
 Which of a short list of style conventions this repo actually follows.
@@ -100,13 +123,13 @@ The audit skips a detector only at that row's skip value: `no` for
 missing row, uses the default in the table below — not "every key is
 `yes`". Values written here are the only way to opt out.
 
-| Convention       | Value   | What it gates                                                 |
-| ---------------- | ------- | ------------------------------------------------------------- |
-| `result-types`   | `yes`   | `errors` #B (expected failures return `Result<T, E>`)         |
-| `branded-types`  | `yes`   | `boundaries` A, `types` #4                                    |
-| `barrel-exports` | `no`    | `imports` #4 (`export *`) — `yes` means barrels are allowed   |
-| `design-tokens`  | `yes`   | the whole `styling` category                                  |
-| `coverage-floor` | `80`    | the Testability coverage floor and the pre-commit checklist   |
+| Convention       | Value | What it gates                                               |
+| ---------------- | ----- | ----------------------------------------------------------- |
+| `result-types`   | `yes` | `errors` #B (expected failures return `Result<T, E>`)       |
+| `branded-types`  | `yes` | `boundaries` A, `types` #4                                  |
+| `barrel-exports` | `no`  | `imports` #4 (`export *`) — `yes` means barrels are allowed |
+| `design-tokens`  | `yes` | the whole `styling` category                                |
+| `coverage-floor` | `80`  | the Testability coverage floor and the pre-commit checklist |
 
 Keys and allowed values:
 
@@ -129,11 +152,11 @@ Fallow required. Setup writes this section at those defaults and does
 not ask about it. `lodestar-audit` may offer to persist a category
 subset here after a run.
 
-| Setting        | Value         | Notes                                                                                          |
-| -------------- | ------------- | ---------------------------------------------------------------------------------------------- |
-| `categories`   | `all`         | `all`, or a comma-separated list of category names (`imports`, `types`, …)                     |
-| `output-root`  | `docs/audit`  | Where audit runs land (`<output-root>/<RUN_ID>/`). Relative, no `..`.                          |
-| `fallow`       | `required`    | `required` (default) stops the audit if Fallow is missing or out of range. `optional` continues with grep-only detectors and lists unchecked subtypes in `INDEX.md`. |
+| Setting       | Value        | Notes                                                                                                                                                                |
+| ------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `categories`  | `all`        | `all`, or a comma-separated list of category names (`imports`, `types`, …)                                                                                           |
+| `output-root` | `docs/audit` | Where audit runs land (`<output-root>/<RUN_ID>/`). Relative, no `..`.                                                                                                |
+| `fallow`      | `required`   | `required` (default) stops the audit if Fallow is missing or out of range. `optional` continues with grep-only detectors and lists unchecked subtypes in `INDEX.md`. |
 
 Architecture reports derive from the same root so the two stay together:
 `docs/audit` → `docs/architecture-review`; any other root →
