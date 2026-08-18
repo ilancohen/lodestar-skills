@@ -480,6 +480,97 @@ function parseOutputRootSetting(raw) {
   return raw.replace(/\/$/, "");
 }
 
+export const GIT_DEFAULTS = {
+  commits: "ask",
+  subjectFormat: "<category>: <slug>",
+  trailer: "Closes <item>.",
+  protected: [],
+  requireClean: "no",
+};
+
+const GIT_COMMITS = new Set(["ask", "per-item", "never"]);
+
+export function parseGit(contextText) {
+  const git = {
+    commits: GIT_DEFAULTS.commits,
+    subjectFormat: GIT_DEFAULTS.subjectFormat,
+    trailer: GIT_DEFAULTS.trailer,
+    protected: [...GIT_DEFAULTS.protected],
+    requireClean: GIT_DEFAULTS.requireClean,
+  };
+  const heading = contextText.search(/^## Git\s*$/m);
+  if (heading === -1) return git;
+
+  const rest = contextText.slice(heading);
+  const next = rest.search(/\n## /);
+  const section = next === -1 ? rest : rest.slice(0, next);
+
+  for (const line of section.split(/\r?\n/)) {
+    if (!line.startsWith("|")) continue;
+    const cells = line
+      .split("|")
+      .slice(1, -1)
+      .map((cell) => cell.trim());
+    if (cells.length < 2) continue;
+    if (/^-+$/.test(cells[0].replace(/:/g, "-"))) continue;
+    const key = stripTicks(cells[0]);
+    if (!key || /^key$/i.test(key)) continue;
+    const raw = stripTicks(cells[1]);
+    if (key === "commits") git.commits = parseGitCommits(raw);
+    else if (key === "subject-format") {
+      git.subjectFormat = parseGitSubjectFormat(raw);
+    } else if (key === "trailer") git.trailer = parseGitTrailer(raw);
+    else if (key === "protected") git.protected = parseGitProtected(raw);
+    else if (key === "require-clean") {
+      git.requireClean = parseGitRequireClean(raw);
+    }
+  }
+  return git;
+}
+
+function parseGitCommits(raw) {
+  if (GIT_COMMITS.has(raw)) return raw;
+  throw new Error(
+    `## Git has an invalid value for \`commits\`: \`${raw}\`. Expected ask, per-item, or never.`,
+  );
+}
+
+function parseGitSubjectFormat(raw) {
+  if (!raw) {
+    throw new Error("## Git has an empty `subject-format`.");
+  }
+  if (!raw.includes("<slug>")) {
+    throw new Error(
+      `## Git has an invalid \`subject-format\`: \`${raw}\`. It must contain \`<slug>\`.`,
+    );
+  }
+  return raw;
+}
+
+function parseGitTrailer(raw) {
+  if (!raw) {
+    throw new Error("## Git has an empty `trailer`. Use `none` for no trailer.");
+  }
+  return raw;
+}
+
+function parseGitProtected(raw) {
+  if (!raw || raw === "none") return [];
+  const names = raw
+    .split(",")
+    .map((part) => stripTicks(part.trim()))
+    .filter(Boolean)
+    .filter((name) => name !== "none");
+  return [...new Set(names)];
+}
+
+function parseGitRequireClean(raw) {
+  if (raw === "yes" || raw === "no") return raw;
+  throw new Error(
+    `## Git has an invalid value for \`require-clean\`: \`${raw}\`. Expected yes or no.`,
+  );
+}
+
 function parseEdgeBullets(section) {
   const edges = [];
   for (const line of section.split(/\r?\n/)) {
@@ -898,10 +989,12 @@ function cmdValidateInput(flags) {
   let conventions;
   let auditSettings;
   let excluded;
+  let git;
   try {
     conventions = parseConventions(contextText);
     auditSettings = parseAuditSettings(contextText);
     excluded = parseExcludedPaths(contextText);
+    git = parseGit(contextText);
   } catch (error) {
     fail(error.message, 2);
   }
@@ -923,6 +1016,7 @@ function cmdValidateInput(flags) {
     fallow: auditSettings.fallow,
     excludedPaths: excluded.excludedPaths,
     testGlobs: excluded.testGlobs,
+    git,
     commands,
     pkgManager: detected.pkgManager,
     run: detected.run,

@@ -192,6 +192,33 @@ Architecture reports derive from the same root so the two stay together:
 Unknown keys are ignored. A typo in a known value is an error at audit
 time, not a silent default.
 
+## Git
+
+How `lodestar-fix` commits. **Absent means default:** ask each session,
+today's subject and trailer, no protected branches, dirty trees allowed.
+A pre-existing file without this section is unchanged.
+
+| Key              | Value                | Notes                                                                                          |
+| ---------------- | -------------------- | ---------------------------------------------------------------------------------------------- |
+| `commits`        | `ask`                | `ask` keeps today's question. `per-item` commits without asking. `never` never asks and never commits — edits stay unstaged. |
+| `subject-format` | `<category>: <slug>` | Must contain `<slug>`. Also substitutes `<category>`.                                          |
+| `trailer`        | `Closes <item>.`     | Body line. `none` for no trailer. `<item>` is the action-item path.                            |
+| `protected`      | `none`               | Branches `lodestar-fix` refuses to commit on. Comma-separated names, or `none`.                |
+| `require-clean`  | `no`                 | `yes` refuses to start with a dirty working tree.                                              |
+
+Unknown keys are ignored. A typo in a known value, or a `subject-format`
+with no `<slug>`, is an error at audit time, not a silent default.
+
+Setup detects, then asks once with the table pre-filled: commitlint
+(`commitlint.config.*`, `.commitlintrc*`, `package.json` `commitlint`;
+use its type list — `fix` → `fix(<category>): <slug>`, else `chore` or
+the first type); last ~20 `git log --format=%s` subjects (Conventional
+Commits → same shape; a leading ticket ID has no placeholder — they
+can prefix the template); hooks (`.husky/`, `lefthook.y*ml`, non-sample
+`.git/hooks`; grep prettier / biome / `eslint --fix`); current branch
+(`main`/`master` → propose for `protected`). Defaults otherwise:
+`commits: ask`, trailer `Closes <item>.`, `require-clean: no`.
+
 ## Principles
 
 The principles, TypeScript rules, testability and error-handling rules,

@@ -40,6 +40,14 @@ Required contents:
 
 If any are missing, stop and ask the user to run `lodestar-audit` first.
 
+Capture from the same `validate-input` payload:
+
+- `outputRoot` — where audit runs land.
+- `git` — commit policy. Every key is populated; a missing `## Git`
+  section yields today's defaults (`commits: ask`, subject
+  `<category>: <slug>`, trailer `Closes <item>.`, no protected
+  branches, `require-clean: no`).
+
 Capture from `.agents/lodestar/context.md` (the file `lodestar-setup`
 writes; `AGENTS.md` is not read):
 
@@ -51,6 +59,19 @@ writes; `AGENTS.md` is not read):
 ---
 
 ## Step 1 — Pick a run
+
+**Git preconditions** (before applying anything):
+
+1. If `git.requireClean` is `yes`, run `git status --porcelain`. A
+   dirty tree → **stop**. Name the dirty files. Do not pick a run.
+2. If the current branch (`git branch --show-current`) is in
+   `git.protected` and `git.commits` is not `never`, **stop** and offer
+   to continue this session without committing. On yes, set
+   `sessionCommits = never` for the rest of the session — do not write
+   `context.md`. On no, stop entirely. Otherwise
+   `sessionCommits = git.commits`.
+
+Then:
 
 1. List `<output-root>/*/` directories that contain **both** `INDEX.md` and
    at least one `NNN-<category>-<slug>.md` file **in the run root** (not
@@ -93,12 +114,19 @@ Items with `status: done` or `status: skipped` are never re-touched.
 Items with `status: in_progress` from an earlier interrupted session
 surface first (Step 4 — Resuming).
 
-Ask one more question:
+Set `AUTO_COMMIT` from `sessionCommits` (the Step 1 override, not the
+raw `git.commits` payload):
+
+- `per-item` — `AUTO_COMMIT = yes`. Say so: `## Git` has
+  `commits: per-item`, so each item is committed without asking.
+- `never` — `AUTO_COMMIT = no`. Say so (protected-branch override or
+  `## Git` `commits: never`): edits stay unstaged. Do not ask.
+- `ask` — ask today's question:
 
 > Auto-commit each item as it's completed? (yes — one git commit per
 > item / no — leave the diff staged for human review)
 
-Hold the answer (call it `AUTO_COMMIT`) for use in Step 3.6.
+Hold the answer for use in Step 3.6.
 
 ---
 
@@ -136,6 +164,11 @@ next session sees the in-progress item and offers to retry it.
 
 ### Step 3.4 — Apply the fix
 
+Always warn — before applying — when any path in the item's `files:`
+list already has uncommitted changes
+(`git status --porcelain -- <files>`). Those edits would be swept
+into a commit. Do not stop.
+
 Follow the **Suggested fix** section of the item exactly. Honor the
 **Scope rules** verbatim — they're the stop conditions for this
 item.
@@ -167,20 +200,43 @@ mask a real failure in another.
 
 ### Step 3.6 — Commit
 
+If `sessionCommits` is `never` (including a session that continued on a
+protected branch without committing): do not `git add`. If any of the
+item's files are already staged, unstage them with
+`git restore --staged -- <those files>` without touching the working
+tree. Continue.
+
 If `AUTO_COMMIT == yes`:
+
+Build the message with the item path relative to the repo root, write
+stdout to a temp file, then:
 
 ```
 git add <files from item>
-git commit -m "<category>: <slug>
+git commit -F <temp>
+```
 
-Closes <output-root>/<RUN_ID>/<NNN>-<category>-<slug>.md."
+`commit-message` invocation:
+
+```
+node <lodestar-fix-skill>/scripts/action-state.mjs commit-message \
+  --file <output-root>/<RUN_ID>/<NNN>-<category>-<slug>.md \
+  --item <output-root>/<RUN_ID>/<NNN>-<category>-<slug>.md \
+  --subject-format "<git.subjectFormat>" \
+  --trailer "<git.trailer>"
 ```
 
 Use only the files listed in the item's `files:`. Never `git add -A`.
+Never `--no-verify`. Never retry with a different message.
 
-If `AUTO_COMMIT == no`, leave the diff staged or unstaged — whatever
-the host's edit tool produced — and continue. The user will commit
-manually.
+If the commit fails — a rejecting hook is the expected case — **stop
+this item**. Write `status: deferred` with the hook output in `note:`,
+leave the changes in place, tell the user, and move on. The edits are
+good; only the commit failed. Do not mark the item done.
+
+If `AUTO_COMMIT == no` (and `sessionCommits` is not `never`), leave the diff
+staged or unstaged — whatever the host's edit tool produced — and
+continue. The user will commit manually.
 
 ### Step 3.7 — Mark done and move
 
@@ -217,9 +273,13 @@ If a sub-agent tool exists, categories parallelize (independent fixes).
 Skip when unavailable — Step 3's inline loop is canonical.
 
 Spawn one sub-agent per category with the item paths, full item text,
-`<typecheck>` / `<test>`, and `AUTO_COMMIT`. Constraints: action item is
-the contract (scope rules stop the work); no edits outside `files:`;
-no nested spawns; return JSON
+`<typecheck>` / `<test>`, `sessionCommits`, `AUTO_COMMIT`, and `git`
+(`subjectFormat`, `trailer`). Constraints: action item is the
+contract (scope rules stop the work); no edits outside `files:`; no
+nested spawns; build commit messages with `commit-message` (never
+`--no-verify`, never retry); hook reject → `status: deferred` with
+hook output, leave edits, do not mark done; `sessionCommits: never` →
+do not commit, leave unstaged. Return JSON
 `[{item_id, status, files_modified, commit_sha, notes}]`.
 
 Sub-agents run `<typecheck>` per batch but defer `<test>` to the
@@ -240,8 +300,13 @@ lodestar-fix session complete on <output-root>/<RUN_ID>/.
   skipped:    N
   remaining:  N
 
-Of the deferred items, M hit scope-creep limits and N need a human
-decision — see the note: field in each.
+Commit policy: <ask | per-item | never> (from ## Git, or session
+override on a protected branch).
+
+Of the deferred items, M hit scope-creep limits, N were rejected by a
+commit hook, and P need a human decision — see the note: field in each.
+List hook-rejected items separately; the edits are on disk and the
+item is resumable.
 
 Next steps:
   - Re-run `lodestar-fix` to pick up where you left off.

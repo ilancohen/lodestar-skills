@@ -5,9 +5,10 @@ description: >-
   layout and which of a short list of conventions it already follows in
   .agents/lodestar/context.md, the one file the other lodestar skills
   read, which links to the bundled principles.md (never copied or
-  inlined). Asks separately whether to add a pointer section to AGENTS.md
-  so principles apply to every task (full suite) or to leave AGENTS.md
-  untouched (skills-only). With separate user consent it may also install
+  inlined). Asks how lodestar-fix should commit, and whether to add a
+  pointer section to AGENTS.md so principles apply to every task (full
+  suite) or to leave AGENTS.md untouched (skills-only). With separate
+  user consent it may also install
   Fallow as a devDependency (writing package.json and the lockfile), write
   .fallowrc.json, add gitignore entries, and tighten existing linter rules.
   Do not load unless the user explicitly invokes lodestar-setup by name.
@@ -21,7 +22,7 @@ metadata:
 
 Write the agent-neutral config the lodestar skills need. The one file that
 matters is `.agents/lodestar/context.md`: package layout, dependency
-direction, build commands, and which conventions the repo already follows.
+direction, build commands, conventions, and how `lodestar-fix` commits.
 `lodestar-audit`, `lodestar-fix`, and `lodestar-architecture` read that
 file and nothing else for repo facts — they never read `AGENTS.md`.
 
@@ -37,17 +38,11 @@ repository, not locations of this installed skill.
 
 - **Does**: discover the packages that already exist, document each one
   (name, path, alias, one-sentence responsibility), record the observed
-  package import graph, record which of a short list of conventions the
-  repo already follows, and write the config files agents read.
-- **Does not**: force the repo's packages into a fixed list of roles
-  (`core`, `api`, `ui`, etc.). The audit operates on whatever packages
-  this skill documents.
-- **Does not**: write an intended or target dependency direction, even when
-  the observed graph is cyclic. If the user wants a proposed layout, point
-  them at `lodestar-architecture` and stop.
-- **Does not**: propose, suggest, or critique an alternative layout.
-  If the user asks for that, point them at `lodestar-architecture` and
-  stop — do not silently start a layout review.
+  package import graph, conventions, how `lodestar-fix` should commit,
+  and write the config files agents read.
+- **Does not**: force packages into a fixed role list (`core`, `api`,
+  `ui`), write a target dependency direction, or propose an alternative
+  layout. Point layout questions at `lodestar-architecture` and stop.
 
 ## Step 0 — Confirm the repo is scannable
 
@@ -115,6 +110,8 @@ Read only what's needed to fill in the template placeholders:
   - `coverage-floor`: a coverage threshold in the test runner config the
     Build & Test `test` script already points at (vitest / jest / c8
     `coverage.thresholds` or equivalent).
+- **Commit policy** — detect per `context-md.md` `## Git` (commitlint,
+  `git log`, hooks, current branch). Record paths, not a judgment.
 
 Stop there. Do not read tsconfig deeply, explore individual packages, check
 for issue trackers, or investigate test frameworks beyond the scripts and
@@ -145,8 +142,9 @@ Bun was detected, ask name, exec prefix, and add-dev — not a closed
 list. Do not proceed with install prefixes until that is answered.
 
 Ask the user to correct anything wrong. One round of feedback only.
-Do not ask about conventions here — that is Step 3. Do not ask whether
-the layout is "right" — that's `lodestar-architecture`'s job, not setup's.
+Do not ask about conventions (Step 3) or commit policy (Step 3a) here.
+Do not ask whether the layout is "right" — that's
+`lodestar-architecture`'s job, not setup's.
 Then a second confirmation: excluded-path candidates with evidence,
 one round to add/remove (empty allowed). Write `## Excluded Paths`
 from that answer in both enforcement modes.
@@ -191,6 +189,21 @@ Record the answers as the `## Conventions` table values:
 
 Do not ask a second question. Setup stays descriptive.
 
+## Step 3a — Confirm how lodestar-fix commits
+
+Setup's second and last new question (excluded paths was the first).
+Ask once, pre-filled from Step 1 / `context-md.md` `## Git`:
+
+> How should `lodestar-fix` commit? Pre-filled from the repo. One round.
+>
+> - commits: **ask** / per-item / never
+> - subject-format / trailer / protected / require-clean — detected or default
+>
+> Hooks: `<husky | lefthook | .git/hooks | none>`. No `--no-verify`.
+
+`never` = no ask, no commit, edits stay unstaged. Write `## Git` in
+both enforcement modes.
+
 ## Step 4 — Choose how principles get enforced
 
 `.agents/lodestar/context.md` gets written either way — the other three
@@ -210,29 +223,21 @@ the rest of setup, so ask about it on its own:
 >   when invoked; nothing applies the principles unprompted.
 
 Record the answer as `ENFORCEMENT_MODE` (`full` or `skills-only`) for
-Steps 5 and 6. This choice does not affect any other step — the layout
-table, the conventions table, Fallow (Step 7), and linting (Step 8) run
-the same way regardless, since `lodestar-audit` needs them whether or not
-principles are auto-enforced.
+Steps 5 and 6. This choice does not affect any other step — layout,
+conventions, Git, Fallow (Step 7), and linting (Step 8) run the same
+way regardless.
 
 ## Step 5 — Write the files
 
 Use the templates beside this `SKILL.md`. Fill every `[bracketed
 placeholder]` with real values. Announce each file before writing it.
 
-`principles.md` (beside this `SKILL.md`) is not one of them. It is the
-single source of truth for the principles content, and every install of
-this suite — regardless of which agent(s) it was installed for — always
-also lands a real copy at the fixed path
-`.agents/skills/lodestar-setup/principles.md` (the install tooling requests
-the skills CLI's `universal` target for exactly this reason). Do not copy,
-inline, or edit its content into any other file, and do not write
-agent-specific files (`CLAUDE.md`, `.github/copilot-instructions.md`, or
-similar) — `.agents/lodestar/context.md` just links to it. No placeholder
-substitution is needed either: `principles.md` references
-`.agents/lodestar/context.md`'s `## Build & Test`, `## Package Layout`,
-and `## Conventions` tables by name instead of embedding literal
-commands, so it reads correctly untouched, in every consuming repo.
+`principles.md` (beside this `SKILL.md`) is the SSOT for principles.
+The install always lands a copy at
+`.agents/skills/lodestar-setup/principles.md`. Do not copy, inline, or
+edit it, and do not write agent-specific files (`CLAUDE.md`, Copilot
+instructions). It references `context.md` tables by name, so it needs
+no placeholder substitution.
 
 ### .agents/lodestar/context.md
 
@@ -253,25 +258,25 @@ docs/audit`, `fallow: required`). Do not ask about these. If the user later pers
   category subset from `lodestar-audit`, leave that row as they wrote it
   on a re-run unless they ask to reset it.
 - Excluded Paths — Step 2 globs; replace wholesale; insert between
-  Package Layout and Conventions if missing.
+  Package Layout and Conventions if missing. Git table — Step 3a.
 
 Leave the `## Principles` and `## Skills` sections as the template has
 them — the principles link must stay pointed at
 `.agents/skills/lodestar-setup/principles.md`.
 
 If the file already exists, replace `## Build & Test`,
-`## Dependency Direction`, `## Package Layout`, `## Conventions`, and
-`## Excluded Paths`; leave other user content. If
+`## Dependency Direction`, `## Package Layout`, `## Conventions`,
+`## Excluded Paths`, and `## Git`; leave other user content. If
 `## Conventions` is missing (a pre-0.5 file), insert it between
 `## Package Layout` and `## Principles`. If `## Audit Settings` is
 missing, insert it between `## Conventions` and `## Principles` with
 the defaults above. If it already exists, leave it — a stored category
-subset or output-root must survive a setup re-run.
+subset or output-root must survive a setup re-run. If `## Git` is
+missing, insert it between `## Audit Settings` and `## Principles`.
 
 Create the `.agents/lodestar/` directory if needed, and write to
-`.agents/lodestar/context.md`. Write it in both enforcement modes — the
-other three skills require it. The Conventions table is written in both
-modes too.
+`.agents/lodestar/context.md`. Write it in both enforcement modes —
+Conventions and Git included.
 
 ### AGENTS.md — only in `full` mode
 
@@ -482,7 +487,7 @@ the audit will skip: `result-types: no` (errors #B), `branded-types: no`
 (`boundaries` A, `types` #4), `barrel-exports: yes` (`imports` #4),
 `design-tokens: no` (the whole `styling` category), `coverage-floor:
 none` (the coverage floor). If every row is at its default, say so.
-List every unscannable package by name and language (not scanned).
+Name the commit policy. List every unscannable package by name and language (not scanned).
 Ask: "Does this look right? If so, run the `lodestar-audit`
 skill to scan the codebase and produce action-item files in
 `<output-root>/<run-id>/` (default `docs/audit/<run-id>/`). If the layout itself feels off, run

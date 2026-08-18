@@ -137,11 +137,59 @@ function cmdArchiveRun(flags) {
   process.stdout.write(`${JSON.stringify({ ok: true, to: dest }, null, 2)}\n`);
 }
 
+export function formatCommitMessage({
+  subjectFormat,
+  trailer,
+  category,
+  slug,
+  item,
+}) {
+  const vars = { category, slug, item };
+  const replace = (template) =>
+    String(template).replaceAll(
+      /<(category|slug|item)>/g,
+      (_, name) => vars[name],
+    );
+  const subject = replace(subjectFormat);
+  if (!trailer || trailer === "none") return `${subject}\n`;
+  return `${subject}\n\n${replace(trailer)}\n`;
+}
+
+function slugFromFilename(basename, category) {
+  const match = basename.match(new RegExp(`^\\d{3}-${category}-(.+)\\.md$`));
+  return match ? match[1] : "";
+}
+
+function cmdCommitMessage(flags) {
+  const file = flags.file;
+  if (!file) fail("commit-message requires --file");
+  if (flags["subject-format"] === true || flags.trailer === true) {
+    fail("commit-message --subject-format and --trailer need a value");
+  }
+  const text = fs.readFileSync(file, "utf8");
+  const yaml = frontmatter(text);
+  const category = field(yaml, "category");
+  const slug = slugFromFilename(path.basename(file), category);
+  if (!category || !slug) {
+    fail("commit-message could not parse category and slug from the item");
+  }
+  process.stdout.write(
+    formatCommitMessage({
+      subjectFormat: flags["subject-format"] || "<category>: <slug>",
+      trailer: flags.trailer === undefined ? "Closes <item>." : flags.trailer,
+      category,
+      slug,
+      item: flags.item || path.basename(file),
+    }),
+  );
+}
+
 const COMMANDS = {
   list: cmdList,
   "set-status": cmdSetStatus,
   "move-done": cmdMoveDone,
   "archive-run": cmdArchiveRun,
+  "commit-message": cmdCommitMessage,
 };
 
 function main(argv = process.argv.slice(2)) {
@@ -149,7 +197,9 @@ function main(argv = process.argv.slice(2)) {
   const command = positionals[0];
   const handler = COMMANDS[command];
   if (!handler)
-    fail("Usage: action-state list|set-status|move-done|archive-run");
+    fail(
+      "Usage: action-state list|set-status|move-done|archive-run|commit-message",
+    );
   handler(flags);
 }
 

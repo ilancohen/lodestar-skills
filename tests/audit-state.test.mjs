@@ -14,6 +14,7 @@ import {
   DEFAULT_OUTPUT_ROOT,
   dedupeFindings,
   findPlaceholders,
+  GIT_DEFAULTS,
   isDeclaredEntryImport,
   isWrongDirectionImport,
   nextRunId,
@@ -22,9 +23,11 @@ import {
   parseDirection,
   parseExcludedPaths,
   parseFindings,
+  parseGit,
   parsePackageLayout,
   sortFindings,
 } from "../skills/lodestar-audit/scripts/audit-state.mjs";
+import { formatCommitMessage } from "../skills/lodestar-fix/scripts/action-state.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SCRIPT = path.join(ROOT, "skills/lodestar-audit/scripts/audit-state.mjs");
@@ -132,6 +135,7 @@ test("validate-input accepts a real layout and does not touch source", () => {
   assert.equal(payload.outputRoot, DEFAULT_OUTPUT_ROOT);
   assert.equal(payload.architectureRoot, "docs/architecture-review");
   assert.equal(payload.fallow, "required");
+  assert.deepEqual(payload.git, GIT_DEFAULTS);
   assert.equal(sha(source), before);
 });
 
@@ -800,3 +804,184 @@ test("validate-input reports opted-out conventions and custom output-root", () =
   assert.equal(payload.outputRoot, "docs/qa");
   assert.equal(payload.architectureRoot, "docs/qa/architecture-review");
 });
+
+function gitMarkdown(rows) {
+  const lines = [
+    "## Git",
+    "",
+    "| Key | Value | Notes |",
+    "| --- | ----- | ----- |",
+    ...rows.map(([key, value]) => `| \`${key}\` | \`${value}\` | x |`),
+    "",
+  ];
+  return lines.join("\n");
+}
+
+test("parseGit defaults when the section is absent", () => {
+  assert.deepEqual(parseGit("# Fixture\n"), GIT_DEFAULTS);
+});
+
+test("parseGit parses each key", () => {
+  const parsed = parseGit(
+    gitMarkdown([
+      ["commits", "never"],
+      ["subject-format", "fix(<category>): <slug>"],
+      ["trailer", "none"],
+      ["protected", "main, master"],
+      ["require-clean", "yes"],
+    ]),
+  );
+  assert.deepEqual(parsed, {
+    commits: "never",
+    subjectFormat: "fix(<category>): <slug>",
+    trailer: "none",
+    protected: ["main", "master"],
+    requireClean: "yes",
+  });
+});
+
+test("parseGit treats protected none as an empty list", () => {
+  const parsed = parseGit(gitMarkdown([["protected", "none"]]));
+  assert.deepEqual(parsed.protected, []);
+});
+
+test("parseGit fills missing rows from defaults", () => {
+  const parsed = parseGit(gitMarkdown([["commits", "per-item"]]));
+  assert.equal(parsed.commits, "per-item");
+  assert.equal(parsed.subjectFormat, GIT_DEFAULTS.subjectFormat);
+  assert.equal(parsed.trailer, GIT_DEFAULTS.trailer);
+  assert.deepEqual(parsed.protected, []);
+  assert.equal(parsed.requireClean, "no");
+});
+
+test("parseGit ignores unknown keys", () => {
+  const parsed = parseGit(
+    gitMarkdown([
+      ["commits", "never"],
+      ["signoff", "yes"],
+    ]),
+  );
+  assert.equal(parsed.commits, "never");
+  assert.equal(parsed.signoff, undefined);
+});
+
+test("parseGit rejects a bad commits value", () => {
+  assert.throws(
+    () => parseGit(gitMarkdown([["commits", "sometimes"]])),
+    /invalid value for `commits`/,
+  );
+});
+
+test("parseGit rejects a subject-format with no slug placeholder", () => {
+  assert.throws(
+    () => parseGit(gitMarkdown([["subject-format", "fix: something"]])),
+    /must contain `<slug>`/,
+  );
+});
+
+test("parseGit rejects a bad require-clean value", () => {
+  assert.throws(
+    () => parseGit(gitMarkdown([["require-clean", "maybe"]])),
+    /invalid value for `require-clean`/,
+  );
+});
+
+test("validate-input rejects a bad git value", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-audit-"));
+  const contextDir = path.join(tmp, ".agents", "lodestar");
+  fs.mkdirSync(contextDir, { recursive: true });
+  const base = fs.readFileSync(
+    path.join(VALID, ".agents/lodestar/context.md"),
+    "utf8",
+  );
+  fs.writeFileSync(
+    path.join(contextDir, "context.md"),
+    `${base}\n${gitMarkdown([["commits", "sometimes"]])}\n`,
+  );
+  const result = run(["validate-input", "--root", tmp]);
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /invalid value for `commits`/);
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test("validate-input emits a fully populated git object", () => {
+  const tmp = writeLayoutRepo(
+    `## Package Layout
+
+| Package | Path | Alias | Responsibility |
+| ------- | ---- | ----- | -------------- |
+| app | src | n/a | HTTP routes and request validation |
+
+${gitMarkdown([
+  ["commits", "per-item"],
+  ["subject-format", "fix(<category>): <slug>"],
+  ["trailer", "Closes <item>."],
+  ["protected", "main"],
+  ["require-clean", "yes"],
+])}
+`,
+    { "src/index.ts": "export const value = 1;\n" },
+  );
+  const result = run(["validate-input", "--root", tmp]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.deepEqual(payload.git, {
+    commits: "per-item",
+    subjectFormat: "fix(<category>): <slug>",
+    trailer: "Closes <item>.",
+    protected: ["main"],
+    requireClean: "yes",
+  });
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test("formatCommitMessage substitutes placeholders", () => {
+  assert.equal(
+    formatCommitMessage({
+      subjectFormat: "<category>: <slug>",
+      trailer: "Closes <item>.",
+      category: "imports",
+      slug: "cross-package",
+      item: "docs/audit/2026-08-18/001-imports-cross-package.md",
+    }),
+    "imports: cross-package\n\nCloses docs/audit/2026-08-18/001-imports-cross-package.md.\n",
+  );
+});
+
+test("formatCommitMessage omits the body when trailer is none", () => {
+  assert.equal(
+    formatCommitMessage({
+      subjectFormat: "fix(<category>): <slug>",
+      trailer: "none",
+      category: "types",
+      slug: "explicit-any",
+      item: "docs/audit/run/002-types-explicit-any.md",
+    }),
+    "fix(types): explicit-any\n",
+  );
+});
+
+test("commit-message prints today's default from an action item", () => {
+  const file = path.join(
+    ROOT,
+    "tests/fixtures/audit-runs/fix-ready/001-imports-cross-package.md",
+  );
+  const result = spawnSync(
+    process.execPath,
+    [
+      path.join(ROOT, "skills/lodestar-fix/scripts/action-state.mjs"),
+      "commit-message",
+      "--file",
+      file,
+      "--item",
+      "docs/audit/2026-08-18/001-imports-cross-package.md",
+    ],
+    { encoding: "utf8" },
+  );
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(
+    result.stdout,
+    "imports: cross-package\n\nCloses docs/audit/2026-08-18/001-imports-cross-package.md.\n",
+  );
+});
+
