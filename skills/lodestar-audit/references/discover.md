@@ -20,7 +20,8 @@ is missing or a row is missing), `commands`,
 
 Each `packages` row includes `scannable` (`yes` / `no`; default `yes`
 when the column is absent), `language` (empty unless a `no (Python)`
-note was written), and `scannableCount`. `allPkgRoots` and
+note was written), `scannableCount`, and `entryPoints` (array; default
+`["index.ts"]` when the column is absent). `allPkgRoots` and
 `aliasPrefix` omit `scannable: no` rows. Iterate detectors only over
 `scannable: yes` rows. Record `scannable: no` rows for `INDEX.md`
 known-blind-spots (`<name>` — `<language>, not scanned`).
@@ -97,6 +98,10 @@ For each category:
    recipes over POSIX `grep` pipelines. Iterate `<pkg_root>` per
    **scannable** package row with repeated `--root` flags (paths may
    contain spaces). Skip `scannable: no` rows — do not grep them.
+   Single-package (one scannable row, empty graph): skip `imports` #6
+   and `boundaries` B only — still run the other subtypes, checkpoint
+   those categories with the real count, and list #6/B as not
+   applicable in `INDEX.md`.
 3. Drop false positives in tests and excluded paths from
    `validate-input` (`excludedPaths`, `testGlobs`). Every
    `source-scan.mjs` invocation must pass `--exclude` / `--test-glob`

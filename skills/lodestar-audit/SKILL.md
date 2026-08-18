@@ -87,7 +87,9 @@ files, an unparseable `## Conventions` value, and an unparseable
 
 A package marked `Scannable: no` is listed in `INDEX.md`'s
 known-blind-spots by name and reason (`worker` — Python, not scanned).
-It is excluded from `allPkgRoots` and from every detector.
+It is excluded from `allPkgRoots` and from every detector. In a
+single-package repo (one scannable row, empty graph), list `imports`
+#6 and `boundaries` B as not applicable there too.
 
 A category or subtype gated off by `conventions` is reported as skipped
 in `INDEX.md`'s known-blind-spots, not silently absent. Discover still
@@ -109,17 +111,17 @@ and the layout table, then follow its link to
 Read the category sub-doc before scanning that category. Read
 `categories/fallow-seed.md` once before Discover.
 
-| Category      | Sub-doc                     | Risk        | Detection style               | Gated by                                              |
-| ------------- | --------------------------- | ----------- | ----------------------------- | ----------------------------------------------------- |
-| `imports`     | `categories/imports.md`     | low         | mechanical (Fallow preferred) | `#4` when `barrel-exports` is `yes`                   |
-| `types`       | `categories/types.md`       | low         | mechanical                    | `#4` when `branded-types` is `no`                     |
-| `boundaries`  | `categories/boundaries.md`  | medium–high | mechanical                    | `A` when `branded-types` is `no`                      |
-| `errors`      | `categories/errors.md`      | high        | mechanical                    | `#B` when `result-types` is `no`                      |
+| Category      | Sub-doc                     | Risk        | Detection style               | Gated by                                                 |
+| ------------- | --------------------------- | ----------- | ----------------------------- | -------------------------------------------------------- |
+| `imports`     | `categories/imports.md`     | low         | mechanical (Fallow preferred) | `#4` when `barrel-exports` is `yes`                      |
+| `types`       | `categories/types.md`       | low         | mechanical                    | `#4` when `branded-types` is `no`                        |
+| `boundaries`  | `categories/boundaries.md`  | medium–high | mechanical                    | `A` when `branded-types` is `no`                         |
+| `errors`      | `categories/errors.md`      | high        | mechanical                    | `#B` when `result-types` is `no`                         |
 | `testability` | `categories/testability.md` | high        | mechanical                    | drop coverage blind-spot when `coverage-floor` is `none` |
-| `soc-yagni`   | `categories/soc-yagni.md`   | low–high    | mixed                         | —                                                     |
-| `dry`         | `categories/dry.md`         | low–medium  | mixed                         | —                                                     |
-| `ssot`        | `categories/ssot.md`        | low–medium  | mechanical                    | —                                                     |
-| `styling`     | `categories/styling.md`     | low–medium  | mechanical                    | whole category when `design-tokens` is `no`           |
+| `soc-yagni`   | `categories/soc-yagni.md`   | low–high    | mixed                         | —                                                        |
+| `dry`         | `categories/dry.md`         | low–medium  | mixed                         | —                                                        |
+| `ssot`        | `categories/ssot.md`        | low–medium  | mechanical                    | —                                                        |
+| `styling`     | `categories/styling.md`     | low–medium  | mechanical                    | whole category when `design-tokens` is `no`              |
 
 Known blind spots (copy into `INDEX.md`): if this run skipped the Fallow
 seed (`fallow: optional` and Fallow missing or invalid), put this first
@@ -131,7 +133,8 @@ layout is the right one (`lodestar-architecture`). Append any
 convention-gated detector this run skipped (name the category, subtype,
 and key). Do not list `coverage-floor: none` as a skip — omit that
 line entirely. Append every `Scannable: no` package by name and
-reason (`worker` — Python, not scanned).
+reason (`worker` — Python, not scanned). In a single-package repo,
+append `imports` #6 and `boundaries` B as not applicable.
 
 ---
 
@@ -208,7 +211,7 @@ Follow [references/plan.md](references/plan.md). Summary:
 4. Write `INDEX.md` from `templates/index.md`. Fill Known blind spots
    from the list in Categories above, plus this run's gated skips,
    plus every `Scannable: no` package (`<name>` — `<language>, not
-   scanned`). Drop the coverage-floor line when
+scanned`). Drop the coverage-floor line when
    `conventions["coverage-floor"]` is `none`.
 5. Align category order with `lodestar-fix`:
    `imports → types → ssot → soc-yagni → boundaries → errors →

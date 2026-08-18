@@ -11,10 +11,18 @@ subtype #6 uses the grep heuristic below.
 
 ## What counts as a violation
 
-1. **Cross-package internal imports** — an import that crosses a package
-   boundary and contains `/src/` in the path.
-   Bad: `import { X } from '<pkg_alias>/src/user/user.service'`
-   Good: `import { X } from '<pkg_alias>'`
+1. **Cross-package internal / deep-path imports** — an import that
+   crosses a package boundary into a path that is **not** a declared
+   entry of the importee. Scan every `from '<pkg_alias>'` / `from
+'<pkg_alias>/…'` specifier, not only `/src/`.
+   Bad: `from '<pkg_alias>/src/user/user.service'` or
+   `from '<pkg_alias>/internal'` when entries are `index.ts`.
+   Good: `from '<pkg_alias>'`, or `from '<pkg_alias>/server'` when
+   `server` (or `./server`) is a declared entry.
+   A multi-entry `exports` map is a deliberate API surface, not a
+   violation. Drop a hit when `isDeclaredEntryImport(specifier, alias,
+entryPoints)` is true (`audit-state.mjs`): canonicalize by stripping
+   `./`, and treat empty / `.` / `index.ts` as the default entry.
 
 2. **Missing re-export** — an external consumer needs something that isn't
    exported from the source package's `index.ts`.
@@ -40,6 +48,11 @@ subtype #6 uses the grep heuristic below.
    are documented in both directions, so they are **not** #6 findings — they
    surface under #3 `circular-import` instead. New downward imports consistent
    with the documented graph are not violations until `context.md` is updated.
+   **Gate:** skip this subtype in a single-package repo (one scannable
+   row, empty graph). Emit nothing. Record `imports` #6 as not
+   applicable in `INDEX.md`'s known-blind-spots — do not stay silent.
+   Other `imports` subtypes stay on. Checkpoint `imports` with the
+   real count.
 
 7. **Unused file** — a source file that no entry point reaches transitively.
    Detected only when the fallow seed runs (`check.unused_files[]`).
@@ -89,10 +102,18 @@ re-exported; they're outside this category's scope.
 ### Fallback: greps
 
 ```bash
-# 1 — cross-package /src/ imports (always scan — not a fallow concept)
+# 1 — undeclared deep / /src/ imports (always scan — not a fallow concept)
+#   Fast path for /src/:
 node scripts/source-scan.mjs --recipe cross-package-src --alias-prefix '<alias_prefix>' --root <pkg_root>
 # Repeat --root for each package path. Do not split paths on spaces.
 #   <alias_prefix> = the common prefix of every alias (e.g. '@repo/').
+#
+#   Full path: for each scannable package T with an alias, scan every
+#   other scannable root for `from '<T.alias>'` and `from '<T.alias>/`.
+#   Keep the hit only when isDeclaredEntryImport is false — so
+#   `from '@repo/core/server'` is dropped when `server` is declared, and
+#   `from '@repo/core/internal'` is kept. Apply the same drop to /src/
+#   recipe hits (an entry of `src/server` is not a violation).
 
 # 4 — barrel re-exports (always scan — not a fallow concept)
 # Skip this grep when conventions["barrel-exports"] is yes.
@@ -103,6 +124,9 @@ node scripts/source-scan.mjs --recipe barrel-reexport --root <pkg_root>
 #   Symbols with zero hits outside P are over-exports.
 
 # 6 — direction grep fallback when neither fallow nor check:deps is available
+#   Skip this grep (and skip mapping fallow boundary_violations to #6)
+#   when there is one scannable row and an empty graph. Other imports
+#   subtypes stay on.
 #   Run `node scripts/audit-state.mjs validate-input --root <repo>` and read
 #   `directionGraph.reachability`. For each package P, allowed import targets
 #   are the packages in `reachability[P]` (self plus every package reachable
@@ -146,7 +170,8 @@ generated action-item title cleaner.
 
 ## Suggested fix shape
 
-- #1 — rewrite the import to the package root.
+- #1 — rewrite the import to a declared entry, or add the subpath to
+  Entry points if it is an intentional `exports` surface.
 - #2 — add the symbol to `index.ts` of the source package; do not change the
   implementation.
 - #3 — invert the dependency, or extract the shared piece to the package

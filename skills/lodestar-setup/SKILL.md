@@ -70,21 +70,18 @@ Read only what's needed to fill in the template placeholders:
   pnpm to use. Do not guess. Do not default to npm.
 - **Build scripts** — read the root `package.json` `scripts` field.
   Identify the build, typecheck, lint, and test commands.
-- **Package layout** — list every package or top-level source directory
-  the audit should scan. Sources of truth, in order: `pnpm-workspace.yaml`
-  / `package.json` `workspaces` if present; otherwise `ls packages/`,
-  `ls apps/`, and any other top-level source dirs the repo uses. For each:
-  - The package's own name (whatever the repo calls it — do not rename).
-  - The path glob (e.g. `packages/server/src`, `apps/*/src`).
-  - The import alias from `package.json` `name`, or `tsconfig.json`
-    `paths`. If there's no alias, record `n/a`.
-  - A one-sentence summary of what the package does, derived from its
-    `README.md`, `package.json` `description`, or — last resort — a
-    quick scan of its top-level exports. Keep it short and concrete
-    ("HTTP routes and request validation", "domain entities and use
-    cases", "DB and queue adapters").
-  - Whether the glob contains scannable files. A row with none gets
-    `Scannable: no` plus a language note (`no (Python)`). Keep the row.
+- **Package layout** — observe, in order: workspace files
+  (`pnpm-workspace.yaml`, `package.json` `workspaces`, `nx.json`,
+  `turbo.json`, `lerna.json`); else every non-root `package.json`
+  (reasonable depth, skip Excluded Paths); else single-package: look
+  one level into `src/` (or `main`/`exports`) for feature/module dirs
+  and offer those as rows, or one row for the source root. Record how
+  it was found. Directory rows are valid. For each:
+  - Name, path glob, alias (`package.json` `name`, `tsconfig` `paths`,
+    `imports` map, or bundler alias; else `n/a`).
+  - Entry points: `exports` subpaths, `typesVersions`, or `main` /
+    `module` / `types`; else `index.ts`.
+  - One-sentence responsibility. `Scannable: no` + language if none.
 - **Excluded paths** — gitignored paths inside layout globs; codegen
   configs (`prisma/schema.prisma`, `codegen.yml`/`ts`, `*.proto`,
   `openapi*.y?ml`) and their output; dirs named `generated`,
@@ -135,10 +132,9 @@ Present a single short summary:
 - The commands you found.
 - The observed package import graph — acyclic chain or cyclic edge list,
   using the repo's actual package names.
-- The Package Layout table you intend to write — one row per package,
-  with name, path, alias, responsibility, and `Scannable: yes` / `no`.
-  Name every unscannable package and its language; the audit will
-  report it as not scanned.
+- How the layout was found, and the table — name, path, alias, entry
+  points, responsibility, Scannable. Name unscannable rows. An empty
+  graph is valid for a single-package repo.
 
 When the graph is cyclic, state plainly that it is cyclic, show the cycle
 edges, and say they will be recorded as-is and reported by the audit as
@@ -248,8 +244,8 @@ This is the load-bearing file. Start from `context-md.md`. Fill in:
 - The observed import graph in whichever form applies (acyclic chain or
   cyclic edge list), plus a `Basis:` line with the capture date.
 - The Package Layout table — one row per package discovered in Step 1,
-  using the repo's own names. Fill Responsibility and `Scannable`
-  (`yes`, or `no (Python)`).
+  using the repo's own names. Fill Responsibility, `Scannable`, and
+  Entry points (`index.ts` if undeclared).
 - The Conventions table — the five keys from Step 3, with the confirmed
   values. Use the skip-value polarity from the template (`barrel-exports:
 yes` means barrels are allowed).

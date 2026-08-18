@@ -20,9 +20,11 @@ project — the setup skill must always substitute before writing.
   // Boundaries derived from `.agents/lodestar/context.md`
   // `## Package Layout` and the observed import graph declared above it.
   //
-  // One zone per package row, using the repo's own package name (no role
-  // mapping). `patterns` use the literal path glob from the table — no
-  // `root` rewriting, so the file is hand-readable.
+  // One zone per layout row (npm package or directory), using the repo's
+  // own name (no role mapping). Directory rows give in-package
+  // boundaries. A single-package layout may have one zone.
+  // `patterns` use the literal path glob from the table — no `root`
+  // rewriting, so the file is hand-readable.
   //
   // Rules: each zone may import from itself plus every zone reachable from
   // it in the documented graph (acyclic chain: everything to its right;
@@ -163,6 +165,8 @@ node <lodestar-audit-skill>/scripts/fallow-contract.mjs run \
 ```
 
 Parse only a `kind: "list-boundaries"` envelope. Every zone must report
-`file_count > 0`. A contract failure or a zero-file zone means the
+`file_count > 0` — including a one-zone single-package config.
+Directory-level rows still give Fallow real boundaries inside one
+package. A contract failure or a zero-file zone means the
 path glob in the Package Layout table doesn't match the on-disk layout —
 fix the table and re-run setup. Delete the temp JSON after reading it.

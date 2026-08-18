@@ -52,6 +52,9 @@ The graph is cyclic — no single dependency order exists.
 New downward imports consistent with the documented ordering are not
 violations until this section is updated.
 
+A single-package repo has an empty graph (no chain, no edges). That is
+valid — do not invent a one-node chain.
+
 ## Package Layout
 
 The audit skill reads this table to know where to scan. List every
@@ -71,13 +74,25 @@ JavaScript. An optional language note may follow (`no (Python)`).
 **Absent means `yes`:** a file with no `Scannable` column keeps today's
 behavior; every row is scanned.
 
-| Package         | Path glob(s)                 | Import alias          | Responsibility   | Scannable |
-| --------------- | ---------------------------- | --------------------- | ---------------- | --------- |
-| `[e.g. core]`   | `[e.g. packages/core/src]`   | `[e.g. @repo/core]`   | `[one sentence]` | `yes`     |
-| `[e.g. server]` | `[e.g. packages/server/src]` | `[e.g. @repo/server]` | `[one sentence]` | `yes`     |
-| `[e.g. shared]` | `[e.g. packages/shared/src]` | `[e.g. @repo/shared]` | `[one sentence]` | `yes`     |
-| `[e.g. web]`    | `[e.g. apps/web/src]`        | `[n/a]`               | `[one sentence]` | `yes`     |
-| `[e.g. worker]` | `[e.g. services/worker]`     | `[n/a]`               | `[one sentence]` | `no (Go)` |
+`Entry points` are comma-separated paths relative to the package root
+(`index.ts`, `server`, `client`). **Absent means `index.ts`.** A
+multi-entry `exports` map is a deliberate API surface — importing those
+subpaths is not `imports` #1.
+
+A single-package repo with **one** scannable row has an empty graph.
+`imports` #6 and `boundaries` B cannot fire — list them in `INDEX.md` as
+not applicable, not as a silent pass. Directory-level rows (feature or
+module dirs as separate rows) are legitimate and **do** give those
+categories something to check; do not mark them inert. The table has
+never required npm packages.
+
+| Package         | Path glob(s)                 | Import alias          | Responsibility   | Scannable | Entry points       |
+| --------------- | ---------------------------- | --------------------- | ---------------- | --------- | ------------------ |
+| `[e.g. core]`   | `[e.g. packages/core/src]`   | `[e.g. @repo/core]`   | `[one sentence]` | `yes`     | `index.ts`         |
+| `[e.g. server]` | `[e.g. packages/server/src]` | `[e.g. @repo/server]` | `[one sentence]` | `yes`     | `index.ts, server` |
+| `[e.g. shared]` | `[e.g. packages/shared/src]` | `[e.g. @repo/shared]` | `[one sentence]` | `yes`     | `index.ts`         |
+| `[e.g. web]`    | `[e.g. apps/web/src]`        | `[n/a]`               | `[one sentence]` | `yes`     | `index.ts`         |
+| `[e.g. worker]` | `[e.g. services/worker]`     | `[n/a]`               | `[one sentence]` | `no (Go)` | `index.ts`         |
 
 Notes for the table:
 

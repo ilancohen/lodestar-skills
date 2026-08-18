@@ -14,6 +14,7 @@ import {
   DEFAULT_OUTPUT_ROOT,
   dedupeFindings,
   findPlaceholders,
+  isDeclaredEntryImport,
   isWrongDirectionImport,
   nextRunId,
   parseAuditSettings,
@@ -296,6 +297,79 @@ test("parsePackageLayout reads the Scannable column", () => {
   assert.equal(rows[0].scannable, "yes");
   assert.equal(rows[1].scannable, "no");
   assert.equal(rows[1].language, "Go");
+});
+
+test("parsePackageLayout defaults Entry points to index.ts when the column is absent", () => {
+  const rows = parsePackageLayout(
+    fs.readFileSync(path.join(VALID, ".agents/lodestar/context.md"), "utf8"),
+  );
+  assert.deepEqual(rows[0].entryPoints, ["index.ts"]);
+  assert.deepEqual(rows[1].entryPoints, ["index.ts"]);
+});
+
+test("parsePackageLayout reads the Entry points column", () => {
+  const rows = parsePackageLayout(`## Package Layout
+
+| Package | Path | Alias | Responsibility | Scannable | Entry points |
+| ------- | ---- | ----- | -------------- | --------- | ------------ |
+| core | packages/core/src | @repo/core | Domain entities and use cases for billing | yes | index.ts, server |
+`);
+  assert.equal(rows[0].scannable, "yes");
+  assert.deepEqual(rows[0].entryPoints, ["index.ts", "server"]);
+});
+
+test("isDeclaredEntryImport matches package root and declared subpaths", () => {
+  const entries = ["index.ts", "./server", "client"];
+  assert.equal(
+    isDeclaredEntryImport("@repo/core", "@repo/core", entries),
+    true,
+  );
+  assert.equal(
+    isDeclaredEntryImport("@repo/core/server", "@repo/core", entries),
+    true,
+  );
+  assert.equal(
+    isDeclaredEntryImport("@repo/core/client", "@repo/core", entries),
+    true,
+  );
+  assert.equal(
+    isDeclaredEntryImport("@repo/core/src/user", "@repo/core", entries),
+    false,
+  );
+  assert.equal(
+    isDeclaredEntryImport("@repo/core/internal", "@repo/core", ["index.ts"]),
+    false,
+  );
+});
+
+test("validate-input accepts one package with an empty dependency graph", () => {
+  const tmp = writeLayoutRepo(
+    `## Package Layout
+
+| Package | Path | Alias | Responsibility |
+| ------- | ---- | ----- | -------------- |
+| app | src | n/a | HTTP routes and request validation |
+`,
+    { "src/index.ts": "export const value = 1;\n" },
+  );
+  const contextPath = path.join(tmp, ".agents/lodestar/context.md");
+  fs.writeFileSync(
+    contextPath,
+    fs
+      .readFileSync(contextPath, "utf8")
+      .replace(
+        /## Dependency Direction[\s\S]*?(?=\n## Package Layout)/,
+        "## Dependency Direction\n\n",
+      ),
+  );
+  const result = run(["validate-input", "--root", tmp]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.packages.length, 1);
+  assert.deepEqual(payload.packages[0].entryPoints, ["index.ts"]);
+  assert.deepEqual(payload.direction, []);
+  assert.deepEqual(payload.directionGraph.edges, []);
+  fs.rmSync(tmp, { recursive: true, force: true });
 });
 
 function writeLayoutRepo(layoutMarkdown, files = {}) {

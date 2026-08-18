@@ -114,6 +114,7 @@ export function parsePackageLayout(contextText) {
       responsibility: cells[3],
       scannable: scannableCell.scannable,
       language: scannableCell.language,
+      entryPoints: parseEntryPoints(cells[5]),
     });
   }
   if (!rows.length) {
@@ -142,6 +143,52 @@ function parseScannableCell(raw) {
     );
   }
   return { scannable: match[1], language: (match[2] || "").trim() };
+}
+
+function parseEntryPoints(raw) {
+  const stripped = String(raw ?? "")
+    .replace(/^`+|`+$/g, "")
+    .trim();
+  if (!stripped) return ["index.ts"];
+  const parts = stripped
+    .split(",")
+    .map((part) => part.replace(/^`+|`+$/g, "").trim())
+    .filter(Boolean);
+  return parts.length ? parts : ["index.ts"];
+}
+
+export function canonicalizeEntry(raw) {
+  const stripped = String(raw ?? "")
+    .replace(/^`+|`+$/g, "")
+    .trim()
+    .replace(/^\.\//, "");
+  if (
+    !stripped ||
+    stripped === "." ||
+    stripped === "index" ||
+    stripped === "index.ts" ||
+    stripped === "index.js" ||
+    stripped === "index.mjs" ||
+    stripped === "index.cjs"
+  ) {
+    return "index.ts";
+  }
+  return stripped;
+}
+
+export function isDeclaredEntryImport(specifier, alias, entryPoints) {
+  if (!alias || alias === "n/a") return false;
+  const prefix = String(alias).replace(/\/$/, "");
+  const spec = String(specifier ?? "")
+    .replace(/^['"]+|['"]+$/g, "")
+    .trim();
+  if (spec === prefix) return true;
+  if (!spec.startsWith(`${prefix}/`)) return false;
+  const subpath = canonicalizeEntry(spec.slice(prefix.length + 1));
+  const entries = (entryPoints?.length ? entryPoints : ["index.ts"]).map(
+    canonicalizeEntry,
+  );
+  return entries.includes(subpath);
 }
 
 export function countScannableFiles(repoRoot, pkgPath, excludedPaths = []) {
@@ -381,7 +428,10 @@ export function parseExcludedPaths(contextText) {
       bucket = "testGlobs";
       continue;
     }
-    if (/^\s*\*\*Not audited\b/i.test(line) || /^\s*Not audited\b/i.test(line)) {
+    if (
+      /^\s*\*\*Not audited\b/i.test(line) ||
+      /^\s*Not audited\b/i.test(line)
+    ) {
       bucket = "excludedPaths";
     }
   }

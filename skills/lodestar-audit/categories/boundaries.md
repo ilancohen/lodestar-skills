@@ -38,6 +38,12 @@ explicitly skip hits in obvious boundary-shape files (`*.dto.ts`,
 
 ### B. Misplaced business logic
 
+**Gate:** skip this subtype in a single-package repo (one scannable
+layout row, empty graph) — there is no other package to misplace
+logic into. Emit nothing. Record `boundaries` B as not applicable in
+`INDEX.md`'s known-blind-spots — do not stay silent. A, C, D, E stay
+on. Checkpoint `boundaries` with the real count.
+
 Domain decisions in files that, by their path or responsibility, should
 not own them:
 
@@ -107,6 +113,8 @@ grep -rEn "(id|Id): string|(price|amount): number|slug: string" \
   <all_pkg_roots> --include="*.ts"
 
 # B — check if eslint-plugin-boundaries is already configured (read-only probe)
+#   Skip this probe and the grep below when there is one scannable row
+#   and an empty graph. A, C, D, E stay on.
 #   If so, use linter output as the definitive source and skip the grep.
 eslint --print-config <any-ts-file> 2>/dev/null | grep -q '"boundaries' \
   && <lint> --format json --max-warnings=999 2>/dev/null \
