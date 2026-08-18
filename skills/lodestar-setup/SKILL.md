@@ -5,10 +5,12 @@ description: >-
   layout and which of a short list of conventions it already follows in
   .agents/lodestar/context.md, the one file the other lodestar skills
   read, which links to the bundled principles.md (never copied or
-  inlined). Asks how lodestar-fix should commit, and whether to add a
-  pointer section to AGENTS.md so principles apply to every task (full
-  suite) or to leave AGENTS.md untouched (skills-only). With separate
-  user consent it may also install
+  inlined). Measures git churn (no source reading) and asks whether to
+  scope the audit to code changed since today's commit. Asks how
+  lodestar-fix should commit, and whether to add a pointer section to
+  AGENTS.md so principles apply to every task (full suite) or to leave
+  AGENTS.md untouched (skills-only). With separate user consent it may
+  also install
   Fallow as a devDependency (writing package.json and the lockfile), write
   .fallowrc.json, add gitignore entries, and tighten existing linter rules.
   Do not load unless the user explicitly invokes lodestar-setup by name.
@@ -22,7 +24,8 @@ metadata:
 
 Write the agent-neutral config the lodestar skills need. The one file that
 matters is `.agents/lodestar/context.md`: package layout, dependency
-direction, build commands, conventions, and how `lodestar-fix` commits.
+direction, build commands, conventions, audit scope, and how
+`lodestar-fix` commits.
 `lodestar-audit`, `lodestar-fix`, and `lodestar-architecture` read that
 file and nothing else for repo facts — they never read `AGENTS.md`.
 
@@ -38,11 +41,12 @@ repository, not locations of this installed skill.
 
 - **Does**: discover the packages that already exist, document each one
   (name, path, alias, one-sentence responsibility), record the observed
-  package import graph, conventions, how `lodestar-fix` should commit,
-  and write the config files agents read.
+  package import graph, conventions, commit policy, and audit scope, and
+  write the config files agents read.
 - **Does not**: force packages into a fixed role list (`core`, `api`,
-  `ui`), write a target dependency direction, or propose an alternative
-  layout. Point layout questions at `lodestar-architecture` and stop.
+  `ui`), write a target dependency direction, propose an alternative
+  layout, or read source to pick a scope. Point layout questions at
+  `lodestar-architecture` and stop.
 
 ## Step 0 — Confirm the repo is scannable
 
@@ -66,26 +70,24 @@ Read only what's needed to fill in the template placeholders:
   justfile / Taskfile / Nx / Turbo / README. Record what a developer
   types. Missing → `n/a`.
 - **Package layout** — find whatever declares the workspace; record the
-  file. Hints, not a closed set: `pnpm-workspace.yaml`, `package.json`
-  `workspaces`, `nx.json`, `turbo.json`, `lerna.json`. Several → prefer
-  the manager's own file and name the others. Only if none: every
-  non-root `package.json` (skip Excluded Paths); else single-package:
-  feature dirs one level into `src/` (or `main`/`exports`), or one row
-  for the source root. Directory rows are valid. For each: name, path,
-  alias (`name` / `paths` / `imports` / bundler; else `n/a`); entry
-  points (`exports` / `typesVersions` / `main`; else `index.ts`);
+  file. Hints: `pnpm-workspace.yaml`, `package.json` `workspaces`,
+  `nx.json`, `turbo.json`, `lerna.json`. Several → prefer the manager's
+  file and name the others. Only if none: every non-root `package.json` (skip Excluded
+  Paths); else single-package: feature dirs one level into `src/` (or
+  `main`/`exports`), or one row for the source root. Directory rows are
+  valid. For each: name, path, alias (`name`/`paths`/`imports`/bundler; else `n/a`); entry
+  points (`exports`/`typesVersions`/`main`; else `index.ts`);
   responsibility; `Scannable: no` + language if none.
 - **Excluded paths** — gitignored paths inside layout globs; codegen
-  configs (`prisma/schema.prisma`, `codegen.yml`/`ts`, `*.proto`,
-  `openapi*.y?ml`) and their output; dirs named `generated`,
-  `__generated__`, `dist`, `build`, `.next`, `.output`; `*.gen.ts` /
-  `*.generated.ts`; `@generated` / "do not edit" banners. Tests: which
-  of `*.test.*`, `*.spec.*`, `__tests__/`, `tests/` appear.
-- **Dependency direction** — build the package-level edge list (which
-  packages import which, with a rough count), then check for cycles.
-  Acyclic → topological order as a chain. Cyclic → record the edges and
-  the cycle; do not order them. If the observation is ambiguous, ask the
-  user once in Step 2 — do not guess silently or infer a target layout.
+  (`prisma/schema.prisma`, `codegen.yml`/`ts`, `*.proto`,
+  `openapi*.y?ml`) and output; dirs `generated`, `__generated__`,
+  `dist`, `build`, `.next`, `.output`; `*.gen.ts`/`*.generated.ts`;
+  `@generated` / "do not edit" banners. Tests: `*.test.*`, `*.spec.*`,
+  `__tests__/`, `tests/`.
+- **Dependency direction** — package-level edge list (who imports whom,
+  rough count), then cycles. Acyclic → chain. Cyclic → record edges and
+  the cycle; do not order them. Ambiguous observation → ask once in
+  Step 2; do not guess a target layout.
 - **Existing files** — check whether `.agents/lodestar/context.md` already
   exists, and whether `AGENTS.md` exists and already has a `## Lodestar`
   section. If they do, read them briefly so you don't overwrite unrelated
@@ -112,6 +114,15 @@ Read only what's needed to fill in the template placeholders:
     `coverage.thresholds` or equivalent).
 - **Commit policy** — detect per `context-md.md` `## Git` (commitlint,
   `git log`, hooks, current branch). Record paths, not a judgment.
+- **Audit-scope measurements** — no source reading. No `.git` → record
+  that and skip to `mode: all` with no question. Else four commands:
+  `git rev-list --count HEAD`; `git log --reverse --format=%ad
+  --date=short | head -n 1` (first commit; do not use `-1`, git applies
+  it before `--reverse`); `git ls-files` count matching a layout glob
+  and a scannable extension (`.ts`/`.tsx`/`.js`/`.jsx`/`.mts`/`.cts`);
+  `git log --since=90.days --name-only --pretty=format:` unique paths
+  intersected with that set. Churn = touched / files (`0` if files is
+  0). Record the four numbers and the ratio.
 
 Stop there. Do not read tsconfig deeply, explore individual packages, check
 for issue trackers, or investigate test frameworks beyond the scripts and
@@ -131,6 +142,7 @@ Present a single short summary:
 - How the layout was found, and the table — name, path, alias, entry
   points, responsibility, Scannable. Name unscannable rows. An empty
   graph is valid for a single-package repo.
+- The four churn numbers (or "not a git repository").
 
 When the graph is cyclic, state plainly that it is cyclic, show the cycle
 edges, and say they will be recorded as-is and reported by the audit as
@@ -148,6 +160,22 @@ Do not ask whether the layout is "right" — that's
 Then a second confirmation: excluded-path candidates with evidence,
 one round to add/remove (empty allowed). Write `## Excluded Paths`
 from that answer in both enforcement modes.
+
+Then the audit-scope question. Show the four numbers. Skip the question
+when the repo is not git (`mode: all`) or `## Audit Scope` already
+exists (leave it — the baseline does not move on a re-run).
+Recommend `changed-since` when files ≥ 80 **and** churn < 0.30;
+otherwise `all`. Always show the numbers.
+
+> This repo has N commits since <date>, M source files, and K of them
+> were touched in the last 90 days. Scope the audit to code changed
+> since today's commit, keeping the rest as a reported backlog? Or
+> expand every finding into an action item? Recommended:
+> **<changed-since | all>** (threshold: 80 files and 30% churn).
+
+On `changed-since`, capture `git rev-parse HEAD` and today's
+`YYYY-MM-DD`; name the sha and say older-code findings are counted, not
+expanded. On `all`, write `mode: all` with no baseline rows.
 
 ## Step 3 — Confirm which conventions the repo already follows
 
@@ -191,7 +219,6 @@ Do not ask a second question. Setup stays descriptive.
 
 ## Step 3a — Confirm how lodestar-fix commits
 
-Setup's second and last new question (excluded paths was the first).
 Ask once, pre-filled from Step 1 / `context-md.md` `## Git`:
 
 > How should `lodestar-fix` commit? Pre-filled from the repo. One round.
@@ -257,6 +284,9 @@ yes` means barrels are allowed).
 docs/audit`, `fallow: required`). Do not ask about these. If the user later persists a
   category subset from `lodestar-audit`, leave that row as they wrote it
   on a re-run unless they ask to reset it.
+- The Audit Scope table — Step 2. `mode: all` with no baseline rows, or
+  `mode: changed-since` plus `baseline-ref` (the captured sha) and
+  `baseline-date` (today). If the section already exists, leave it.
 - Excluded Paths — Step 2 globs; replace wholesale; insert between
   Package Layout and Conventions if missing. Git table — Step 3a.
 
@@ -271,12 +301,15 @@ If the file already exists, replace `## Build & Test`,
 `## Package Layout` and `## Principles`. If `## Audit Settings` is
 missing, insert it between `## Conventions` and `## Principles` with
 the defaults above. If it already exists, leave it — a stored category
-subset or output-root must survive a setup re-run. If `## Git` is
-missing, insert it between `## Audit Settings` and `## Principles`.
+subset or output-root must survive a setup re-run. Missing `## Audit
+Scope` → insert between `## Audit Settings` and `## Git` (or
+`## Principles`); if present, leave it. Missing `## Git` → insert after
+`## Audit Scope` when present, else between `## Audit Settings` and
+`## Principles`.
 
 Create the `.agents/lodestar/` directory if needed, and write to
 `.agents/lodestar/context.md`. Write it in both enforcement modes —
-Conventions and Git included.
+Conventions, Audit Scope, and Git included.
 
 ### AGENTS.md — only in `full` mode
 
@@ -319,80 +352,55 @@ unread copy of the layout and that `context.md` is the one that counts.
 
 The audit skill **requires** [fallow](https://docs.fallow.tools) as the
 primary graph-based detector for `imports`, `dry`, and `soc-yagni`
-unless `## Audit Settings` records `fallow: optional`. When
-configured, Fallow also supplies wrong-direction import findings. Without `.fallowrc.json`, boundary
-violations are not detected by fallow and the audit falls back to a
-heuristic grep for direction violations.
+unless `## Audit Settings` records `fallow: optional`. Configured, it
+also supplies wrong-direction findings. Without `.fallowrc.json`,
+boundaries fall back to a heuristic grep.
 
 ### Resolve fallow, and offer to install it
 
-1. Prefer the version already in the project, then check `PATH`, via the
-   lodestar-audit contract script (absolute path to
-   `lodestar-audit/scripts/fallow-contract.mjs`):
+1. Prefer the project copy, then `PATH`, via
+   `lodestar-audit/scripts/fallow-contract.mjs`:
    ```bash
    node <lodestar-audit-skill>/scripts/fallow-contract.mjs resolve-bin --root <repo>
    ```
    ```powershell
    node <lodestar-audit-skill>/scripts/fallow-contract.mjs resolve-bin --root <repo>
    ```
-   A binary that resolves and is in range needs nothing further — **never
-   install over a working copy**. Go straight to `.fallowrc.json` below.
-2. If fallow is missing or outside the supported range, offer to install
-   it. `resolve-bin` fails with a message that already ends in `Install a
-compatible version with: <command>`, built for the manager it detected
-   from the lockfile — quote that command rather than composing one here,
-   so the version pin and the per-manager syntax have one source. When the
-   lockfile is ambiguous the message lists all three managers instead; use
-   the one confirmed in Step 2, and if that is still unknown, ask before
-   quoting or running anything. Do not guess. That quoted command is the
-   base: settle the location (item 3 of this step) first, since it can
-   change the command, and whatever the final command is, that is the one to
-   run, to show in the prompt, and to print if the answer is "no".
+   In-range binary → **never install over it**; go to `.fallowrc.json`.
+2. Missing or out of range: offer to install. `resolve-bin` already
+   ends in `Install a compatible version with: <command>` — quote that
+   command (SSOT for pin and manager syntax). Ambiguous lockfile lists
+   three managers; use Step 2's answer, or ask. Settle location (item 3)
+   first; that final command is what you run, prompt, and print on "no".
 
-   When nothing resolved:
+   Nothing resolved:
 
    > fallow is required by `lodestar-audit` and was not found in this repo
    > or on `PATH`. Install it as a devDependency with `<command>`?
    > (yes / no — I'll print the command and carry on)
 
-   When a version resolved but is out of range, name it. This changes a
-   dependency the repo already pins, and something else may be using that
-   binary:
+   Out of range — name the version (this changes a pin others may use):
 
    > This repo has fallow `<found version>`, which `lodestar-audit` can't
    > use. Upgrade it with `<command>`? (yes / no — I'll print the command
    > and carry on)
 
-3. Before installing in a repo with more than one package, ask where it
-   goes: the workspace root, or a named package. Adjust the quoted command
-   for the answer — root is `pnpm add -D -w` / `npm install --save-dev` /
-   `yarn add -D` / `bun add -d` at the root, and a named package is
+3. Multi-package: ask root vs named package. Root: `pnpm add -D -w` /
+   `npm install --save-dev` / `yarn add -D` / `bun add -d`. Package:
    `pnpm --filter <name> add -D` / `npm install --save-dev --workspace
 <name>` / `yarn workspace <name> add -D` / `bun add -d --cwd <package>`.
-   Recommend the root. Bun installs
-   into `node_modules` by default, so `resolve-bin` finds it the same
-   way as npm. Do not proceed without an answer.
-4. On "yes", run the final command from items 2 and 3 of this step, then
-   re-run `resolve-bin` and say which version resolved. A binary that still
-   doesn't resolve, or still falls outside the range, counts as a failed
-   install.
-
-   `resolve-bin` looks in `<root>/node_modules/.bin` and then `PATH`, so it
-   cannot see a binary that landed in one package's own `node_modules`.
-   Package-local installs often hoist to the root anyway — only if the root
-   re-run comes back empty, re-run with `--root` pointed at the package
-   directory. If that is where it resolves, say so: `lodestar-audit`
-   resolves fallow the same way, so the install is invisible from the repo
-   root, and it should be moved to the root or put on `PATH` before the
-   audit runs. Do not tell the user to point the audit's `--root` at the
-   package — that would narrow the scan to that package.
-
-5. On "no", or on a failed install: print the command verbatim, say plainly
-   that `lodestar-audit` will refuse to run until a compatible fallow is
-   present (`fallow: required`, the default this step writes), and carry on — the `.fallowrc.json` question is asked either
-   way. Installs fail for ordinary reasons (no network, or a platform with
-   no fallow binary — it ships as platform-specific optional dependencies).
-   That is not a setup failure and must not skip the rest of this step.
+   Recommend root. Bun lands in `node_modules` like npm. Do not proceed
+   without an answer.
+4. On "yes", run that command, re-run `resolve-bin`, name the version.
+   Still missing or out of range = failed install. `resolve-bin` sees
+   `<root>/node_modules/.bin` then `PATH`, not a package-local bin. If
+   root is empty, retry `--root` at the package; if it resolves there,
+   say the audit won't see it from the repo root — move it to root or
+   `PATH`. Do not tell them to point the audit `--root` at the package.
+5. On "no" or failed install: print the command, say `lodestar-audit`
+   refuses until a compatible fallow is present (`fallow: required`,
+   the default this step writes), and carry on — `.fallowrc.json` is
+   still asked. Network/platform misses are not setup failures.
 
 ### Write `.fallowrc.json`
 
@@ -407,46 +415,33 @@ If fallow is not installed, say the file will sit ready until it is.
 If `.fallowrc.json` already exists, ask instead: "merge boundary section /
 leave alone / overwrite?"
 
-If the user opts in, write `.fallowrc.json` from `fallowrc.md` beside this
-`SKILL.md` (the template document contains the
-JSON inside a fenced block). Substitute:
+If the user opts in, write `.fallowrc.json` from `fallowrc.md` (JSON in a
+fenced block). Substitute:
 
-- One `boundaries.zones[]` entry per **scannable** row (`Scannable: no`
-  has no zone). The zone `name` is the package name from the table.
-  Use the literal path glob from the table as the `patterns` value
-  (wrapping bare directory paths to `<path>/**`). For a row with a glob
-  like `apps/*/src`, prefer `"autoDiscover": ["apps"]` so each app
-  becomes its own sub-zone.
-- One `boundaries.rules[]` entry per scannable package. The `allow` list is every
-  package reachable from `from` in the documented graph (including cycle
-  partners). For an acyclic chain this matches every package to the right
-  in the chain. The tail-of-chain package with no downward edges gets
-  `allow: []` (or only cycle partners when cyclic).
-- `ignorePatterns`: one entry per `## Excluded Paths` glob. Skip Fallow's built-in ignores. `dupes`/`health` honor it; do not mirror. `extends` replaces arrays — check the merge.
+- One `boundaries.zones[]` per **scannable** row (`Scannable: no` has no
+  zone). `name` = package name; `patterns` = the table glob (`<path>/**`
+  if bare). `apps/*/src` → `"autoDiscover": ["apps"]`.
+- One `boundaries.rules[]` per scannable package. `allow` = every
+  package reachable from `from` (including cycle partners); acyclic
+  chain → everything to the right; tail gets `allow: []`.
+- `ignorePatterns`: one per `## Excluded Paths` glob. Skip Fallow
+  built-ins. `dupes`/`health` honor it; `extends` replaces arrays.
 
-Write to `.fallowrc.json`.
-
-Then ask separately before editing `.gitignore`:
+Write to `.fallowrc.json`. Then ask:
 
 > Add `.audit-fallow-seed.json` and `.fallow/` to `.gitignore`?
 > (yes / no)
 
-If the user agrees and `.gitignore` exists and does not already cover
-them, add those two entries (`.audit-fallow-seed.json` is the audit's
-transient seed cache; `.fallow/` is fallow's own cache directory). If
-they decline, still write `.fallowrc.json` and say the gitignore entries
-were skipped.
+If yes and `.gitignore` exists and does not already cover them, add
+both. If they decline, still write `.fallowrc.json` and say gitignore
+was skipped.
 
-`.agents/lodestar/fallow-compat.json` is written by lodestar-audit when
-it accepts a Fallow schema newer than the baseline. It is a team decision
-and must be committed — never add it to `.gitignore`.
+`.agents/lodestar/fallow-compat.json` is a team-committed audit artifact
+— never gitignore it.
 
-After writing, verify the zones. This needs a compatible fallow: if none
-resolved — absent, or present but out of range and the upgrade declined —
-skip the check, say so, and say the zones stay unverified until fallow is
-installed. Otherwise run the lodestar-audit contract script
-(absolute path to the installed
-`lodestar-audit/scripts/fallow-contract.mjs`):
+After writing, verify zones when a compatible fallow resolved; if none
+resolved, skip and say unverified. Else run this from the **absolute
+path** of the installed `lodestar-audit/scripts/fallow-contract.mjs`:
 
 ```bash
 node <lodestar-audit-skill>/scripts/fallow-contract.mjs run \
@@ -455,9 +450,8 @@ node <lodestar-audit-skill>/scripts/fallow-contract.mjs run \
   --out <repo>/.audit-fallow-boundaries.json
 ```
 
-Every zone should report `file_count > 0`. A contract failure or a
-zero-file zone means the config or Package Layout glob must be fixed
-before continuing. Delete the temp JSON after reading it.
+Every zone needs `file_count > 0`. Fix the config or layout glob on
+failure. Delete the temp JSON.
 
 ## Step 8 — (Optional) Linting rules for higher-accuracy audit findings
 
@@ -488,6 +482,9 @@ the audit will skip: `result-types: no` (errors #B), `branded-types: no`
 `design-tokens: no` (the whole `styling` category), `coverage-floor:
 none` (the coverage floor). If every row is at its default, say so.
 Name the commit policy. List every unscannable package by name and language (not scanned).
+Name the audit scope. When `changed-since`, say the next audit will find
+little by design (baseline is today's commit) and existing code shows
+up as the `INDEX.md` backlog; widen for one run in the audit, not here.
 Ask: "Does this look right? If so, run the `lodestar-audit`
 skill to scan the codebase and produce action-item files in
 `<output-root>/<run-id>/` (default `docs/audit/<run-id>/`). If the layout itself feels off, run
