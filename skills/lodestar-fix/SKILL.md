@@ -10,7 +10,7 @@ license: MIT
 compatibility: Requires git and the target repository's declared typecheck and test commands (`n/a` skips that check). npm, pnpm, yarn, and Bun are detected from lockfiles; any other manager works when recorded in context.md. Deno and Bazel are not supported. Shell examples assume a POSIX-compatible environment.
 metadata:
   author: Ilan Cohen
-  version: "0.9.0"
+  version: "0.9.1"
 ---
 
 You are running `lodestar-fix`. The job is to **triage** and **execute** the
@@ -24,6 +24,35 @@ cwd as the target repository. Invoke scripts with an absolute path to
 that file (or `node <skill-dir>/scripts/<name>.mjs`). `--file` and
 `--run-dir` are paths in the target repository. Use them for status
 writes and file moves instead of POSIX `mv`.
+
+---
+
+## How to talk to the user
+
+Anything you print or ask is read by a person who is skimming.
+
+What you say:
+
+- Ask one clear question at a time. Say what happens for each answer.
+- Describe a fix by what it changes, not by its category key or item id.
+- Keep status values (`deferred`, `in_progress`, …) out of questions — say
+  "left for later", "half-finished".
+- Never trim or postpone a warning. A dirty tree, a protected branch, a
+  rejected commit, or a fix that grew past its scope is said plainly and
+  up front.
+- Short sentences. No unexplained abbreviations. No filler openers.
+
+How you lay it out:
+
+- Put the point first. No wind-up, no restating it at the end.
+- Bullets, not paragraphs. One idea per bullet, one or two sentences.
+- Blank line between blocks. Never one dense block of text.
+- Bold the first few words of each bullet, plus any count, file name, or
+  recommendation, so reading only the bold still gives the gist.
+- Say the least that fully answers, then stop.
+
+The Step 4 report block and any commit message keep their given shape.
+Everything else you print follows the rules above.
 
 ---
 
@@ -91,7 +120,7 @@ Then:
    run is unfinished, default to that. Otherwise list the unfinished
    runs and ask which one. If no candidate run qualifies, say so and
    point the user at `lodestar-audit`'s Plan phase.
-3. Print: "Working on `<output-root>/<RUN_ID>/`."
+3. Print: "Working through the fixes in `<output-root>/<RUN_ID>/`."
 
 ---
 
@@ -107,12 +136,14 @@ Build a summary:
 
 Print the summary, then ask one question:
 
-> Which items do you want to tackle this session?
+> What do you want to work on now?
 >
-> 1. All unstarted, low-risk items (skip `requires_decision: true`).
-> 2. By category — pick which categories to include.
-> 3. Decision pass — only `requires_decision: true` items (interactive).
-> 4. A specific list of IDs.
+> 1. **The safe ones** — every fix that hasn't been started and is
+>    low-risk. Anything needing a judgement call from you is left out.
+> 2. **By area** — you pick which areas to work through.
+> 3. **Just the judgement calls** — only the fixes that need you to decide
+>    something. I'll walk you through them one by one.
+> 4. **Specific ones** — give me the numbers.
 
 For (1) and (2), order items by category in the suggested sequence
 `imports → types → ssot → soc-yagni → boundaries → errors →
@@ -126,14 +157,15 @@ surface first (Step 4 — Resuming).
 Set `AUTO_COMMIT` from `sessionCommits` (the Step 1 override, not the
 raw `git.commits` payload):
 
-- `per-item` — `AUTO_COMMIT = yes`. Say so: `## Audit Configuration` has
-  `commits: per-item`, so each item is committed without asking.
-- `never` — `AUTO_COMMIT = no`. Say so (protected-branch override or
-  `## Audit Configuration` `commits: never`): edits stay unstaged. Do not ask.
+- `per-item` — `AUTO_COMMIT = yes`. Say so plainly: setup asked for one
+  commit per fix, so each will be committed as it's done, without asking.
+- `never` — `AUTO_COMMIT = no`. Say why in one line — either setup said
+  never commit, or you're on a protected branch — and that changes will be
+  left in the working copy for them to commit. Do not ask.
 - `ask` — ask today's question:
 
-> Auto-commit each item as it's completed? (yes — one git commit per
-> item / no — leave the diff staged for human review)
+> Should I commit each fix as I finish it, or leave everything for you to
+> review and commit yourself? (commit each one / leave them to me)
 
 Hold the answer for use in Step 3.6.
 
@@ -153,12 +185,13 @@ from a category template.
 ### Step 3.2 — Decision gate
 
 If `requires_decision: true`, print the problem statement and the
-suggested fix. Ask: "Proceed? (yes / skip / defer)".
+suggested fix in plain words. Ask: "Shall I make this change? (yes / no,
+drop it / not now, ask me again later)".
 
-- `skip` → write `status: skipped` with a one-line `note:`, move the
-  file to `<output-root>/<RUN_ID>/done/` (create the subfolder if
+- "no, drop it" → write `status: skipped` with a one-line `note:`, move
+  the file to `<output-root>/<RUN_ID>/done/` (create the subfolder if
   needed), and move on.
-- `defer` → write `status: deferred` with a `note:` describing the
+- "not now" → write `status: deferred` with a `note:` describing the
   open question, and move on (leave the file in the run root).
 - `yes` → proceed to Step 3.3.
 
@@ -302,26 +335,26 @@ once after all return, then prints Step 4.
 Print a session summary:
 
 ```
-lodestar-fix session complete on <output-root>/<RUN_ID>/.
+Finished this session on <output-root>/<RUN_ID>/.
 
-  done:       N
-  deferred:   N
-  skipped:    N
-  remaining:  N
+  fixed:            N
+  left for later:   N
+  dropped:          N
+  not started yet:  N
 
-Commit policy: <ask | per-item | never> (from ## Audit Configuration, or session
-override on a protected branch).
+Changes were <committed one per fix | left in your working copy for you
+to commit>.
 
-Of the deferred items, M hit scope-creep limits, N were rejected by a
-commit hook, and P need a human decision — see the note: field in each.
-List hook-rejected items separately; the edits are on disk and the
-item is resumable.
+Of the N left for later: M turned out to need bigger changes than the fix
+allowed, N were blocked by a commit hook, and P are waiting on a decision
+from you. Each one says why in its file.
+(List the hook-blocked ones separately — those edits are already on disk
+and can be picked up again.)
 
-Next steps:
-  - Re-run `lodestar-fix` to pick up where you left off.
-  - Review deferred items individually; resolve the blocker and either
-    re-run `lodestar-fix` (which will surface them) or remove the deferred
-    status manually to retry.
+What you can do next:
+  - Run `lodestar-fix` again to carry on from here.
+  - Open anything left for later, deal with what's blocking it, then run
+    `lodestar-fix` again — it will bring those back up.
 ```
 
 ### Step 4a — Promote a finished run
@@ -342,7 +375,7 @@ node scripts/action-state.mjs archive-run --run-dir <output-root>/<RUN_ID>
 Create `<output-root>/done/` if it does not exist. Print:
 
 ```
-All items resolved. Run archived to <output-root>/done/<RUN_ID>/.
+Nothing left in this batch. Moved it to <output-root>/done/<RUN_ID>/.
 ```
 
 If any action-item files remain in the run root (deferred or
@@ -354,9 +387,9 @@ If this session completed at least one `imports` #3 item (circular
 dependency — subtype, title, or problem names a cycle), ask **once
 after the last item**, never per item, never silently:
 
-> This run broke a documented cycle. Refresh `## Dependency Direction`
-> in `.agents/lodestar/context.md` from the current import graph?
-> (yes / no)
+> Two of your packages used to import each other, and this session broke
+> that loop. The setup notes still describe the old arrangement. Shall I
+> update them to match the code as it is now? (yes / no)
 
 On no, change nothing. On yes, run:
 
@@ -387,14 +420,16 @@ does not trigger this.
 1. Files already moved to `<output-root>/<RUN_ID>/done/` are never
    re-touched — their absence from the run root is the signal.
 2. Items with `status: in_progress` in the run root surface first. For
-   each, print the item and the git diff (if any) and ask: "retry /
-   mark done / revert and defer". Retry re-applies the fix from
-   scratch (any partial diff must be reverted first); "mark done"
-   trusts the existing diff and then moves the file to `done/`;
-   "revert and defer" rolls back and writes `status: deferred` (leaves
-   the file in the run root).
-3. Items with `status: deferred` in the run root surface next. Ask:
-   "Has the blocker been resolved? (retry / skip / leave deferred)".
+   each, print the item and the git diff (if any) and ask: "This one was
+   half-finished last time. Start it over, keep what's there and call it
+   done, or undo it and come back to it later? (start over / keep it /
+   undo it)". "Start over" re-applies the fix from scratch (any partial
+   diff must be reverted first); "keep it" trusts the existing diff and
+   moves the file to `done/`; "undo it" rolls back and writes
+   `status: deferred` (leaves the file in the run root).
+3. Items with `status: deferred` in the run root surface next. Say what
+   was blocking each one, then ask: "Is this sorted now? (yes, try again /
+   no, drop it / leave it for later)".
 4. Unstarted items follow as in a fresh session.
 
 ---

@@ -18,7 +18,7 @@ compatibility: >-
   in context.md. Deno and Bazel are not supported.
 metadata:
   author: Ilan Cohen
-  version: "0.9.0"
+  version: "0.9.1"
 ---
 
 You are running a lodestar audit. **Discover** and
@@ -30,6 +30,38 @@ should have everything needed to land the fix.
 Scripts live beside this `SKILL.md` under `scripts/`. Run them with
 `node scripts/<name>.mjs` from this skill directory, or with an absolute
 path to that file.
+
+---
+
+## How to talk to the user
+
+Anything you print or ask is read by a person who is skimming.
+
+What you say:
+
+- Ask one clear question at a time. Say what happens for each answer.
+- Name a thing by what it does, not by its internal key — "how files
+  import each other", not `imports` #7.
+- Keep run ids, config keys, and file paths to where they are genuinely
+  needed.
+- Give counts, not ratios. Never ask the user to compare a number to a
+  threshold; give your recommendation and a one-line reason.
+- Never trim or postpone a warning. A blind spot, a stale basis, or a
+  skipped category stays in, however short the message.
+- Short sentences. No unexplained abbreviations. No filler openers.
+
+How you lay it out:
+
+- Put the point first. No wind-up, no restating it at the end.
+- Bullets, not paragraphs. One idea per bullet, one or two sentences.
+- Blank line between blocks. Never one dense block of text.
+- Bold the first few words of each bullet, plus any count, file name, or
+  recommendation, so reading only the bold still gives the gist.
+- Say the least that fully answers, then stop.
+
+Findings and action-item files are written to a template and are not
+covered by the layout rules above. Their prose still follows the
+plain-language rules.
 
 ---
 
@@ -103,9 +135,10 @@ node scripts/audit-state.mjs check-freshness --root <repo>
 
 Exit 0: continue. Exit 2: print the stderr list and ask once:
 
-> `.agents/lodestar/context.md` no longer matches the repo: [list].
-> Proceed with the audit on this basis, or stop and re-run
-> `lodestar-setup` first? (proceed / stop)
+> The repo has changed since setup ran, so what I know about it is out of
+> date: [list, in plain words]. I can audit anyway — findings may be off
+> where the notes are wrong — or stop so you can re-run `lodestar-setup`
+> first. (carry on / stop)
 
 On stop, create no run directory. Do not run `lodestar-setup` inline.
 On proceed, pass the stdout JSON to `resolve-run` as `--drift`. A
@@ -183,38 +216,46 @@ writing or merging `findings.md`.
 1. Run `node scripts/audit-state.mjs resolve-run --root <repo>`
    (add `--drift '<json>'` when Preconditions chose proceed).
    Capture `outputRoot` and `path` from the JSON.
-2. If `inProgress` is non-empty, ask: "Resume that run? (yes / start a
-   fresh run)". Resume with
+2. If `inProgress` is non-empty, ask: "There's an unfinished audit from
+   `<date>`. Pick up where it left off, or start over? (pick up / start
+   over)". Resume with
    `resolve-run --root <repo> --resume <RUN_ID>`.
    If `inProgress` is empty, look at the latest run directory under
    `outputRoot` (not only today's date). When `INDEX.md` exists and
    `findings.md` has any `in_scope: false` (or `## Backlog` total >
-   0), offer: "Promote a backlog slice on `<RUN_ID>`? (yes / start a
-   fresh run)". On yes: `--resume` that id, **skip Discover**, flip
-   `in_scope: true` on the chosen slice (one category, one package, or
-   all), re-run Plan only. Do not re-merge. Do not ask the Discover
-   consent questions.
-3. Print: "Output → `<output-root>/<RUN_ID>/`."
-4. List categories. If `validate-input`'s `categories` is a subset of
-   the nine (not all of them), present that subset as the default:
-   "Proceed with `<list>`? (yes / pick a different subset / all)". The
-   user can widen this run without editing `context.md`. If `categories`
-   is all nine, ask: "Proceed? (yes / pick a subset)". Wait.
+   0), offer: "The last audit left `<N>` problems in its backlog without
+   fix instructions. Want me to write those up now, instead of scanning
+   again? (write them up / scan again)". On the first: `--resume` that id,
+   **skip Discover**, flip `in_scope: true` on the chosen slice (one
+   category, one package, or all), re-run Plan only. Do not re-merge. Do
+   not ask the Discover consent questions.
+3. Print: "I'll put the results in `<output-root>/<RUN_ID>/`."
+4. List the categories in plain words, not as bare keys — e.g. "imports
+   (how files depend on each other)", "errors (how failures are handled)".
+   If `validate-input`'s `categories` is a subset of the nine, present
+   that subset as the default: "Setup says to check these: `<list>`.
+   Go ahead? (yes / choose different ones / check everything)". The user
+   can widen this run without editing `context.md`. If `categories` is all
+   nine, ask: "I'll check all nine areas. Go ahead? (yes / choose a
+   smaller set)". Wait.
    After they pick a subset (this run, or confirming a stored subset),
-   ask once: "Write this subset into `.agents/lodestar/context.md`
-   `## Audit Configuration` so later runs default to it? (yes / no — this
-   run uses it either way)". On yes, replace the `categories` row; do
-   not change `output-root`. Do not ask when they chose all nine, or
+   ask once: "Should future audits default to this same set? (yes / no —
+   either way, this run uses it)". On yes, replace the `categories` row;
+   do not change `output-root`. Do not ask when they chose all nine, or
    when the stored subset already matches. This edits `context.md`, not
    application source.
-5. If `validate-input` `scope.mode` is `changed-since`, present it as
-   the default and offer to widen **this run only** (do not write the
-   answer to `context.md`): keep the baseline / expand every finding /
-   expand the backlog for one category / expand the backlog for one
-   package. Widen-all → omit `--changed-files`. One category or package
-   → after merge, flip those findings to `in_scope: true` before Phase 2. A one-run widening is not a policy change.
-6. After Discover, ask: "Proceed to Phase 2 now? (yes / pause)". If
-   pause, stop. The run stays resumable.
+5. If `validate-input` `scope.mode` is `changed-since`, say in plain words
+   that setup limited fix instructions to code changed since `<date>`, and
+   that everything else is still found but only listed. Then offer, for
+   **this run only** (do not write the answer to `context.md`): keep it
+   that way / write up everything / write up the backlog for one area /
+   write up the backlog for one package. Widen-all → omit
+   `--changed-files`. One category or package → after merge, flip those
+   findings to `in_scope: true` before Phase 2. Say that widening here
+   changes this run only, not the setting.
+6. After Discover, ask: "Want me to write up fix instructions for these
+   now, or stop here? (write them up / stop)". If they stop, stop. The run
+   stays resumable.
 
 Skip steps 4–6 and Discover when step 2 chose promote.
 

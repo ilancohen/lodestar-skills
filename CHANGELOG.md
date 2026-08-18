@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented here.
 
+## [0.9.1] - 2026-08-18
+
+### Changed
+
+- **Plain-language, skimmable prompts.** Every question and summary the
+  four skills put on screen is rewritten in everyday words. Internal keys
+  (`changed-since`, `barrel-exports`, `ENFORCEMENT_MODE`, `deferred`, …)
+  stay in the files and out of the questions, choices say what happens if
+  you pick them, and the setup audit-scope question gives counts and a
+  reason instead of a churn ratio and a threshold. Each `SKILL.md` now
+  carries a "How to talk to the user" section covering both wording and
+  layout: point first, bullets over paragraphs, blank line between blocks,
+  bold lead-ins, warnings never trimmed or postponed. Written report
+  files, action items, and commit messages keep their own templates.
+
 ## [0.9.0] - 2026-08-18
 
 ### Changed
@@ -13,8 +28,8 @@ All notable changes to this project will be documented here.
 ### Breaking
 
 - **`context.md` is seven sections.** `## Audit Settings`, `## Audit
-  Scope`, `## Git`, and `## Excluded Paths` become one `## Audit
-  Configuration` table, with globs under `### Excluded Paths`.
+Scope`, `## Git`, and `## Excluded Paths` become one `## Audit
+Configuration` table, with globs under `### Excluded Paths`.
   `## Principles`, `## Skills`, and `## Audit Output` become one
   `## Reference`. A `0.8.x` file fails the parser; re-run
   `lodestar-setup`. There is no migration.
@@ -29,7 +44,7 @@ All notable changes to this project will be documented here.
   Skips when the inputs are absent rather than guessing. Audit warns
   and asks whether to proceed, recording the stale basis in the run;
   `lodestar-fix` stops on command drift and can refresh `## Dependency
-  Direction` after breaking a documented cycle; `lodestar-architecture`
+Direction` after breaking a documented cycle; `lodestar-architecture`
   reports drift without blocking. A pre-0.8 file, and a repo where
   every check skips, behave as today.
 

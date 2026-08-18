@@ -19,7 +19,7 @@ license: MIT
 compatibility: Requires filesystem write access and a POSIX-compatible shell for optional Fallow setup, plus network access if you accept the optional Fallow install. npm, pnpm, yarn, and Bun are detected from lockfiles; any other manager works when recorded in context.md. Deno and Bazel are not supported.
 metadata:
   author: Ilan Cohen
-  version: "0.9.0"
+  version: "0.9.1"
 ---
 
 Write the agent-neutral config the lodestar skills need. The one file that
@@ -47,6 +47,34 @@ repository, not locations of this installed skill.
   `ui`), write a target dependency direction, propose an alternative
   layout, or read source to pick a scope. Point layout questions at
   `lodestar-architecture` and stop.
+
+## How to talk to the user
+
+Every question and summary in this skill is read by a person who may not
+know what any of it means, and who is skimming. Write accordingly.
+
+What you say:
+
+- Ask one clear question at a time. Say what happens for each answer.
+- Say what a thing is, not what it is called. "A tool that maps how your
+  files import each other", not "the graph-based detector".
+- Never make the user do arithmetic or compare a number to a threshold.
+  Give the numbers and give your recommendation with a one-line reason.
+- Keep internal config keys (`mode`, `changed-since`, `barrel-exports`,
+  `ENFORCEMENT_MODE`, …) out of questions. They belong in the files you
+  write, and in these instructions — not on screen.
+- Never trim or postpone a warning. Anything that could make the user
+  choose wrong stays in, however short the message.
+- Short sentences. No unexplained abbreviations. No filler openers.
+
+How you lay it out:
+
+- Put the point first. No wind-up, no restating it at the end.
+- Bullets, not paragraphs. One idea per bullet, one or two sentences.
+- Blank line between blocks. Never one dense block of text.
+- Bold the first few words of each bullet, plus any number, file name, or
+  recommendation, so reading only the bold still gives the gist.
+- Say the least that fully answers, then stop.
 
 Work through the steps in order. Before each step, load its
 `references/NN-*.md` file. Those files are one hop from this one — a

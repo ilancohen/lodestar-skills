@@ -25,15 +25,17 @@ boundaries fall back to a heuristic grep.
 
    Nothing resolved:
 
-   > fallow is required by `lodestar-audit` and was not found in this repo
-   > or on `PATH`. Install it as a devDependency with `<command>`?
-   > (yes / no — I'll print the command and carry on)
+   > The audit needs a tool called fallow to see how your files import
+   > each other. It isn't installed here. Shall I add it as a dev
+   > dependency? I'd run `<command>`.
+   > (yes / no — I'll just show you the command and move on)
 
    Out of range — name the version (this changes a pin others may use):
 
-   > This repo has fallow `<found version>`, which `lodestar-audit` can't
-   > use. Upgrade it with `<command>`? (yes / no — I'll print the command
-   > and carry on)
+   > This repo has fallow `<found version>`, but the audit needs a newer
+   > one. Shall I upgrade it with `<command>`? Note this changes the
+   > version for everyone on the project.
+   > (yes / no — I'll just show you the command and move on)
 
 3. Multi-package: ask root vs named package. Root: `pnpm add -D -w` /
    `npm install --save-dev` / `yarn add -D` / `bun add -d`. Package:
@@ -57,13 +59,15 @@ boundaries fall back to a heuristic grep.
 Ask this whether or not fallow ended up installed — the config is useful
 the moment it is:
 
-> Write `.fallowrc.json` so the audit detects wrong-direction imports with
-> fallow instead of a heuristic grep? (yes / no)
+> Shall I write a `.fallowrc.json` file describing which package is
+> allowed to import which? With it, the audit can tell for certain when an
+> import goes the wrong way. Without it, it has to guess by searching
+> text. (yes / no)
 
 If fallow is not installed, say the file will sit ready until it is.
 
-If `.fallowrc.json` already exists, ask instead: "merge boundary section /
-leave alone / overwrite?"
+If `.fallowrc.json` already exists, say so and ask whether to add the
+import-boundary part to it, leave the file alone, or replace it.
 
 If the user opts in, write `.fallowrc.json` from `fallowrc.md` (JSON in a
 fenced block). Substitute:
@@ -79,8 +83,9 @@ fenced block). Substitute:
 
 Write to `.fallowrc.json`. Then ask:
 
-> Add `.audit-fallow-seed.json` and `.fallow/` to `.gitignore`?
-> (yes / no)
+> The audit leaves behind two throwaway things — a `.audit-fallow-seed.json`
+> file and a `.fallow/` folder — that shouldn't be committed. Add them to
+> `.gitignore`? (yes / no)
 
 If yes and `.gitignore` exists and does not already cover them, add
 both. If they decline, still write `.fallowrc.json` and say gitignore

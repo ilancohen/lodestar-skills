@@ -6,17 +6,18 @@ skills require it and won't run without it. What's optional is whether
 _every_ task, to check the principles. That's a bigger blast radius than
 the rest of setup, so ask about it on its own:
 
-> Should these principles apply automatically to every task any agent does
-> in this repo, or only when someone explicitly runs a lodestar skill
-> (`lodestar-audit`, `lodestar-fix`, `lodestar-architecture`)?
+> One more choice: when should these coding principles apply?
 >
-> - **Full suite** — add a short `## Lodestar` section to `AGENTS.md` that
->   tells every agent to check the principles before completing any task,
->   and points at `.agents/lodestar/context.md`.
-> - **Skills-only** — leave `AGENTS.md` untouched. The skills still work
->   when invoked; nothing applies the principles unprompted.
+> - **On every task** — I add a few lines to `AGENTS.md` telling any AI
+>   agent working in this repo to check the principles before it finishes
+>   anything, whatever it was asked to do.
+> - **Only when asked** — I leave `AGENTS.md` alone. The principles apply
+>   only when someone runs a lodestar skill by name.
+>
+> Either way the setup file gets written and the skills work.
 
-Record the answer as `ENFORCEMENT_MODE` (`full` or `skills-only`) for
+Record "on every task" as `ENFORCEMENT_MODE: full` and "only when asked"
+as `ENFORCEMENT_MODE: skills-only` for
 Steps 5 and 6. This choice does not affect any other step — layout,
 conventions, Git, Fallow (Step 7), and linting (Step 8) run the same
 way regardless.

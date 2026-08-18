@@ -5,11 +5,13 @@ Older versions of this skill put the `## Build & Test`,
 `## Audit Output` sections in `AGENTS.md`. If you found any of them there
 in Step 1, their values now live in `context.md`, so ask once:
 
-> `AGENTS.md` still has the lodestar sections from an older setup. The
-> skills now read `.agents/lodestar/context.md` instead. Remove those
-> sections from `AGENTS.md`? (yes / leave them)
+> An older version of this setup put some lodestar sections in
+> `AGENTS.md`: `<list them>`. The skills don't read those any more — that
+> information now lives in `.agents/lodestar/context.md`. Shall I delete
+> them from `AGENTS.md`? Everything else in the file stays.
+> (yes / leave them)
 
 If yes, remove only those sections (plus the `## Lodestar` section if
 `ENFORCEMENT_MODE` is `skills-only`) and leave the rest of `AGENTS.md`
-untouched. If they decline, say that `AGENTS.md` now holds a second,
-unread copy of the layout and that `context.md` is the one that counts.
+untouched. If they decline, tell them `AGENTS.md` now has an out-of-date
+copy that nothing reads, and `context.md` is the one that counts.
