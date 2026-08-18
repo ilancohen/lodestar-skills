@@ -20,6 +20,7 @@ Near-miss (should not trigger):
 
 - "We just installed the lodestar skills. Document our packages and agent guidance."
 - "We added a billing package. Refresh the lodestar context file without auditing."
+- "Is my lodestar context still accurate?"
 - "We switched from npm to pnpm. Update the lodestar setup files."
 - "Set up engineering principles but ask me to confirm package responsibilities before writing."
 - "Wire up the agent engineering docs for this monorepo the way the principles suite expects."
@@ -42,6 +43,7 @@ Should trigger:
 
 - "Run lodestar-audit on this TypeScript monorepo. Do not fix source."
 - "I edited findings.md. Re-run only the plan phase of lodestar-audit."
+- "Is my lodestar context still accurate?"
 - `/lodestar-audit`
 
 Near-miss: setup docs, applying fixes, architecture review, advice-only, security/coverage/format/perf tasks, and ambient discovery requests that do not name the skill:
@@ -64,6 +66,7 @@ Expected outcomes (once explicitly invoked):
 - `imports` subtype #6 (`wrong-direction`) means an import opposes a documented edge or path in `context.md`; documented cycle edges surface as #3 `circular-import` instead.
 - Honor category subsets and pause after `findings.md` when asked. Read `output-root` rather than hardcoding `docs/audit`.
 - Stop and point at `lodestar-setup` / Fallow when `.agents/lodestar/context.md` is missing or has no Package Layout. An `AGENTS.md` that still carries an old layout table must not be used as a fallback. Missing `CLAUDE.md` or `.agents/skills/README.md` is not a blocker.
+- "Is my lodestar context still accurate?" runs `check-freshness` only — report drifted facts or that the file still matches. Do not start an audit run. Do not re-run `lodestar-setup` (that is "Refresh the lodestar context file without auditing").
 - Fallow schema acceptance: a schema above the contract baseline passes when every required field is present. On the first encounter the contract script writes `.agents/lodestar/fallow-compat.json` and prints a one-line note to stderr; subsequent runs with that schema are silent. A schema above the baseline that dropped a required field fails with a "pin to last known-good version" message instead of the upgrade message. When `## Audit Settings` has `fallow: optional` and Fallow is missing or invalid, the audit continues with grep-only detectors and lists `imports` #7–#9, `dry` A, and `soc-yagni` A ranking as not checked at all in `INDEX.md`. `boundaries` B still runs (grep). Default (absent or `required`) still stops.
 
 ## lodestar-fix

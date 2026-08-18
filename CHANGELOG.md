@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented here.
 
+## [0.8.0] - 2026-08-18
+
+### Added
+
+- **Context freshness.** `check-freshness` notices when
+  `.agents/lodestar/context.md` has stopped being true — a package on
+  disk with no layout row, or a recorded command whose script is gone.
+  Skips when the inputs are absent rather than guessing. Audit warns
+  and asks whether to proceed, recording the stale basis in the run;
+  `lodestar-fix` stops on command drift and can refresh `## Dependency
+  Direction` after breaking a documented cycle; `lodestar-architecture`
+  reports drift without blocking. A pre-0.8 file, and a repo where
+  every check skips, behave as today.
+
 ## [0.7.0] - 2026-08-18
 
 ### Added

@@ -19,7 +19,7 @@ license: MIT
 compatibility: Requires filesystem write access and a POSIX-compatible shell for optional Fallow setup, plus network access if you accept the optional Fallow install. npm, pnpm, yarn, and Bun are detected from lockfiles; any other manager works when recorded in context.md. Deno and Bazel are not supported.
 metadata:
   author: Ilan Cohen
-  version: "0.7.0"
+  version: "0.8.0"
 ---
 
 Write the agent-neutral config the lodestar skills need. The one file that
@@ -70,7 +70,7 @@ Read only what's needed to fill in the template placeholders:
   justfile / Taskfile / Nx / Turbo / README. Record what a developer
   types. Missing → `n/a`.
 - **Package layout** — find whatever declares the workspace; record the
-  file. Hints: `pnpm-workspace.yaml`, `package.json` `workspaces`,
+  file as a `layout-source` row in Build & Test. Hints: `pnpm-workspace.yaml`, `package.json` `workspaces`,
   `nx.json`, `turbo.json`, `lerna.json`. Several → prefer the manager's
   file and name the others. Only if none: every non-root `package.json` (skip Excluded
   Paths); else single-package: feature dirs one level into `src/` (or
@@ -490,6 +490,9 @@ skill to scan the codebase and produce action-item files in
 `<output-root>/<run-id>/` (default `docs/audit/<run-id>/`). If the layout itself feels off, run
 `lodestar-architecture` instead — it produces an advisory report and never
 modifies source."
+
+To check later whether `context.md` still matches the repo, run
+`check-freshness` — do not re-run this skill just to find out.
 
 Do not run the audit automatically. Do not run `lodestar-architecture`
 automatically. Setup is descriptive — anything evaluative is the other

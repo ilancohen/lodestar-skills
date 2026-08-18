@@ -3,7 +3,16 @@
 Written by `lodestar-setup` to `.agents/lodestar/context.md`. This is the
 only file the lodestar skills read for repo facts — `lodestar-audit`,
 `lodestar-fix`, and `lodestar-architecture` stop and ask for setup if it is
-missing. Keep it accurate; nothing else needs to be kept in sync.
+missing. Keep it accurate; nothing else needs to be kept in sync. To
+see whether this file still matches the repo, run `check-freshness`
+(do not re-run setup just to find out):
+
+```text
+node <lodestar-audit-skill>/scripts/audit-state.mjs check-freshness --root <repo>
+```
+
+Exit 0: still true. Exit 2: named facts have drifted — re-run
+`lodestar-setup` to rewrite them.
 
 ## Project
 
@@ -33,6 +42,11 @@ command with a `<pkg>` placeholder. Write it only when needed, as a
 table row whose value is `pixi; pixi run; pixi add --dev <pkg>`.
 **Absent means detect from the lockfile.** The recorded row wins over
 detection. Do not leave a placeholder row in the table.
+
+A `layout-source` row records the file that declared the workspace
+(`pnpm-workspace.yaml`, `package.json`, `nx.json`, …).
+**Absent means the missing-package freshness check skips** rather than
+walking the tree. Write it whenever setup observed a declaring file.
 
 ## Dependency Direction
 

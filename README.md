@@ -11,7 +11,9 @@ the rules, and fix those spots — with your say-so at every step.
   `.agents/lodestar/context.md`, which is the only file the other three
   skills read.
 - **`lodestar-audit`** — scans for rule-breaking and writes up each one as a
-  standalone action item. Doesn't touch your code.
+  standalone action item. Doesn't touch your code. Its `check-freshness`
+  command also answers whether `context.md` still matches the repo,
+  without running an audit or re-running setup.
 - **`lodestar-fix`** — applies those action items, one scoped change at a
   time, checking its work as it goes.
 - **`lodestar-architecture`** — a second opinion on the package layout
