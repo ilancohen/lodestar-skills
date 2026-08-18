@@ -79,6 +79,12 @@ npx skills add ilancohen/lodestar-skills
 That's the normal path — it detects your agent, pre-selects all four skills,
 Enter to confirm. A few more ways to run it:
 
+Adopting this in a large, long-lived repo does not have to open with a
+thousand action items. Setup can scope the audit to code changed since
+today's commit and keep the rest as a counted backlog in `INDEX.md`. A
+`context.md` with no `## Audit Scope` section still expands every
+finding.
+
 | Want to...           | Run                                                                           |
 | -------------------- | ----------------------------------------------------------------------------- |
 | Pick one agent       | `npx skills add ilancohen/lodestar-skills --skill '*' -a cursor -a universal` |
@@ -113,8 +119,8 @@ Skills don't activate on their own — you have to invoke them by name
 
 1. Run `lodestar-setup` once, in the target repo. It writes
    `.agents/lodestar/context.md` — your package layout, dependency
-   direction, build commands, exclusions, conventions, and commit
-   policy — which is the only file the other skills read. It also asks whether
+   direction, build commands, exclusions, conventions, audit scope, and
+   commit policy — which is the only file the other skills read. It also asks whether
    principles should apply to every task automatically (full suite: a
    short pointer section is added to `AGENTS.md`) or only when you
    explicitly run a lodestar skill (skills-only: `AGENTS.md` is left

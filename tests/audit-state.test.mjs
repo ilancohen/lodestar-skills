@@ -42,6 +42,11 @@ const SINGLE = path.join(ROOT, "tests/fixtures/repos/single-package");
 const POLYGLOT = path.join(ROOT, "tests/fixtures/repos/polyglot");
 const EXCLUDED = path.join(ROOT, "tests/fixtures/repos/excluded");
 const BUN = path.join(ROOT, "tests/fixtures/repos/bun");
+const CHANGED_SINCE = path.join(ROOT, "tests/fixtures/repos/changed-since");
+const SCOPED = path.join(
+  ROOT,
+  "tests/fixtures/audit-runs/scoped-backlog/findings.md",
+);
 const CLEAN = path.join(ROOT, "tests/fixtures/audit-runs/clean/findings.md");
 const HEAVY = path.join(
   ROOT,
@@ -1240,5 +1245,32 @@ test("changed-files includes rename and untracked, excludes deletion", () => {
   const payload = JSON.parse(result.stdout);
   assert.deepEqual(payload, ["renamed-to.ts", "untracked.ts"]);
   fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test("changed-since fixture parses mode and baseline", () => {
+  const parsed = parseAuditScope(
+    fs.readFileSync(
+      path.join(CHANGED_SINCE, ".agents/lodestar/context.md"),
+      "utf8",
+    ),
+  );
+  assert.equal(parsed.mode, "changed-since");
+  assert.equal(
+    parsed.baselineRef,
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  );
+  assert.equal(parsed.baselineDate, "2026-08-18");
+});
+
+test("scoped-backlog fixture mixes in_scope and still validates", () => {
+  const result = run(["validate-output", "--path", SCOPED]);
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = parseFindings(fs.readFileSync(SCOPED, "utf8"));
+  assert.equal(parsed.findings.length, 2);
+  assert.equal(parsed.findings[0].in_scope, true);
+  assert.equal(parsed.findings[1].in_scope, false);
+  const inScope = parsed.findings.filter((item) => item.in_scope).length;
+  const backlog = parsed.findings.filter((item) => !item.in_scope).length;
+  assert.equal(inScope + backlog, parsed.findings.length);
 });
 

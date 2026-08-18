@@ -2,7 +2,32 @@
 
 All notable changes to this project will be documented here.
 
+## [0.7.0] - 2026-08-18
+
+### Added
+
+- **`context.md` `## Audit Scope`.** Setup measures git churn (commit
+  count, first-commit date, tracked source files, 90-day touches) and
+  asks one question: expand every finding, or only code changed since
+  today's commit. Large mostly-cold repos (80+ source files and under
+  30% 90-day churn) get `changed-since` recommended; the rest get
+  `all`. The baseline is `HEAD` at setup. Absent section means `all`.
+  `changed-since` without a resolvable `baseline-ref` is an error, not
+  a silent fallback.
+
+- **Backlog reporting.** Discovery still scans the whole repo.
+  `findings.md` is complete under every scope; Phase 2 expands
+  `in_scope` findings only and `INDEX.md` counts the rest. A later
+  session can promote a category or package without re-scanning. A
+  one-run widening is not written back to `context.md`.
+
+### Changed
+
+- **Backward compatible.** A `context.md` with no `## Audit Scope`
+  section audits everything and expands every finding, as today.
+
 ## [0.6.0] - 2026-08-18
+
 
 ### Fixed
 
