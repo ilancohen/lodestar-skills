@@ -192,6 +192,27 @@ Architecture reports derive from the same root so the two stay together:
 Unknown keys are ignored. A typo in a known value is an error at audit
 time, not a silent default.
 
+## Audit Scope
+
+Which findings become action items. Discovery still scans the whole
+repo and writes every finding into `findings.md`; this section does
+not narrow the scan. **Absent means
+`mode: all`:** a file with no `## Audit Scope` section expands every
+finding, exactly as today.
+
+| Key             | Value                          | Notes                                                                                          |
+| --------------- | ------------------------------ | ---------------------------------------------------------------------------------------------- |
+| `mode`          | `all`                          | `all` expands every finding. `changed-since` expands only findings that touch code changed since `baseline-ref`. |
+| `baseline-ref`  | `[commit sha]`                 | The adoption commit. Required when `mode: changed-since`.                                      |
+| `baseline-date` | `[YYYY-MM-DD]`                 | Human-readable capture date. Informational; never parsed.                                      |
+
+`mode: changed-since` without a resolvable `baseline-ref` is an error
+at audit time, not a silent fallback to `all`. Out-of-scope findings
+stay in `findings.md` and are counted as a backlog in `INDEX.md`.
+
+Unknown keys are ignored. A typo in a known value is an error at audit
+time, not a silent default.
+
 ## Git
 
 How `lodestar-fix` commits. **Absent means default:** ask each session,
