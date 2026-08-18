@@ -2,8 +2,9 @@
 name: lodestar-setup
 description: >-
   Sets up the lodestar suite in a repository by documenting its package
-  layout in .agents/lodestar/context.md, the one file the other lodestar
-  skills read, which links to the bundled principles.md (never copied or
+  layout and which of a short list of conventions it already follows in
+  .agents/lodestar/context.md, the one file the other lodestar skills
+  read, which links to the bundled principles.md (never copied or
   inlined). Asks separately whether to add a pointer section to AGENTS.md
   so principles apply to every task (full suite) or to leave AGENTS.md
   untouched (skills-only). With separate user consent it may also install
@@ -20,9 +21,9 @@ metadata:
 
 Write the agent-neutral config the lodestar skills need. The one file that
 matters is `.agents/lodestar/context.md`: package layout, dependency
-direction, and build commands. `lodestar-audit`, `lodestar-fix`, and
-`lodestar-architecture` read that file and nothing else for repo facts —
-they never read `AGENTS.md`.
+direction, build commands, and which conventions the repo already follows.
+`lodestar-audit`, `lodestar-fix`, and `lodestar-architecture` read that
+file and nothing else for repo facts — they never read `AGENTS.md`.
 
 This requires only the information needed to fill in the templates — do not
 do a broad repo survey, and do not propose architectural changes (the
@@ -36,7 +37,8 @@ repository, not locations of this installed skill.
 
 - **Does**: discover the packages that already exist, document each one
   (name, path, alias, one-sentence responsibility), record the observed
-  package import graph, and write the config files agents read.
+  package import graph, record which of a short list of conventions the
+  repo already follows, and write the config files agents read.
 - **Does not**: force the repo's packages into a fixed list of roles
   (`core`, `api`, `ui`, etc.). The audit operates on whatever packages
   this skill documents.
@@ -82,10 +84,28 @@ Read only what's needed to fill in the template placeholders:
   content. Older installs kept the layout table and command table in
   `AGENTS.md` — if you find them there, reuse those values for
   `context.md` and then strip those sections from `AGENTS.md` (see
-  Step 5).
+  Step 6).
+- **Conventions evidence** — a short, bounded sweep so Step 3 can
+  pre-check from evidence. Record paths (or "not found"), not a
+  judgment. Stop at the first hit per signal; do not walk the whole
+  tree.
+  - `result-types`: a `Result` / `Either` type or `ok:` discriminant
+    exported from a package in the layout table (search those packages'
+    public `index.ts` and a file named `result.ts` / `either.ts` if
+    present).
+  - `branded-types`: `& { readonly __brand` under the layout globs
+    (one grep, first hit).
+  - `barrel-exports`: `export *` in any package `index.ts` named by the
+    layout table.
+  - `design-tokens`: a `tokens.css`, `theme.ts`, or a CSS custom-property
+    block (`:root` with `--`) at the repo root or a layout package root.
+  - `coverage-floor`: a coverage threshold in the test runner config the
+    Build & Test `test` script already points at (vitest / jest / c8
+    `coverage.thresholds` or equivalent).
 
 Stop there. Do not read tsconfig deeply, explore individual packages, check
-for issue trackers, or investigate test frameworks beyond the scripts.
+for issue trackers, or investigate test frameworks beyond the scripts and
+the coverage threshold above.
 Do not try to map the discovered packages onto a canonical role list —
 the table you write is keyed by the repo's own package names.
 
@@ -111,11 +131,50 @@ use as part of this same confirmation. Do not proceed with install or
 script prefixes until that is answered.
 
 Ask the user to correct anything wrong. One round of feedback only.
-Do not ask separate questions about coverage, branded types, or violations,
-and do not ask whether the layout is "right" — that's `lodestar-architecture`'s
-job, not setup's.
+Do not ask about conventions here — that is Step 3. Do not ask whether
+the layout is "right" — that's `lodestar-architecture`'s job, not setup's.
 
-## Step 3 — Choose how principles get enforced
+## Step 3 — Confirm which conventions the repo already follows
+
+Present one multi-select, pre-checked from the Step 1 sweep, with the
+evidence shown per row. Frame it as what the repo already does, not as
+what to enforce:
+
+> Which of these does this repo already follow? Pre-checked from a
+> short evidence sweep — uncheck anything that doesn't match. One
+> round of feedback.
+>
+> - [ ] `result-types` — expected failures return `Result<T, E>`
+>       (evidence: `<path>` / not found)
+> - [ ] `branded-types` — domain identifiers are branded types
+>       (evidence: `<path>` / not found)
+> - [x] no `export *` barrels (`barrel-exports: no`)
+>       (evidence: `export *` found at `<path>` / none — none → checked)
+> - [ ] `design-tokens` — styling uses design tokens
+>       (evidence: `<path>` / not found)
+> - coverage floor: `<N or none>` (evidence: `<path>: <N>` / not found;
+>   default 80)
+
+Pre-check per row from evidence — do not apply one rule to every row:
+
+- `result-types` / `branded-types` / `design-tokens`: check when the
+  signal was found; leave unchecked when not found.
+- no `export *` barrels: check when **no** `export *` was found (the
+  default); uncheck when one was. The quote above shows the default.
+- coverage: pre-fill the number from the test config, or `80` when not
+  found.
+
+Record the answers as the `## Conventions` table values:
+
+- checked `result-types` / `branded-types` / `design-tokens` → `yes`;
+  unchecked → `no`
+- checked "no `export *`" → `barrel-exports: no`; unchecked → `yes`
+  (barrels allowed)
+- coverage floor → the confirmed integer or `none`
+
+Do not ask a second question. Setup stays descriptive.
+
+## Step 4 — Choose how principles get enforced
 
 `.agents/lodestar/context.md` gets written either way — the other three
 skills require it and won't run without it. What's optional is whether
@@ -134,12 +193,12 @@ the rest of setup, so ask about it on its own:
 >   when invoked; nothing applies the principles unprompted.
 
 Record the answer as `ENFORCEMENT_MODE` (`full` or `skills-only`) for
-Step 5. This choice does not affect any other step — the layout table,
-Fallow (Step 6), and linting (Step 7) run the same way regardless,
-since `lodestar-audit` needs them whether or not principles are
-auto-enforced.
+Steps 5 and 6. This choice does not affect any other step — the layout
+table, the conventions table, Fallow (Step 7), and linting (Step 8) run
+the same way regardless, since `lodestar-audit` needs them whether or not
+principles are auto-enforced.
 
-## Step 4 — Write the files
+## Step 5 — Write the files
 
 Use the templates beside this `SKILL.md`. Fill every `[bracketed
 placeholder]` with real values. Announce each file before writing it.
@@ -154,9 +213,9 @@ inline, or edit its content into any other file, and do not write
 agent-specific files (`CLAUDE.md`, `.github/copilot-instructions.md`, or
 similar) — `.agents/lodestar/context.md` just links to it. No placeholder
 substitution is needed either: `principles.md` references
-`.agents/lodestar/context.md`'s `## Build & Test` and `## Package Layout`
-tables by name instead of embedding literal commands, so it reads correctly
-untouched, in every consuming repo.
+`.agents/lodestar/context.md`'s `## Build & Test`, `## Package Layout`,
+and `## Conventions` tables by name instead of embedding literal
+commands, so it reads correctly untouched, in every consuming repo.
 
 ### .agents/lodestar/context.md
 
@@ -169,23 +228,29 @@ This is the load-bearing file. Start from `context-md.md`. Fill in:
 - The Package Layout table — one row per package discovered in Step 1.
   Use the repo's own names verbatim. Fill the Responsibility column with
   the one-sentence summary you drafted.
+- The Conventions table — the five keys from Step 3, with the confirmed
+  values. Use the skip-value polarity from the template (`barrel-exports:
+  yes` means barrels are allowed).
 
 Leave the `## Principles` and `## Skills` sections as the template has
 them — the principles link must stay pointed at
 `.agents/skills/lodestar-setup/principles.md`.
 
 If the file already exists, replace the `## Build & Test`,
-`## Dependency Direction`, and `## Package Layout` sections and leave any
-other content the user added alone.
+`## Dependency Direction`, `## Package Layout`, and `## Conventions`
+sections and leave any other content the user added alone. If
+`## Conventions` is missing (a pre-0.5 file), insert it between
+`## Package Layout` and `## Principles`.
 
 Create the `.agents/lodestar/` directory if needed, and write to
 `.agents/lodestar/context.md`. Write it in both enforcement modes — the
-other three skills require it.
+other three skills require it. The Conventions table is written in both
+modes too.
 
 ### AGENTS.md — only in `full` mode
 
 If `ENFORCEMENT_MODE` is `skills-only`, **do not touch `AGENTS.md`**. Skip
-to Step 5.
+to Step 6.
 
 If it is `full`, take the `## Lodestar` section from `agents-md.md` and
 append it to `AGENTS.md`, or replace an existing `## Lodestar` section with
@@ -203,7 +268,7 @@ placeholders: it is a signpost to `.agents/lodestar/context.md` and
 `principles.md` for anyone browsing `.agents/skills/`. No skill reads it.
 Skip it if a README already exists there with other content.
 
-## Step 5 — Clean up a pre-0.3 install
+## Step 6 — Clean up a pre-0.3 install
 
 Older versions of this skill put the `## Build & Test`,
 `## Dependency Direction`, `## Package Layout`, `## Skills`, and
@@ -219,7 +284,7 @@ If yes, remove only those sections (plus the `## Lodestar` section if
 untouched. If they decline, say that `AGENTS.md` now holds a second,
 unread copy of the layout and that `context.md` is the one that counts.
 
-## Step 6 — Fallow and `.fallowrc.json` for the audit's fallow seed
+## Step 7 — Fallow and `.fallowrc.json` for the audit's fallow seed
 
 The audit skill **requires** [fallow](https://docs.fallow.tools) as the
 primary graph-based detector for `imports`, `dry`, and `soc-yagni`. When
@@ -359,7 +424,7 @@ Every zone should report `file_count > 0`. A contract failure or a
 zero-file zone means the config or Package Layout glob must be fixed
 before continuing. Delete the temp JSON after reading it.
 
-## Step 7 — (Optional) Linting rules for higher-accuracy audit findings
+## Step 8 — (Optional) Linting rules for higher-accuracy audit findings
 
 The lodestar-audit skill runs an opportunistic linter probe when detecting
 `types` (#1, #3), `errors` (A, B), and `boundaries.B` violations. Enabling
@@ -374,14 +439,19 @@ Ask once whether they want to tighten ESLint / Biome rules for audit
 accuracy. If they decline, skip. If they opt in, read
 [linters.md](linters.md) and apply only the rules they confirm.
 
-## Step 8 — Confirm
+## Step 9 — Confirm
 
 Print a one-line summary of each file written or updated (including
-`.fallowrc.json` if Step 6 ran), and which `ENFORCEMENT_MODE` was used —
+`.fallowrc.json` if Step 7 ran), and which `ENFORCEMENT_MODE` was used —
 say plainly whether `AGENTS.md` was edited (`full`) or left alone
-(`skills-only`). Name the fallow version Step 6 resolved, whether it was
+(`skills-only`). Name the fallow version Step 7 resolved, whether it was
 already there or just installed. If none resolved, say so, repeat the
 install command, and say `lodestar-audit` needs it.
+List any convention recorded at its skip value, so the user sees what
+the audit will skip: `result-types: no` (errors #B), `branded-types: no`
+(`boundaries` A, `types` #4), `barrel-exports: yes` (`imports` #4),
+`design-tokens: no` (the whole `styling` category), `coverage-floor:
+none` (the coverage floor). If every row is at its default, say so.
 Ask: "Does this look right? If so, run the `lodestar-audit`
 skill to scan the codebase and produce action-item files in
 `docs/audit/<run-id>/`. If the layout itself feels off, run
