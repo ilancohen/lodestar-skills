@@ -84,7 +84,7 @@ Enter to confirm. A few more ways to run it:
 Adopting this in a large, long-lived repo does not have to open with a
 thousand action items. Setup can scope the audit to code changed since
 today's commit and keep the rest as a counted backlog in `INDEX.md`. A
-`context.md` with no `## Audit Scope` section still expands every
+`context.md` with no `mode` row in `## Audit Configuration` still expands every
 finding.
 
 | Want to...           | Run                                                                           |
@@ -128,7 +128,7 @@ Skills don't activate on their own — you have to invoke them by name
    explicitly run a lodestar skill (skills-only: `AGENTS.md` is left
    alone). Either way it documents your layout and configures Fallow.
 2. Run `lodestar-audit`. It writes to `docs/audit/<run-id>/` unless
-   `## Audit Settings` names a different `output-root`.
+   `## Audit Configuration` names a different `output-root`.
 3. Read the index it produces and decide what to act on.
 4. Run `lodestar-fix` when you want it to actually change code.
 5. Run `lodestar-architecture` separately, only if the package layout itself

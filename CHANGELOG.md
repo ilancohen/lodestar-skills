@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented here.
 
+## [0.9.0] - 2026-08-18
+
+### Changed
+
+- **Setup and audit docs.** Setup step procedures live in
+  `references/`; `SKILL.md` is the dispatcher. Audit category docs name
+  siblings in prose and do not load each other.
+
+### Breaking
+
+- **`context.md` is seven sections.** `## Audit Settings`, `## Audit
+  Scope`, `## Git`, and `## Excluded Paths` become one `## Audit
+  Configuration` table, with globs under `### Excluded Paths`.
+  `## Principles`, `## Skills`, and `## Audit Output` become one
+  `## Reference`. A `0.8.x` file fails the parser; re-run
+  `lodestar-setup`. There is no migration.
+
 ## [0.8.0] - 2026-08-18
 
 ### Added

@@ -41,6 +41,7 @@ import { formatCommitMessage } from "../skills/lodestar-fix/scripts/action-state
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SCRIPT = path.join(ROOT, "skills/lodestar-audit/scripts/audit-state.mjs");
 const VALID = path.join(ROOT, "tests/fixtures/repos/valid");
+const PRE09 = path.join(ROOT, "tests/fixtures/repos/pre-0.9");
 const OPTED_OUT = path.join(ROOT, "tests/fixtures/repos/opted-out");
 const CYCLIC = path.join(ROOT, "tests/fixtures/repos/cyclic");
 const PLACEHOLDER = path.join(ROOT, "tests/fixtures/repos/placeholder");
@@ -166,6 +167,13 @@ test("validate-input rejects placeholder responsibilities", () => {
   const result = run(["validate-input", "--root", PLACEHOLDER]);
   assert.equal(result.status, 2);
   assert.match(result.stderr, /no real Responsibility/);
+});
+
+test("validate-input rejects a 0.8.x context.md with a re-run-setup remedy", () => {
+  const result = run(["validate-input", "--root", PRE09]);
+  assert.equal(result.status, 2, result.stderr);
+  assert.match(result.stderr, /pre-0.9 section layout/);
+  assert.match(result.stderr, /Re-run lodestar-setup/);
 });
 
 test("clean findings validate", () => {
@@ -979,7 +987,7 @@ test("parseAuditSettings rejects a path with ..", () => {
   );
 });
 
-test("resolve-run uses docs/audit when Audit Settings is absent", () => {
+test("resolve-run uses docs/audit when Audit Configuration is absent", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-audit-"));
   const result = run(["resolve-run", "--root", tmp, "--date", "2026-08-18"]);
   assert.equal(result.status, 0, result.stderr);

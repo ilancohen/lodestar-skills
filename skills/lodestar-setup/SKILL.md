@@ -19,7 +19,7 @@ license: MIT
 compatibility: Requires filesystem write access and a POSIX-compatible shell for optional Fallow setup, plus network access if you accept the optional Fallow install. npm, pnpm, yarn, and Bun are detected from lockfiles; any other manager works when recorded in context.md. Deno and Bazel are not supported.
 metadata:
   author: Ilan Cohen
-  version: "0.8.0"
+  version: "0.9.0"
 ---
 
 Write the agent-neutral config the lodestar skills need. The one file that

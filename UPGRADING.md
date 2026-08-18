@@ -24,6 +24,23 @@ Scripts that must not prompt:
 npx skills add ilancohen/lodestar-skills --skill '*' -y
 ```
 
+## Upgrading to 0.9.0 — re-run setup
+
+0.9.0 collapses `.agents/lodestar/context.md` from 12 sections to 7.
+There is no migration. A file written by `0.5.0`–`0.8.x` fails the
+parser and names the remedy: re-run `lodestar-setup` to regenerate it.
+
+What moved:
+
+- `## Audit Settings`, `## Audit Scope`, `## Git`, and
+  `## Excluded Paths` → one `## Audit Configuration` key/value table,
+  with globs under nested `### Excluded Paths`
+- `## Principles`, `## Skills`, and `## Audit Output` → one closing
+  `## Reference` section
+
+Hand-edited values in those four audit sections belong on the matching
+keys of `## Audit Configuration` after setup rewrites the file.
+
 ## Upgrading to 0.3.0 — re-run setup
 
 0.3.0 moves the repo facts the skills read out of `AGENTS.md` and into
