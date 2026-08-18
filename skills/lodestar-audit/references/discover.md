@@ -5,16 +5,27 @@ Load this file before running detectors. Keep the read-only rule from
 
 Throughout this skill, `context.md` means `.agents/lodestar/context.md` in
 the target repository — the file `lodestar-setup` writes. It is the only
-source of package layout, dependency direction, and commands. `AGENTS.md`
-is never read.
+source of package layout, dependency direction, commands, and conventions.
+`AGENTS.md` is never read.
 
 ## Package set
 
 Use `node scripts/audit-state.mjs validate-input --root <repo>`. It
 returns `packages`, `direction` (acyclic chain order, empty when cyclic),
-`directionGraph` (`chain`, `edges`, `cyclic`, `reachability`), `commands`,
+`directionGraph` (`chain`, `edges`, `cyclic`, `reachability`),
+`conventions` (every key present; defaults filled when `## Conventions`
+is missing or a row is missing), `commands`,
 `pkgManager`, `run`, `pkgManagerAmbiguous`, `pkgManagerLockfiles`,
 `allPkgRoots`, and `aliasPrefix`.
+
+`conventions` keys: `result-types`, `branded-types`, `barrel-exports`,
+`design-tokens` (`yes` / `no`), and `coverage-floor` (positive integer or
+`none`). Defaults: `yes`, `yes`, `no`, `yes`, `80`. Unknown table keys
+are ignored. An unparseable known value fails `validate-input`.
+
+A category gated off by a convention is still checkpointed complete with
+count 0 so resume logic is unaffected. Do not omit it from the scan
+loop's checkpoint — skip its detectors, then checkpoint it complete.
 
 If `pkgManager` is `null` / `pkgManagerAmbiguous` is true, **ask the
 user** which of npm, yarn, or pnpm to use before running any install or

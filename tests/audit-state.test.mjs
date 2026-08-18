@@ -8,10 +8,12 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import {
   assignIds,
+  CONVENTION_DEFAULTS,
   dedupeFindings,
   findPlaceholders,
   isWrongDirectionImport,
   nextRunId,
+  parseConventions,
   parseDirection,
   parseFindings,
   parsePackageLayout,
@@ -115,6 +117,7 @@ test("validate-input accepts a real layout and does not touch source", () => {
   assert.equal(payload.packages[0].name, "core");
   assert.equal(payload.pkgManager, null);
   assert.equal(payload.pkgManagerAmbiguous, true);
+  assert.deepEqual(payload.conventions, CONVENTION_DEFAULTS);
   assert.equal(sha(source), before);
 });
 
@@ -267,5 +270,101 @@ test("validate-input stops when the context file is missing", () => {
   const result = run(["validate-input", "--root", tmp]);
   assert.equal(result.status, 2);
   assert.match(result.stderr, /\.agents\/lodestar\/context\.md is missing/);
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+function conventionsMarkdown(rows) {
+  const lines = [
+    "## Conventions",
+    "",
+    "| Convention | Value | What it gates |",
+    "| ---------- | ----- | ------------- |",
+    ...rows.map(([key, value]) => `| \`${key}\` | \`${value}\` | x |`),
+    "",
+  ];
+  return lines.join("\n");
+}
+
+test("parseConventions defaults when the section is absent", () => {
+  assert.deepEqual(
+    parseConventions("# Fixture\n\n## Package Layout\n"),
+    CONVENTION_DEFAULTS,
+  );
+});
+
+test("parseConventions parses each key", () => {
+  const parsed = parseConventions(
+    conventionsMarkdown([
+      ["result-types", "no"],
+      ["branded-types", "no"],
+      ["barrel-exports", "yes"],
+      ["design-tokens", "no"],
+      ["coverage-floor", "none"],
+    ]),
+  );
+  assert.deepEqual(parsed, {
+    "result-types": "no",
+    "branded-types": "no",
+    "barrel-exports": "yes",
+    "design-tokens": "no",
+    "coverage-floor": "none",
+  });
+});
+
+test("parseConventions fills missing rows from defaults", () => {
+  const parsed = parseConventions(conventionsMarkdown([["result-types", "no"]]));
+  assert.equal(parsed["result-types"], "no");
+  assert.equal(parsed["branded-types"], "yes");
+  assert.equal(parsed["barrel-exports"], "no");
+  assert.equal(parsed["coverage-floor"], 80);
+});
+
+test("parseConventions parses coverage-floor as a number", () => {
+  const parsed = parseConventions(
+    conventionsMarkdown([["coverage-floor", "70"]]),
+  );
+  assert.equal(parsed["coverage-floor"], 70);
+});
+
+test("parseConventions ignores unknown keys", () => {
+  const parsed = parseConventions(
+    conventionsMarkdown([
+      ["result-types", "no"],
+      ["fallow", "optional"],
+    ]),
+  );
+  assert.equal(parsed["result-types"], "no");
+  assert.equal(parsed.fallow, undefined);
+});
+
+test("parseConventions rejects a bad boolean", () => {
+  assert.throws(
+    () => parseConventions(conventionsMarkdown([["result-types", "yeah"]])),
+    /invalid value for `result-types`/,
+  );
+});
+
+test("parseConventions rejects a bad coverage-floor", () => {
+  assert.throws(
+    () => parseConventions(conventionsMarkdown([["coverage-floor", "80%"]])),
+    /invalid value for `coverage-floor`/,
+  );
+});
+
+test("validate-input rejects a bad conventions value", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-audit-"));
+  const contextDir = path.join(tmp, ".agents", "lodestar");
+  fs.mkdirSync(contextDir, { recursive: true });
+  const base = fs.readFileSync(
+    path.join(VALID, ".agents/lodestar/context.md"),
+    "utf8",
+  );
+  fs.writeFileSync(
+    path.join(contextDir, "context.md"),
+    `${base}\n${conventionsMarkdown([["result-types", "yeah"]])}\n`,
+  );
+  const result = run(["validate-input", "--root", tmp]);
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /invalid value for `result-types`/);
   fs.rmSync(tmp, { recursive: true, force: true });
 });

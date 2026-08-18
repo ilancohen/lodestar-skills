@@ -195,6 +195,68 @@ export function parseDirection(contextText) {
   };
 }
 
+export const CONVENTION_DEFAULTS = {
+  "result-types": "yes",
+  "branded-types": "yes",
+  "barrel-exports": "no",
+  "design-tokens": "yes",
+  "coverage-floor": 80,
+};
+
+const BOOLEAN_CONVENTIONS = new Set([
+  "result-types",
+  "branded-types",
+  "barrel-exports",
+  "design-tokens",
+]);
+
+function stripTicks(value) {
+  return value.replace(/^`+|`+$/g, "").trim();
+}
+
+export function parseConventions(contextText) {
+  const conventions = { ...CONVENTION_DEFAULTS };
+  const heading = contextText.search(/^## Conventions\s*$/m);
+  if (heading === -1) return conventions;
+
+  const rest = contextText.slice(heading);
+  const next = rest.search(/\n## /);
+  const section = next === -1 ? rest : rest.slice(0, next);
+
+  for (const line of section.split(/\r?\n/)) {
+    if (!line.startsWith("|")) continue;
+    const cells = line
+      .split("|")
+      .slice(1, -1)
+      .map((cell) => cell.trim());
+    if (cells.length < 2) continue;
+    if (/^-+$/.test(cells[0].replace(/:/g, "-"))) continue;
+    const key = stripTicks(cells[0]);
+    if (!key || /^convention$/i.test(key)) continue;
+    const raw = stripTicks(cells[1]);
+    if (!Object.hasOwn(CONVENTION_DEFAULTS, key)) continue;
+    conventions[key] = parseConventionValue(key, raw);
+  }
+  return conventions;
+}
+
+function parseConventionValue(key, raw) {
+  if (BOOLEAN_CONVENTIONS.has(key)) {
+    if (raw === "yes" || raw === "no") return raw;
+    throw new Error(
+      `## Conventions has an invalid value for \`${key}\`: \`${raw}\`. Expected yes or no.`,
+    );
+  }
+  if (key === "coverage-floor") {
+    if (raw === "none") return "none";
+    if (/^[1-9]\d*$/.test(raw)) return Number(raw);
+    throw new Error(
+      `## Conventions has an invalid value for \`coverage-floor\`: \`${raw}\`. Expected a positive integer or none.`,
+    );
+  }
+  throw new Error(`## Conventions has an unknown key \`${key}\`.`);
+}
+
 function parseEdgeBullets(section) {
   const edges = [];
   for (const line of section.split(/\r?\n/)) {
@@ -594,11 +656,18 @@ function cmdValidateInput(flags) {
   }
   const commands = parseCommands(contextText);
   const directionGraph = parseDirection(contextText);
+  let conventions;
+  try {
+    conventions = parseConventions(contextText);
+  } catch (error) {
+    fail(error.message, 2);
+  }
   const detected = detectPkgManager(root);
   printJson({
     packages,
     direction: directionGraph.chain ?? [],
     directionGraph,
+    conventions,
     commands,
     pkgManager: detected.pkgManager,
     run: detected.run,
