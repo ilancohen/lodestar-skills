@@ -161,7 +161,13 @@ category name when that category is finished for every package.
 
 ## Finish Discover
 
-Validate:
+Merge with `merge-findings`. When `scope.mode` is `changed-since`, pass
+`--changed-files` from `changed-files --root <repo> --since
+<baselineRef>`. Scope is not part of run state — checkpoints and resume
+are unchanged; a run started under one scope can be resumed under
+another.
+
+Then validate:
 
 ```text
 node scripts/audit-state.mjs validate-output --path <output-root>/<RUN_ID>/findings.md

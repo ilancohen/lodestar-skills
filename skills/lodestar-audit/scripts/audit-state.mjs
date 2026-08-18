@@ -45,7 +45,7 @@ Commands:
   resolve-run --root DIR [--date YYYY-MM-DD] [--resume RUN_ID]
   validate-input --root DIR
   changed-files --root DIR --since REF
-  merge-findings --in FILE [--in FILE ...] [--out FILE]
+  merge-findings --in FILE [--in FILE ...] [--out FILE] [--changed-files JSON]
   validate-output --path FILE
   checkpoint --run-dir DIR --category NAME --status complete|partial --count N [--package NAME]
   recover --run-dir DIR
@@ -836,6 +836,39 @@ export function aliasPrefix(packages) {
   return prefix;
 }
 
+export function parseInScopeField(raw) {
+  if (!raw) return true;
+  if (raw === "true") return true;
+  if (raw === "false") return false;
+  return raw;
+}
+
+export function findingPath(entry) {
+  const text = String(entry).replace(/\\/g, "/");
+  const match = text.match(/^(.*):(\d+)$/);
+  return match ? match[1] : text;
+}
+
+export function findingInScope(finding, changedSet) {
+  if (finding.scope_unit === "advisory") return true;
+  return (finding.files || []).some((entry) =>
+    changedSet.has(findingPath(entry)),
+  );
+}
+
+export function applyChangedFiles(findings, changedFiles) {
+  if (changedFiles == null) {
+    return findings.map((finding) => ({ ...finding, in_scope: true }));
+  }
+  const changedSet = new Set(
+    changedFiles.map((filePath) => String(filePath).replace(/\\/g, "/")),
+  );
+  return findings.map((finding) => ({
+    ...finding,
+    in_scope: findingInScope(finding, changedSet),
+  }));
+}
+
 export function parseFindingBlock(block) {
   const idMatch = block.match(/^### (F\d{4})\s*$/m);
   if (!idMatch) return null;
@@ -864,6 +897,7 @@ export function parseFindingBlock(block) {
       : field("evidence"),
     scope_unit: field("scope_unit"),
     requires_decision: field("requires_decision") === "true",
+    in_scope: parseInScopeField(field("in_scope")),
     notes: notesMatch
       ? notesMatch[1].replace(/^    /gm, "").trimEnd()
       : field("notes"),
@@ -985,6 +1019,9 @@ export function renderFindings(runId, findings, complete = []) {
       lines.push(
         `- requires_decision: ${finding.requires_decision ? "true" : "false"}`,
       );
+      lines.push(
+        `- in_scope: ${finding.in_scope === false ? "false" : "true"}`,
+      );
       lines.push("- notes: |");
       for (const line of String(finding.notes || "").split("\n")) {
         lines.push(`    ${line}`);
@@ -1014,6 +1051,9 @@ export function validateFinding(finding) {
   }
   if (!finding.subtype) errors.push("missing subtype");
   if (!finding.scope_unit) errors.push("missing scope_unit");
+  if (finding.in_scope !== true && finding.in_scope !== false) {
+    errors.push("invalid in_scope");
+  }
   if (!Array.isArray(finding.files)) errors.push("files must be a list");
   return errors;
 }
@@ -1180,7 +1220,16 @@ function cmdMergeFindings(flags) {
       fail(`malformed findings in ${file}: ${error.message}`, 2);
     }
   }
-  const merged = assignIds(dedupeFindings(sortFindings(findings)));
+  let changedFiles;
+  try {
+    changedFiles = parseChangedFilesFlag(flags["changed-files"]);
+  } catch (error) {
+    fail(error.message, 2);
+  }
+  const merged = applyChangedFiles(
+    assignIds(dedupeFindings(sortFindings(findings))),
+    changedFiles,
+  );
   const runId = flags["run-id"] || "merged";
   const complete = [];
   if (flags.out && fs.existsSync(flags.out)) {
@@ -1203,6 +1252,19 @@ function cmdMergeFindings(flags) {
   const rendered = renderFindings(runId, merged, completeUnique);
   if (flags.out) atomicWrite(flags.out, rendered);
   printJson({ count: merged.length, findings: merged });
+}
+
+function parseChangedFilesFlag(raw) {
+  if (raw === undefined || raw === true) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      throw new Error("expected a JSON array");
+    }
+    return parsed.map(String);
+  } catch (error) {
+    throw new Error(`invalid --changed-files: ${error.message}`);
+  }
 }
 
 function cmdValidateOutput(flags) {

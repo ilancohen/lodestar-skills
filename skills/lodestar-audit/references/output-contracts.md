@@ -32,6 +32,7 @@ by deleting the block.
     import { userService } from '@repo/core/src/user/user.service';
 - scope_unit: one-file
 - requires_decision: false
+- in_scope: true
 - notes: |
 ```
 
@@ -47,15 +48,21 @@ Invariants:
   `one-entity`, `one-class`, `one-symbol`, or `advisory`.
 - `requires_decision` is `true` when the sub-doc stop conditions apply,
   or when the fix needs judgment. Default `false` for mechanical fixes.
+- `in_scope` is `true` or `false`. Missing means `true` (an older
+  `findings.md` still validates). A human may flip it between phases to
+  pull one old-code finding into this run's action items.
 
 ## Merge
 
 ```text
-node scripts/audit-state.mjs merge-findings --in a.json --in b.json --out <output-root>/<RUN_ID>/findings.md --run-id <RUN_ID>
+node scripts/audit-state.mjs merge-findings --in a.json --in b.json --out <output-root>/<RUN_ID>/findings.md --run-id <RUN_ID> [--changed-files '["path"]']
 ```
 
 Dedupes by category, subtype, package, files, and evidence. Sorts by
-category order then file path. Reassigns IDs from `F0001`.
+category order then file path. Reassigns IDs from `F0001`. With
+`--changed-files`, each finding gets `in_scope: true` when any of its
+`files` is in the set, or when `scope_unit` is `advisory`. Without the
+flag, every finding is `in_scope: true`.
 
 ## Validate
 

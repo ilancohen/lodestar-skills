@@ -61,9 +61,10 @@ Phase 1 — DISCOVER     →  <output-root>/<RUN_ID>/findings.md
 Phase 2 — PLAN         →  <output-root>/<RUN_ID>/INDEX.md + NNN-….md files
 ```
 
-`findings.md` is the seam. Discover writes finding blocks only. Plan
-expands them into action items. A human may edit `findings.md` between
-phases. Both phases are restartable with the same `<RUN_ID>`.
+`findings.md` is the seam. Discover writes finding blocks only — the
+same set under every scope. Plan expands in-scope findings into action
+items. A human may edit `findings.md` between phases, including flipping
+`in_scope`. Both phases are restartable with the same `<RUN_ID>`.
 
 Never overwrite a previous run. Output stays under
 `<output-root>/<RUN_ID>/` (`outputRoot` from `validate-input` /
@@ -193,7 +194,10 @@ Follow [references/discover.md](references/discover.md). Summary:
    unchecked subtypes in `INDEX.md` (`imports` #7–#9, `dry` A,
    `soc-yagni` A ranking).
 3. Mechanical pass in category order, then semantic pass.
-4. Merge with `node scripts/audit-state.mjs merge-findings`.
+4. Merge with `node scripts/audit-state.mjs merge-findings`. When
+   `scope.mode` is `changed-since`, pass `--changed-files` from
+   `changed-files --root <repo> --since <baselineRef>`. Detectors still
+   ran repo-wide; this only sets `in_scope`.
 5. Validate with `node scripts/audit-state.mjs validate-output --path
 <output-root>/<RUN_ID>/findings.md`.
 6. Checkpoint a category as complete only after it is finished for every

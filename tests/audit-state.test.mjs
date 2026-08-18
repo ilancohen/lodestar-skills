@@ -7,6 +7,7 @@ import { spawnSync } from "node:child_process";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import {
+  applyChangedFiles,
   assignIds,
   architectureOutputRoot,
   CATEGORIES,
@@ -232,6 +233,85 @@ test("merge-findings rejects malformed json", () => {
   fs.writeFileSync(bad, "{not json");
   const result = run(["merge-findings", "--in", bad]);
   assert.equal(result.status, 2);
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+function sampleFinding(overrides) {
+  return {
+    category: "imports",
+    subtype: "cross-package-src",
+    package: "api",
+    files: ["packages/api/src/routes/users.ts:12"],
+    evidence: "import",
+    scope_unit: "one-file",
+    requires_decision: false,
+    notes: "",
+    ...overrides,
+  };
+}
+
+test("applyChangedFiles marks only overlapping files in scope", () => {
+  const findings = applyChangedFiles(
+    [
+      sampleFinding({ files: ["packages/api/src/new.ts:1"] }),
+      sampleFinding({
+        files: ["packages/core/src/old.ts:1"],
+        subtype: "wrong-direction",
+      }),
+    ],
+    ["packages/api/src/new.ts"],
+  );
+  assert.equal(findings[0].in_scope, true);
+  assert.equal(findings[1].in_scope, false);
+});
+
+test("applyChangedFiles keeps advisory findings in scope", () => {
+  const findings = applyChangedFiles(
+    [sampleFinding({ scope_unit: "advisory", files: ["packages/core/src/old.ts:1"] })],
+    ["packages/api/src/new.ts"],
+  );
+  assert.equal(findings[0].in_scope, true);
+});
+
+test("applyChangedFiles without a changed set marks every finding in scope", () => {
+  const findings = applyChangedFiles(
+    [sampleFinding({ in_scope: false })],
+    null,
+  );
+  assert.equal(findings[0].in_scope, true);
+});
+
+test("missing in_scope in findings.md defaults to true and still validates", () => {
+  const result = run(["validate-output", "--path", HEAVY]);
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = parseFindings(fs.readFileSync(HEAVY, "utf8"));
+  assert.equal(parsed.findings[0].in_scope, true);
+});
+
+test("merge-findings --changed-files partitions findings", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-audit-"));
+  const input = path.join(tmp, "in.json");
+  fs.writeFileSync(
+    input,
+    JSON.stringify([
+      sampleFinding({ files: ["src/new.ts:1"] }),
+      sampleFinding({
+        files: ["src/old.ts:1"],
+        subtype: "wrong-direction",
+      }),
+    ]),
+  );
+  const result = run([
+    "merge-findings",
+    "--in",
+    input,
+    "--changed-files",
+    JSON.stringify(["src/new.ts"]),
+  ]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.findings[0].in_scope, true);
+  assert.equal(payload.findings[1].in_scope, false);
   fs.rmSync(tmp, { recursive: true, force: true });
 });
 
@@ -1051,7 +1131,11 @@ function scopeMarkdown(rows) {
 }
 
 function gitOk(cwd, args) {
-  const result = spawnSync("git", ["-C", cwd, ...args], { encoding: "utf8" });
+  const result = spawnSync(
+    "git",
+    ["-C", cwd, "-c", "core.hooksPath=/dev/null", ...args],
+    { encoding: "utf8" },
+  );
   assert.equal(result.status, 0, result.stderr);
   return result;
 }
@@ -1124,7 +1208,7 @@ test("validate-input rejects an unresolvable baseline-ref", () => {
 });
 
 test("changed-files includes rename and untracked, excludes deletion", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-changed-"));
+  const tmp = fs.mkdtempSync(path.join(ROOT, "tests/fixtures/.tmp-changed-"));
   gitOk(tmp, ["init", "-b", "main"]);
   gitOk(tmp, ["config", "user.email", "test@example.com"]);
   gitOk(tmp, ["config", "user.name", "Test"]);
