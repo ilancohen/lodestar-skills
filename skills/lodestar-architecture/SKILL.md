@@ -47,6 +47,17 @@ Capture from `.agents/lodestar/context.md` (or `validate-input` JSON):
 Also note whether `.fallowrc.json` exists; if so, its zones should match
 `<packages>` (the setup skill writes it that way).
 
+Run the full freshness check. Do not stop on drift — this skill's
+subject is the layout, and a package on disk with no row is a finding
+to report, not a reason to refuse the review:
+
+```text
+node <lodestar-audit-skill>/scripts/audit-state.mjs check-freshness --root <repo>
+```
+
+Exit 2: fold the drifted facts into the report (Risks, and
+"Matches contents?" for a missing package). Exit 0: omit.
+
 ---
 
 ## Step 1 — Ask one question
@@ -165,7 +176,9 @@ unit-tested in isolation" beats "good separation of concerns".)
 ## Risks and open questions
 
 (Bullet list. 2–6 items. Be concrete about which package or boundary the
-risk lives in. Examples of useful items:
+risk lives in. If `check-freshness` reported drift, put those facts
+first — a package on disk with no layout row, or a recorded command
+whose script is gone. Then the usual architectural smells:
 
 - `shared/` exports 47 symbols, 12 of which are used by a single
   package — possible kitchen-sink shared package.

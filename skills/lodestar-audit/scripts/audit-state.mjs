@@ -2,8 +2,8 @@
 /**
  * Deterministic audit-state helper. Installed with lodestar-audit.
  *
- * Subcommands: resolve-run, validate-input, check-freshness, changed-files,
- * merge-findings, validate-output, checkpoint, recover
+ * Subcommands: resolve-run, validate-input, check-freshness, derive-direction,
+ * changed-files, merge-findings, validate-output, checkpoint, recover
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -45,6 +45,7 @@ Commands:
   resolve-run --root DIR [--date YYYY-MM-DD] [--resume RUN_ID] [--drift JSON]
   validate-input --root DIR
   check-freshness --root DIR [--facts layout,commands]
+  derive-direction --root DIR
   changed-files --root DIR --since REF
   merge-findings --in FILE [--in FILE ...] [--out FILE] [--changed-files JSON]
   validate-output --path FILE
@@ -652,6 +653,111 @@ function printDriftHuman(drift) {
       );
     }
   }
+}
+
+function packageForSpecifier(spec, packages) {
+  const ranked = [...packages]
+    .filter((row) => row.alias && row.alias !== "n/a")
+    .sort((a, b) => b.alias.length - a.alias.length);
+  for (const row of ranked) {
+    if (spec === row.alias || spec.startsWith(`${row.alias}/`)) return row;
+  }
+  return null;
+}
+
+function collectImportEdges(root, packages, excludedPaths = []) {
+  const counts = new Map();
+  for (const from of packages) {
+    for (const dir of packageDirs(root, from.path)) {
+      const files = walk(dir, DEFAULT_INCLUDE, true, [], {
+        cwd: root,
+        excludeGlobs: excludedPaths,
+      });
+      for (const file of files) {
+        const text = fs.readFileSync(file, "utf8");
+        for (const match of text.matchAll(/from ['"]([^'"]+)['"]/g)) {
+          const to = packageForSpecifier(match[1], packages);
+          if (!to || to.name === from.name) continue;
+          const key = `${from.name}\0${to.name}`;
+          counts.set(key, (counts.get(key) || 0) + 1);
+        }
+      }
+    }
+  }
+  return [...counts].map(([key, count]) => {
+    const [from, to] = key.split("\0");
+    return { from, to, count };
+  });
+}
+
+function topologicalChain(names, edges) {
+  const incoming = new Map(names.map((name) => [name, 0]));
+  const outgoing = new Map(names.map((name) => [name, []]));
+  for (const edge of edges) {
+    if (!incoming.has(edge.from) || !incoming.has(edge.to)) continue;
+    incoming.set(edge.to, incoming.get(edge.to) + 1);
+    outgoing.get(edge.from).push(edge.to);
+  }
+  const queue = names.filter((name) => incoming.get(name) === 0);
+  const chain = [];
+  while (queue.length) {
+    const current = queue.shift();
+    chain.push(current);
+    for (const next of outgoing.get(current) || []) {
+      incoming.set(next, incoming.get(next) - 1);
+      if (incoming.get(next) === 0) queue.push(next);
+    }
+  }
+  return chain.length === names.length ? chain : null;
+}
+
+function importCountLabel(count) {
+  return count === 1 ? "(1 import)" : `(${count} imports)`;
+}
+
+function renderDirectionMarkdown(result) {
+  const lines = [
+    `Basis: observed import graph, captured ${utcDate()}.`,
+    "",
+  ];
+  if (!result.edges.length) {
+    return `${lines.join("\n").trimEnd()}\n`;
+  }
+  if (result.cyclic) {
+    for (const edge of result.edges) {
+      const tag = canReach(result.edges, edge.to, edge.from)
+        ? " [cycle]"
+        : "";
+      lines.push(
+        `- ${edge.from} → ${edge.to} ${importCountLabel(edge.count)}${tag}`,
+      );
+    }
+    lines.push("");
+    lines.push("The graph is cyclic — no single dependency order exists.");
+    lines.push("");
+    return lines.join("\n");
+  }
+  lines.push(result.chain.join(" → "));
+  lines.push("");
+  return lines.join("\n");
+}
+
+export function deriveDirection(root) {
+  const contextPath = path.join(root, ".agents", "lodestar", "context.md");
+  if (!fs.existsSync(contextPath)) {
+    throw new Error(
+      ".agents/lodestar/context.md is missing. Run lodestar-setup first.",
+    );
+  }
+  const contextText = fs.readFileSync(contextPath, "utf8");
+  const packages = parsePackageLayout(contextText);
+  const names = packages.map((row) => row.name);
+  const excluded = parseExcludedPaths(contextText);
+  const edges = collectImportEdges(root, packages, excluded.excludedPaths);
+  const cyclic = hasDirectedCycle(edges);
+  const chain = cyclic ? null : topologicalChain(names, edges) || names;
+  const result = { cyclic, chain, edges };
+  return { ...result, markdown: renderDirectionMarkdown(result) };
 }
 
 export function parseDirection(contextText) {
@@ -1565,6 +1671,15 @@ function cmdCheckFreshness(flags) {
   if (result.drift.length) process.exit(2);
 }
 
+function cmdDeriveDirection(flags) {
+  const root = flags.root || process.cwd();
+  try {
+    printJson(deriveDirection(root));
+  } catch (error) {
+    fail(error.message, 1);
+  }
+}
+
 function cmdValidateInput(flags) {
   const root = flags.root || process.cwd();
   const contextPath = path.join(root, ".agents", "lodestar", "context.md");
@@ -1871,6 +1986,7 @@ const COMMANDS = {
   "resolve-run": cmdResolveRun,
   "validate-input": cmdValidateInput,
   "check-freshness": cmdCheckFreshness,
+  "derive-direction": cmdDeriveDirection,
   "changed-files": cmdChangedFiles,
   "merge-findings": cmdMergeFindings,
   "validate-output": cmdValidateOutput,

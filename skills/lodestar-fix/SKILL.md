@@ -56,6 +56,15 @@ writes; `AGENTS.md` is not read):
   in the report. Stop and ask to re-run `lodestar-setup` only when a
   command is missing from the table entirely.
 
+Then run command-only freshness (layout facts are not this skill's):
+
+```text
+node <lodestar-audit-skill>/scripts/audit-state.mjs check-freshness --root <repo> --facts commands
+```
+
+Exit 2: stop. Name the stale command and point at `lodestar-setup`.
+`n/a` is not drift. Do not run a layout check.
+
 ---
 
 ## Step 1 — Pick a run
@@ -339,6 +348,36 @@ All items resolved. Run archived to <output-root>/done/<RUN_ID>/.
 If any action-item files remain in the run root (deferred or
 unstarted), skip this step and leave the run in place.
 
+### Step 4b — Refresh `## Dependency Direction` after a cycle fix
+
+If this session completed at least one `imports` #3 item (circular
+dependency — subtype, title, or problem names a cycle), ask **once
+after the last item**, never per item, never silently:
+
+> This run broke a documented cycle. Refresh `## Dependency Direction`
+> in `.agents/lodestar/context.md` from the current import graph?
+> (yes / no)
+
+On no, change nothing. On yes, run:
+
+```text
+node <lodestar-audit-skill>/scripts/audit-state.mjs derive-direction --root <repo>
+```
+
+If `cyclic` is still true — other imports along the same edge that no
+item covered — report that and change nothing. If acyclic, replace
+**only** `## Dependency Direction`, including a fresh `Basis:` date.
+Layout, commands, conventions, and responsibilities stay untouched.
+
+This write belongs to no item. Do not fold it into an item's commit.
+Own commit, `context.md` only. Honor the session commit policy:
+`never`, or `ask` when the user already declined auto-commit → write
+and leave unstaged. `per-item` or `AUTO_COMMIT=yes` → commit. A run
+with no #3 items never asks.
+
+A `#6` (wrong-direction) fix converges toward the recorded graph and
+does not trigger this.
+
 ---
 
 ## Resuming
@@ -379,9 +418,15 @@ unstarted), skip this step and leave the run in place.
 - **No `git add -A`.** Stage only the files listed in the item's
   `files:`. The audit's per-item granularity is the whole point —
   preserve it in the commit history.
+- **`## Dependency Direction` refresh is the one exception.** Step 4b
+  may rewrite that section of `context.md` on consent after an
+  `imports` #3 fix, in its own commit, because this skill is the one
+  that can invalidate that section. It is not scope-creep.
 - **Stop conditions:**
   - The run directory has no `INDEX.md` or no action-item files.
   - `<typecheck>` and `<test>` are both `n/a` or missing from
     `.agents/lodestar/context.md` (nothing to verify). A single `n/a`
     is not a stop — skip that check.
+  - `check-freshness --facts commands` reports drift (a recorded
+    command no longer resolves). Point at `lodestar-setup`.
   - The user says stop.

@@ -32,6 +32,7 @@ import {
   parseLayoutSource,
   scriptNameFromCommand,
   checkFreshness,
+  deriveDirection,
   sortFindings,
 } from "../skills/lodestar-audit/scripts/audit-state.mjs";
 import { formatCommitMessage } from "../skills/lodestar-fix/scripts/action-state.mjs";
@@ -1684,4 +1685,93 @@ test("check-freshness skips the root workspace member .", () => {
     payload.drift.some((item) => item.observed === "."),
     false,
   );
+});
+
+test("derive-direction round-trips the cyclic fixture", () => {
+  const result = run(["derive-direction", "--root", CYCLIC]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.cyclic, true);
+  assert.equal(payload.chain, null);
+  assert.equal(payload.edges.length, 2);
+  const parsed = parseDirection(
+    `## Dependency Direction\n\n${payload.markdown}\n## Package Layout\n`,
+  );
+  assert.equal(parsed.cyclic, true);
+  assert.equal(parsed.chain, null);
+  assert.equal(parsed.edges.length, 2);
+});
+
+test("derive-direction round-trips an acyclic import graph", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-dir-"));
+  fs.mkdirSync(path.join(tmp, "packages/core/src"), { recursive: true });
+  fs.mkdirSync(path.join(tmp, "packages/api/src"), { recursive: true });
+  fs.writeFileSync(
+    path.join(tmp, "packages/core/src/index.ts"),
+    "export const value = 1;\n",
+  );
+  fs.writeFileSync(
+    path.join(tmp, "packages/api/src/index.ts"),
+    'import { value } from "@repo/core";\nexport const route = value;\n',
+  );
+  fs.mkdirSync(path.join(tmp, ".agents/lodestar"), { recursive: true });
+  fs.writeFileSync(
+    path.join(tmp, ".agents/lodestar/context.md"),
+    `# Fixture
+
+## Package Layout
+
+| Package | Path              | Alias      | Responsibility                            |
+| ------- | ----------------- | ---------- | ----------------------------------------- |
+| core    | packages/core/src | @repo/core | Domain entities and use cases for billing |
+| api     | packages/api/src  | @repo/api  | HTTP routes and request validation        |
+`,
+  );
+  const derived = deriveDirection(tmp);
+  assert.equal(derived.cyclic, false);
+  assert.deepEqual(derived.chain, ["api", "core"]);
+  const parsed = parseDirection(
+    `## Dependency Direction\n\n${derived.markdown}\n## Package Layout\n`,
+  );
+  assert.equal(parsed.cyclic, false);
+  assert.deepEqual(parsed.chain, ["api", "core"]);
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test("derive-direction honors Excluded Paths", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-dir-ex-"));
+  fs.mkdirSync(path.join(tmp, "packages/core/src"), { recursive: true });
+  fs.mkdirSync(path.join(tmp, "packages/api/src/generated"), {
+    recursive: true,
+  });
+  fs.writeFileSync(
+    path.join(tmp, "packages/core/src/index.ts"),
+    "export const value = 1;\n",
+  );
+  fs.writeFileSync(
+    path.join(tmp, "packages/api/src/generated/client.ts"),
+    'import { value } from "@repo/core";\nexport const route = value;\n',
+  );
+  fs.mkdirSync(path.join(tmp, ".agents/lodestar"), { recursive: true });
+  fs.writeFileSync(
+    path.join(tmp, ".agents/lodestar/context.md"),
+    `# Fixture
+
+## Package Layout
+
+| Package | Path              | Alias      | Responsibility                            |
+| ------- | ----------------- | ---------- | ----------------------------------------- |
+| core    | packages/core/src | @repo/core | Domain entities and use cases for billing |
+| api     | packages/api/src  | @repo/api  | HTTP routes and request validation        |
+
+## Excluded Paths
+
+**Not audited**
+
+- \`**/generated/**\` — codegen
+`,
+  );
+  const derived = deriveDirection(tmp);
+  assert.equal(derived.edges.length, 0);
+  fs.rmSync(tmp, { recursive: true, force: true });
 });
