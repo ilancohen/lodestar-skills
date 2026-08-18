@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "lodestar",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Set up engineering principles, audit repositories, apply scoped fixes, and review package architecture.",
   "author": {
     "name": "Ilan Cohen"

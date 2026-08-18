@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented here.
 
+## [0.4.2] - 2026-08-18
+
+### Changed
+
+- **`lodestar-setup` Step 6 offers to install Fallow** instead of only
+  printing the command and leaving it to the user. It asks first, asks where
+  the devDependency goes when the repo has more than one package, and never
+  installs over a copy that already resolves in range. An out-of-range copy
+  gets the same prompt worded as an upgrade, with the installed version
+  named.
+
+  The command is quoted from `resolve-bin`'s own failure message, so the
+  version pin and the per-manager syntax keep one source.
+
+  Declining, or an install that fails (no network, or a platform with no
+  Fallow binary), is not a setup failure: the command is printed, the step
+  says `lodestar-audit` needs a compatible Fallow, and `.fallowrc.json` is
+  still offered. The install, `.fallowrc.json`, and the `.gitignore` edit
+  are three independent consent gates.
+
 ## [0.4.1] - 2026-08-18
 
 ### Changed

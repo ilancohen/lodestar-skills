@@ -44,8 +44,9 @@ Full definitions: [`skills/lodestar-setup/principles.md`](skills/lodestar-setup/
 - A POSIX-ish shell (macOS, Linux, or Windows via bash/WSL — plain
   PowerShell/cmd isn't supported for most steps).
 - [Fallow](https://docs.fallow.tools) **^3.15.0**, only if you'll run
-  `lodestar-audit`. Install it in the target repo: `pnpm add -D fallow@^3.15.0`
-  (or the npm/yarn equivalent).
+  `lodestar-audit`. `lodestar-setup` offers to install it for you (it asks
+  first, and asks where in a monorepo), or add it yourself with
+  `pnpm add -D fallow@^3.15.0` or the npm/yarn equivalent.
 
 ## Install
 

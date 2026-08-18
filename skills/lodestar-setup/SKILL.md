@@ -15,7 +15,7 @@ license: MIT
 compatibility: Requires filesystem write access and a POSIX-compatible shell for optional Fallow setup, plus network access if you accept the optional Fallow install. Supports npm, pnpm, and yarn repositories.
 metadata:
   author: Ilan Cohen
-  version: "0.4.1"
+  version: "0.4.2"
 ---
 
 Write the agent-neutral config the lodestar skills need. The one file that
