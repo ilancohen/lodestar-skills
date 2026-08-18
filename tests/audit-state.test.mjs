@@ -27,6 +27,7 @@ import {
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SCRIPT = path.join(ROOT, "skills/lodestar-audit/scripts/audit-state.mjs");
 const VALID = path.join(ROOT, "tests/fixtures/repos/valid");
+const OPTED_OUT = path.join(ROOT, "tests/fixtures/repos/opted-out");
 const CYCLIC = path.join(ROOT, "tests/fixtures/repos/cyclic");
 const PLACEHOLDER = path.join(ROOT, "tests/fixtures/repos/placeholder");
 const CLEAN = path.join(ROOT, "tests/fixtures/audit-runs/clean/findings.md");
@@ -448,4 +449,16 @@ test("resolve-run honors a custom output-root", () => {
   assert.equal(fs.existsSync(payload.path), true);
   assert.equal(fs.existsSync(path.join(tmp, "docs", "audit")), false);
   fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test("validate-input reports opted-out conventions and custom output-root", () => {
+  const result = run(["validate-input", "--root", OPTED_OUT]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.conventions["result-types"], "no");
+  assert.equal(payload.conventions["design-tokens"], "no");
+  assert.equal(payload.conventions["coverage-floor"], "none");
+  assert.equal(payload.conventions["branded-types"], "yes");
+  assert.equal(payload.outputRoot, "docs/qa");
+  assert.equal(payload.architectureRoot, "docs/qa/architecture-review");
 });

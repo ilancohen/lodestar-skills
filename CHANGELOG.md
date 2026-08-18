@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented here.
 
+## [0.5.0] - 2026-08-18
+
+### Added
+
+- **`context.md` `## Conventions`.** Setup asks one multi-select —
+  pre-checked from a bounded evidence sweep — which of five style
+  conventions the repo already follows: `result-types`, `branded-types`,
+  `barrel-exports`, `design-tokens`, `coverage-floor`. The audit skips the
+  matching detectors when a row is at its skip value, and lists the skip
+  in `INDEX.md` rather than staying silent. `principles.md` still states
+  the defaults; it points at the table instead of copying values.
+
+- **`context.md` `## Audit Settings`.** Optional `categories` (default
+  all) and `output-root` (default `docs/audit`). Setup does not ask;
+  `lodestar-audit` may persist a subset if the user asks after a run.
+  Architecture reports stay beside the audit root (`docs/audit` →
+  `docs/architecture-review`; any other root →
+  `<output-root>/architecture-review`).
+
+### Changed
+
+- **Backward compatible.** A `context.md` with neither new section
+  parses as today: every convention on, coverage floor 80, all nine
+  categories, output under `docs/audit`. Pre-0.5 files need no
+  migration. Styling B now waits for a third occurrence of a literal,
+  matching `ssot` A (was 2).
+
 ## [0.4.2] - 2026-08-18
 
 ### Changed

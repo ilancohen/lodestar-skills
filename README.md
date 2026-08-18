@@ -34,6 +34,22 @@ Full definitions: [`skills/lodestar-setup/principles.md`](skills/lodestar-setup/
 - [Prefer Proven Libraries](skills/lodestar-setup/principles.md#prefer-proven-libraries-avoid-nih) — don't reimplement solved problems
 - [Ubiquitous Language](skills/lodestar-setup/principles.md#ubiquitous-language) — one term, one concept
 
+## Will this fight my codebase?
+
+Defaults are opinionated. Five of them are negotiable at setup — one
+multi-select, pre-checked from what the repo already does, written into
+`.agents/lodestar/context.md` `## Conventions`:
+
+- expected failures as `Result<T, E>` (`result-types`)
+- branded domain identifiers (`branded-types`)
+- no `export *` barrels (`barrel-exports`)
+- design tokens instead of raw hex/spacing (`design-tokens`)
+- an 80% coverage floor (`coverage-floor`)
+
+A `context.md` with no `## Conventions` section keeps every default.
+Nothing else is opt-out: unguarded `any`, module-level side effects, CQS,
+and the rest stay on.
+
 ## Before you install
 
 - A coding agent that supports Agent Skills, plus Git.
@@ -91,13 +107,14 @@ Skills don't activate on their own — you have to invoke them by name
 
 1. Run `lodestar-setup` once, in the target repo. It writes
    `.agents/lodestar/context.md` — your package layout, dependency
-   direction, and build commands — which is the only file the other skills
-   read. It also asks whether principles should apply to every task
-   automatically (full suite: a short pointer section is added to
-   `AGENTS.md`) or only when you explicitly run a lodestar skill
-   (skills-only: `AGENTS.md` is left alone). Either way it documents your
-   layout and configures Fallow.
-2. Run `lodestar-audit`. It writes to `docs/audit/<run-id>/`.
+   direction, build commands, and which conventions you already follow —
+   which is the only file the other skills read. It also asks whether
+   principles should apply to every task automatically (full suite: a
+   short pointer section is added to `AGENTS.md`) or only when you
+   explicitly run a lodestar skill (skills-only: `AGENTS.md` is left
+   alone). Either way it documents your layout and configures Fallow.
+2. Run `lodestar-audit`. It writes to `docs/audit/<run-id>/` unless
+   `## Audit Settings` names a different `output-root`.
 3. Read the index it produces and decide what to act on.
 4. Run `lodestar-fix` when you want it to actually change code.
 5. Run `lodestar-architecture` separately, only if the package layout itself
