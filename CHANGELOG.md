@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented here.
 
+## [0.4.0] - 2026-08-18
+
+### Changed
+
+- **Breaking (semantic).** `context.md` `## Dependency Direction` records the
+  **observed** package import graph, not an intended layering. Acyclic repos
+  keep the chain form; cyclic repos use an explicit edge list plus a cyclic
+  statement. A `Basis:` capture date is required. `lodestar-setup` never
+  infers or writes a target direction when the graph is cyclic.
+
+- `lodestar-audit` `imports` subtype #6 (`wrong-direction`) now means an
+  import opposes a documented edge or path. Documented cycle edges are
+  reported as #3 (`circular-import`), not #6. `validate-input` adds
+  `directionGraph` (`chain`, `edges`, `cyclic`, `reachability`); `direction`
+  remains the acyclic chain order (empty when cyclic).
+
+- `.fallowrc.json` boundary `allow` lists derive from documented graph
+  reachability (cycle partners list each other), matching the new semantics.
+
+  **Upgrading:** re-run `lodestar-setup` to refresh `context.md` and
+  `.fallowrc.json`, or hand-edit the direction section to the new form.
+
 ## [0.3.1] - 2026-08-17
 
 ### Changed

@@ -10,7 +10,7 @@ license: MIT
 compatibility: Requires git and the target repository's declared typecheck and test commands. Shell examples assume a POSIX-compatible environment.
 metadata:
   author: Ilan Cohen
-  version: "0.3.1"
+  version: "0.4.0"
 ---
 
 You are running `lodestar-fix`. The job is to **triage** and **execute** the

@@ -1,4 +1,4 @@
-# Fixture
+# Fixture — cyclic import graph
 
 ## Build & Test
 
@@ -10,9 +10,14 @@
 
 ## Dependency Direction
 
+Observed package import graph — not an intended or target layout.
+
 Basis: observed import graph, captured 2026-08-18.
 
-core → api
+- core → api (1 import) [cycle]
+- api → core (1 import) [cycle]
+
+The graph is cyclic — no single dependency order exists.
 
 ## Package Layout
 
