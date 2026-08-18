@@ -73,6 +73,10 @@ for this run, do a manual pass:
   bullet when every package is scannable.
 - **Out-of-scope findings** — counted in [Backlog](#backlog), never
   omitted from `findings.md`. Not a silent pass.
+- **Stale context** — this run proceeded on a `context.md` that no
+  longer matches the repo: `<facts from .checkpoint.json drift>`.
+  Re-run `lodestar-setup`, then re-audit, to supersede it. **Omit this
+  bullet when there is no `drift` key.**
 
 ## Action items
 

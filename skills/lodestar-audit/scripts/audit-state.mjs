@@ -1367,7 +1367,41 @@ export function assignIds(findings) {
   }));
 }
 
-export function renderFindings(runId, findings, complete = []) {
+function driftFacts(payload) {
+  if (!payload) return [];
+  if (Array.isArray(payload.drift)) return payload.drift;
+  if (Array.isArray(payload)) return payload;
+  return [];
+}
+
+export function renderDriftLines(payload) {
+  const facts = driftFacts(payload);
+  if (!facts.length) return [];
+  const lines = [
+    "## Stale basis",
+    "",
+    "This run proceeded on a `.agents/lodestar/context.md` that no longer",
+    "matches the repo. Findings below rest on that known-stale basis.",
+    "",
+  ];
+  for (const item of facts) {
+    if (item.fact === "missing-package") {
+      lines.push(`- missing package: \`${item.observed}\``);
+    } else {
+      lines.push(
+        `- stale command \`${item.name}\`: recorded \`${item.recorded}\` but ${item.observed}`,
+      );
+    }
+  }
+  lines.push("");
+  lines.push(
+    "Re-run `lodestar-setup`, then re-audit, to supersede this run.",
+    "",
+  );
+  return lines;
+}
+
+export function renderFindings(runId, findings, complete = [], drift = null) {
   const lines = [
     `# Audit findings — ${runId}`,
     "",
@@ -1375,6 +1409,7 @@ export function renderFindings(runId, findings, complete = []) {
     "violation. Edit freely before Phase 2 — false positives can be removed",
     "by deleting the block.",
     "",
+    ...renderDriftLines(drift),
   ];
   const byCategory = new Map(CATEGORIES.map((name) => [name, []]));
   for (const finding of findings) {
@@ -1666,9 +1701,21 @@ function cmdMergeFindings(flags) {
     seen.add(item.category);
     completeUnique.push(item);
   }
-  const rendered = renderFindings(runId, merged, completeUnique);
+  const drift = readDriftFromOut(flags.out);
+  const rendered = renderFindings(runId, merged, completeUnique, drift);
   if (flags.out) atomicWrite(flags.out, rendered);
   printJson({ count: merged.length, findings: merged });
+}
+
+function readDriftFromOut(outPath) {
+  if (!outPath) return null;
+  const marker = path.join(path.dirname(outPath), ".checkpoint.json");
+  if (!fs.existsSync(marker)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(marker, "utf8")).drift || null;
+  } catch {
+    return null;
+  }
 }
 
 function parseChangedFilesFlag(raw) {

@@ -53,6 +53,13 @@ Invariants:
   `findings.md` still validates). A human may flip it between phases to
   pull one old-code finding into this run's action items.
 
+When `.checkpoint.json` has a `drift` key, `merge-findings` re-emits a
+`## Stale basis` block under the header (which facts drifted; re-run
+`lodestar-setup` then re-audit to supersede). Absent `drift` means the
+header is unchanged. `parseFindings` and `validate-output` ignore the
+block. Put the same facts in `INDEX.md` Known blind spots as
+**Stale context** — omit that bullet when there is no `drift` key.
+
 ## Merge
 
 ```text

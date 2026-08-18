@@ -24,6 +24,7 @@ import {
   parseDirection,
   parseExcludedPaths,
   parseFindings,
+  renderFindings,
   parseGit,
   parseAuditScope,
   SCOPE_DEFAULTS,
@@ -168,6 +169,94 @@ test("validate-input rejects placeholder responsibilities", () => {
 test("clean findings validate", () => {
   const result = run(["validate-output", "--path", CLEAN]);
   assert.equal(result.status, 0, result.stderr);
+});
+
+test("renderFindings without drift matches today's header", () => {
+  const rendered = renderFindings("2026-08-10", [], [
+    ...CATEGORIES.map((category) => ({ category, count: 0 })),
+  ]);
+  assert.equal(rendered, fs.readFileSync(CLEAN, "utf8"));
+});
+
+const SAMPLE_DRIFT = {
+  fresh: false,
+  layoutSource: "pnpm-workspace.yaml",
+  drift: [
+    {
+      fact: "missing-package",
+      recorded: "no matching row in ## Package Layout",
+      observed: "packages/worker",
+      remedy: "re-run setup",
+    },
+  ],
+  skipped: [],
+};
+
+test("stale-basis block round-trips through parse and validate-output", () => {
+  const first = renderFindings(
+    "2026-08-10",
+    [
+      sampleFinding({
+        id: "F0001",
+        files: ["packages/api/src/routes/users.ts:12"],
+      }),
+    ],
+    [{ category: "imports", count: 1 }],
+    SAMPLE_DRIFT,
+  );
+  assert.match(first, /## Stale basis/);
+  assert.match(first, /missing package: `packages\/worker`/);
+  const parsed = parseFindings(first);
+  assert.equal(parsed.findings.length, 1);
+  assert.equal(parsed.findings[0].id, "F0001");
+  const second = renderFindings(
+    "2026-08-10",
+    parsed.findings,
+    parsed.complete,
+    SAMPLE_DRIFT,
+  );
+  assert.equal(parseFindings(second).findings[0].id, "F0001");
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-audit-"));
+  const findingsPath = path.join(tmp, "findings.md");
+  fs.writeFileSync(findingsPath, first);
+  const validated = run(["validate-output", "--path", findingsPath]);
+  assert.equal(validated.status, 0, validated.stderr);
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test("merge-findings re-emits stale basis from the checkpoint", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-audit-"));
+  const runDir = path.join(tmp, "2026-08-10");
+  fs.mkdirSync(runDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(runDir, ".checkpoint.json"),
+    `${JSON.stringify({ drift: SAMPLE_DRIFT }, null, 2)}\n`,
+  );
+  const input = path.join(tmp, "in.json");
+  fs.writeFileSync(
+    input,
+    JSON.stringify([
+      sampleFinding({ files: ["packages/api/src/routes/users.ts:12"] }),
+    ]),
+  );
+  const out = path.join(runDir, "findings.md");
+  const merged = run([
+    "merge-findings",
+    "--in",
+    input,
+    "--out",
+    out,
+    "--run-id",
+    "2026-08-10",
+  ]);
+  assert.equal(merged.status, 0, merged.stderr);
+  const text = fs.readFileSync(out, "utf8");
+  assert.match(text, /## Stale basis/);
+  const recovered = JSON.parse(run(["recover", "--run-dir", runDir]).stdout);
+  assert.equal(recovered.findings.length, 1);
+  const validated = run(["validate-output", "--path", out]);
+  assert.equal(validated.status, 0, validated.stderr);
+  fs.rmSync(tmp, { recursive: true, force: true });
 });
 
 test("finding-heavy fixture round-trips through merge with stable ids", () => {
