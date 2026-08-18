@@ -37,7 +37,7 @@ Read only what's needed to fill in the template placeholders:
   content. Older installs kept the layout table and command table in
   `AGENTS.md` — if you find them there, reuse those values for
   `context.md` and then strip those sections from `AGENTS.md` (see
-  Step 6). A value already in `## Conventions` is never overwritten by a
+  cleanup). A value already in `## Conventions` is never overwritten by a
   sweep that misses it.
 - **Conventions evidence** — a short, bounded sweep so the review screen
   can pre-check from evidence. Record paths (or "not found"), not a

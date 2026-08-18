@@ -1,7 +1,7 @@
-# Step 5 — Write the files
+# Write the files
 
 Use the templates beside `SKILL.md`. Fill every `[bracketed
-placeholder]` with real values. Do not announce each file; the Step 9
+placeholder]` with real values. Do not announce each file; the Step 5
 summary lists them.
 
 `principles.md` (beside `SKILL.md`) is the SSOT for principles.
@@ -62,7 +62,7 @@ Conventions and Audit Configuration included.
 ### AGENTS.md — only in `full` mode
 
 If `ENFORCEMENT_MODE` is `skills-only`, **do not touch `AGENTS.md`**. Skip
-to Step 6.
+to cleanup.
 
 If it is `full`, take the `## Lodestar` section from `agents-md.md` and
 append it to `AGENTS.md`, or replace an existing `## Lodestar` section with

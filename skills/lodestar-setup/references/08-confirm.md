@@ -1,4 +1,4 @@
-# Step 9 — Confirm
+# Step 5 — Confirm
 
 Write the summary for a person skimming it. Follow `SKILL.md`'s "How to
 talk to the user": bullets, blank line between blocks, bold lead-ins, no
@@ -7,7 +7,7 @@ config keys unless you also say what they mean.
 Group it under short bold headings, in this order.
 
 **Files** — each file you wrote or changed, one bullet each (including
-`.fallowrc.json` if Step 7 ran). Say plainly whether you edited
+`.fallowrc.json` if the fallow procedure wrote it). Say plainly whether you edited
 `AGENTS.md` or left it alone.
 
 **Fallow** — the version you found, and whether it was already there or
@@ -27,7 +27,7 @@ each, in plain words, for every convention the user left off:
 If nothing is switched off, just say so.
 
 **Settings** — one bullet each: how `lodestar-fix` will commit, in the
-same words you used when you asked; any package you couldn't scan, by name
+same words as the review screen; any package you couldn't scan, by name
 and language; and which code the audit will write fixes for. If it's only
 code changed from today on, warn them the first audit will look almost
 empty on purpose, that older problems appear as a backlog list in

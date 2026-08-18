@@ -3,8 +3,8 @@ Template for `.fallowrc.json` — the optional config file that lets the
 audit's fallow seed (see lodestar-audit/categories/fallow-seed.md)
 detect cross-package boundary violations.
 
-Read by `lodestar-setup` Step 7 only when the user opts in
-to fallow integration. The setup skill substitutes the placeholders below
+Read by `lodestar-setup`'s fallow procedure only when the user ticks
+the `.fallowrc.json` row. The setup skill substitutes the placeholders below
 from the `.agents/lodestar/context.md` `## Package Layout` table, the
 observed import graph in `## Dependency Direction`, and the globs in
 `### Excluded Paths`.

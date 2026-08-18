@@ -1,4 +1,4 @@
-# Step 7 — Fallow and `.fallowrc.json` for the audit's fallow seed
+# Fallow and `.fallowrc.json` for the audit's fallow seed
 
 The audit skill **requires** [fallow](https://docs.fallow.tools) as the
 primary graph-based detector for `imports`, `dry`, and `soc-yagni`

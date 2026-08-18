@@ -1,4 +1,4 @@
-# Step 8 — (Optional) Linting rules for higher-accuracy audit findings
+# Linting rules for higher-accuracy audit findings
 
 The lodestar-audit skill runs an opportunistic linter probe when detecting
 `types` (#1, #3), `errors` (A, B), and `boundaries.B` violations. Enabling

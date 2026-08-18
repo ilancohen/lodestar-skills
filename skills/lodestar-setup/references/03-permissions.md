@@ -11,7 +11,7 @@ feedback. Later steps honor these ticks and ask nothing.
 Before the list, gather what the rows need — do not load another step
 reference:
 
-- Run `resolve-bin` (same command Step 7 will re-run):
+- Run `resolve-bin` (same command the fallow procedure will re-run):
   `node <lodestar-audit-skill>/scripts/fallow-contract.mjs resolve-bin --root <repo>`.
   In-range → omit the install row. Missing or out of range → the
   trailing `Install a compatible version with: <command>` is the pin
@@ -21,8 +21,8 @@ reference:
   names a package, rebuild with `pnpm --filter <name> add -D` /
   `npm install --save-dev --workspace <name>` /
   `yarn workspace <name> add -D` / `bun add -d --cwd <package>`. Use the
-  package manager from Step 1. That composed command is what Step 7
-  runs, prints on decline, and prints on failure.
+  package manager from Step 1. That composed command is what the fallow
+  procedure runs, prints on decline, and prints on failure.
 - Check whether `.fallowrc.json` exists (changes the write-row verb).
 - Check whether `.gitignore` already covers `.audit-fallow-seed.json`
   and `.fallow/` (omit that row when both are covered).

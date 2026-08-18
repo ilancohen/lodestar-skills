@@ -1,4 +1,4 @@
-# Step 6 — Clean up a pre-0.3 install
+# Clean up a pre-0.3 install
 
 Older versions of this skill put the `## Build & Test`,
 `## Dependency Direction`, `## Package Layout`, `## Skills`, and

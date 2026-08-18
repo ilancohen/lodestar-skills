@@ -1,6 +1,6 @@
 # Linter rules for higher-accuracy audit findings
 
-Read this only when the user opts into Step 7. Enabling these rules
+Read this only when the linter row was ticked. Enabling these rules
 in an **existing** linter config makes opportunistic probes in
 `lodestar-audit` definitive rather than heuristic. Do not install a new
 linter or write config without consent.
