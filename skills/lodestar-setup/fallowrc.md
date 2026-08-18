@@ -6,7 +6,7 @@ detect cross-package boundary violations.
 Read by `lodestar-setup` Step 6 only when the user opts in
 to fallow integration. The setup skill substitutes the placeholders below
 from the `.agents/lodestar/context.md` `## Package Layout` table and the
-dependency direction.
+observed import graph in `## Dependency Direction`.
 
 Do not check this template's literal `<placeholder>` form into a user
 project — the setup skill must always substitute before writing.
@@ -17,15 +17,16 @@ project — the setup skill must always substitute before writing.
   "$schema": "./node_modules/fallow/schema.json",
 
   // Boundaries derived from `.agents/lodestar/context.md`
-  // `## Package Layout` and the dependency direction declared above it.
+  // `## Package Layout` and the observed import graph declared above it.
   //
   // One zone per package row, using the repo's own package name (no role
   // mapping). `patterns` use the literal path glob from the table — no
   // `root` rewriting, so the file is hand-readable.
   //
-  // Rules: each zone may import from itself plus every zone allowed by
-  // the dependency direction (i.e. everything to its right in the chain).
-  // The tail-of-chain package gets `allow: []` and is fully isolated.
+  // Rules: each zone may import from itself plus every zone reachable from
+  // it in the documented graph (acyclic chain: everything to its right;
+  // cyclic: cycle partners list each other). The tail-of-chain package with
+  // no downward edges gets `allow: []` unless it has cycle partners.
   "boundaries": {
     "zones": [
       // EXAMPLE — one entry per row in the context.md Package Layout table.
@@ -101,6 +102,46 @@ Multi-app globs (e.g. `apps/*/src`) become a single zone with
 This makes each app a sibling sub-zone, isolated from the others — usually
 what you want when several apps share lower-level packages but should not
 import from each other.
+
+## Worked example — cyclic `core` ↔ `api`
+
+For a `context.md` that records a cyclic graph between `core` and `api`:
+
+| Package | Path glob             |
+| ------- | --------------------- |
+| `core`  | `packages/core/src`   |
+| `api`   | `packages/api/src`    |
+
+Observed edges (both marked `[cycle]`):
+
+- `core → api`
+- `api → core`
+
+The setup skill writes:
+
+```jsonc
+{
+  "$schema": "./node_modules/fallow/schema.json",
+  "boundaries": {
+    "zones": [
+      { "name": "core", "patterns": ["packages/core/src/**"] },
+      { "name": "api", "patterns": ["packages/api/src/**"] },
+    ],
+    "rules": [
+      { "from": "core", "allow": ["api"] },
+      { "from": "api", "allow": ["core"] },
+    ],
+  },
+  "rules": {
+    "boundary-violation": "error",
+    "circular-dependencies": "error",
+  },
+}
+```
+
+`boundary-violation` stays quiet for the documented cycle edges while
+`circular-dependencies` still reports the cycle. Both severities remain
+`error`.
 
 ## Verifying the file
 
