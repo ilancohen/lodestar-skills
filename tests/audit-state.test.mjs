@@ -8,11 +8,15 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import {
   assignIds,
+  architectureOutputRoot,
+  CATEGORIES,
   CONVENTION_DEFAULTS,
+  DEFAULT_OUTPUT_ROOT,
   dedupeFindings,
   findPlaceholders,
   isWrongDirectionImport,
   nextRunId,
+  parseAuditSettings,
   parseConventions,
   parseDirection,
   parseFindings,
@@ -118,6 +122,9 @@ test("validate-input accepts a real layout and does not touch source", () => {
   assert.equal(payload.pkgManager, null);
   assert.equal(payload.pkgManagerAmbiguous, true);
   assert.deepEqual(payload.conventions, CONVENTION_DEFAULTS);
+  assert.deepEqual(payload.categories, CATEGORIES);
+  assert.equal(payload.outputRoot, DEFAULT_OUTPUT_ROOT);
+  assert.equal(payload.architectureRoot, "docs/architecture-review");
   assert.equal(sha(source), before);
 });
 
@@ -366,5 +373,79 @@ test("validate-input rejects a bad conventions value", () => {
   const result = run(["validate-input", "--root", tmp]);
   assert.equal(result.status, 2);
   assert.match(result.stderr, /invalid value for `result-types`/);
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+function auditSettingsMarkdown(rows) {
+  const lines = [
+    "## Audit Settings",
+    "",
+    "| Setting | Value | Notes |",
+    "| ------- | ----- | ----- |",
+    ...rows.map(([key, value]) => `| \`${key}\` | \`${value}\` | x |`),
+    "",
+  ];
+  return lines.join("\n");
+}
+
+test("parseAuditSettings defaults when the section is absent", () => {
+  const parsed = parseAuditSettings("# Fixture\n");
+  assert.deepEqual(parsed.categories, CATEGORIES);
+  assert.equal(parsed.outputRoot, DEFAULT_OUTPUT_ROOT);
+});
+
+test("parseAuditSettings honors a custom output-root and category subset", () => {
+  const parsed = parseAuditSettings(
+    auditSettingsMarkdown([
+      ["categories", "imports, types, ssot"],
+      ["output-root", "docs/qa"],
+    ]),
+  );
+  assert.deepEqual(parsed.categories, ["imports", "types", "ssot"]);
+  assert.equal(parsed.outputRoot, "docs/qa");
+  assert.equal(architectureOutputRoot(parsed.outputRoot), "docs/qa/architecture-review");
+});
+
+test("parseAuditSettings rejects an unknown category", () => {
+  assert.throws(
+    () => parseAuditSettings(auditSettingsMarkdown([["categories", "imports, nope"]])),
+    /unknown category/,
+  );
+});
+
+test("parseAuditSettings rejects a path with ..", () => {
+  assert.throws(
+    () => parseAuditSettings(auditSettingsMarkdown([["output-root", "docs/../secret"]])),
+    /invalid `output-root`/,
+  );
+});
+
+test("resolve-run uses docs/audit when Audit Settings is absent", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-audit-"));
+  const result = run(["resolve-run", "--root", tmp, "--date", "2026-08-18"]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.outputRoot, DEFAULT_OUTPUT_ROOT);
+  assert.ok(payload.path.endsWith(path.join("docs", "audit", "2026-08-18")));
+  assert.equal(fs.existsSync(payload.path), true);
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test("resolve-run honors a custom output-root", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-audit-"));
+  const contextDir = path.join(tmp, ".agents", "lodestar");
+  fs.mkdirSync(contextDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(contextDir, "context.md"),
+    `# Fixture\n\n${auditSettingsMarkdown([["output-root", "docs/qa"]])}\n`,
+  );
+  const result = run(["resolve-run", "--root", tmp, "--date", "2026-08-18"]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.outputRoot, "docs/qa");
+  assert.equal(payload.architectureRoot, "docs/qa/architecture-review");
+  assert.ok(payload.path.endsWith(path.join("docs", "qa", "2026-08-18")));
+  assert.equal(fs.existsSync(payload.path), true);
+  assert.equal(fs.existsSync(path.join(tmp, "docs", "audit")), false);
   fs.rmSync(tmp, { recursive: true, force: true });
 });

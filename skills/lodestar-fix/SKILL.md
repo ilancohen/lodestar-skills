@@ -29,7 +29,10 @@ writes and file moves instead of POSIX `mv`.
 
 ## Inputs
 
-The skill operates on one `docs/audit/<RUN_ID>/` directory at a time.
+The skill operates on one `<output-root>/<RUN_ID>/` directory at a time
+(`outputRoot` from `node <lodestar-audit-skill>/scripts/audit-state.mjs
+validate-input --root <repo>`, default `docs/audit`). Substitute that
+value for the output directory — do not hardcode `docs/audit`.
 Required contents:
 
 - `INDEX.md` (written by `lodestar-audit`'s Plan phase).
@@ -48,16 +51,16 @@ writes; `AGENTS.md` is not read):
 
 ## Step 1 — Pick a run
 
-1. List `docs/audit/*/` directories that contain **both** `INDEX.md` and
+1. List `<output-root>/*/` directories that contain **both** `INDEX.md` and
    at least one `NNN-<category>-<slug>.md` file **in the run root** (not
-   under `done/`). Exclude `docs/audit/done/` itself. Never offer a run
+   under `done/`). Exclude `<output-root>/done/` itself. Never offer a run
    that lacks `INDEX.md` — Inputs would stop immediately.
 2. An "unfinished" run is one where the run root (not the `done/`
    subfolder) still holds at least one action-item file. If exactly one
    run is unfinished, default to that. Otherwise list the unfinished
    runs and ask which one. If no candidate run qualifies, say so and
    point the user at `lodestar-audit`'s Plan phase.
-3. Print: "Working on `docs/audit/<RUN_ID>/`."
+3. Print: "Working on `<output-root>/<RUN_ID>/`."
 
 ---
 
@@ -115,7 +118,7 @@ If `requires_decision: true`, print the problem statement and the
 suggested fix. Ask: "Proceed? (yes / skip / defer)".
 
 - `skip` → write `status: skipped` with a one-line `note:`, move the
-  file to `docs/audit/<RUN_ID>/done/` (create the subfolder if
+  file to `<output-root>/<RUN_ID>/done/` (create the subfolder if
   needed), and move on.
 - `defer` → write `status: deferred` with a `note:` describing the
   open question, and move on (leave the file in the run root).
@@ -167,7 +170,7 @@ If `AUTO_COMMIT == yes`:
 git add <files from item>
 git commit -m "<category>: <slug>
 
-Closes docs/audit/<RUN_ID>/<NNN>-<category>-<slug>.md."
+Closes <output-root>/<RUN_ID>/<NNN>-<category>-<slug>.md."
 ```
 
 Use only the files listed in the item's `files:`. Never `git add -A`.
@@ -192,14 +195,14 @@ what was asked.
 Then **move** the file into the `done/` subfolder:
 
 ```bash
-node scripts/action-state.mjs move-done --file docs/audit/<RUN_ID>/<NNN>-<category>-<slug>.md --run-dir docs/audit/<RUN_ID>
+node scripts/action-state.mjs move-done --file <output-root>/<RUN_ID>/<NNN>-<category>-<slug>.md --run-dir <output-root>/<RUN_ID>
 ```
 
 ```powershell
-node scripts/action-state.mjs move-done --file docs/audit/<RUN_ID>/<NNN>-<category>-<slug>.md --run-dir docs/audit/<RUN_ID>
+node scripts/action-state.mjs move-done --file <output-root>/<RUN_ID>/<NNN>-<category>-<slug>.md --run-dir <output-root>/<RUN_ID>
 ```
 
-Create `docs/audit/<RUN_ID>/done/` if it does not yet exist. This
+Create `<output-root>/<RUN_ID>/done/` if it does not yet exist. This
 keeps the run root to only unresolved items so future re-runs don't
 have to scan completed work.
 
@@ -227,7 +230,7 @@ once after all return, then prints Step 4.
 Print a session summary:
 
 ```
-lodestar-fix session complete on docs/audit/<RUN_ID>/.
+lodestar-fix session complete on <output-root>/<RUN_ID>/.
 
   done:       N
   deferred:   N
@@ -247,22 +250,22 @@ Next steps:
 ### Step 4a — Promote a finished run
 
 After printing the report, check whether the run root
-`docs/audit/<RUN_ID>/` contains **no remaining action-item files**
+`<output-root>/<RUN_ID>/` contains **no remaining action-item files**
 (only `INDEX.md`, the `done/` subfolder, and possibly other
 non-action-item files). If so, the run is fully resolved:
 
 ```bash
-node scripts/action-state.mjs archive-run --run-dir docs/audit/<RUN_ID>
+node scripts/action-state.mjs archive-run --run-dir <output-root>/<RUN_ID>
 ```
 
 ```powershell
-node scripts/action-state.mjs archive-run --run-dir docs/audit/<RUN_ID>
+node scripts/action-state.mjs archive-run --run-dir <output-root>/<RUN_ID>
 ```
 
-Create `docs/audit/done/` if it does not exist. Print:
+Create `<output-root>/done/` if it does not exist. Print:
 
 ```
-All items resolved. Run archived to docs/audit/done/<RUN_ID>/.
+All items resolved. Run archived to <output-root>/done/<RUN_ID>/.
 ```
 
 If any action-item files remain in the run root (deferred or
@@ -274,7 +277,7 @@ unstarted), skip this step and leave the run in place.
 
 `lodestar-fix` is restartable. Re-running against the same run directory:
 
-1. Files already moved to `docs/audit/<RUN_ID>/done/` are never
+1. Files already moved to `<output-root>/<RUN_ID>/done/` are never
    re-touched — their absence from the run root is the signal.
 2. Items with `status: in_progress` in the run root surface first. For
    each, print the item and the git diff (if any) and ask: "retry /
@@ -303,7 +306,7 @@ unstarted), skip this step and leave the run in place.
   fields. The problem / fix / scope-rules / acceptance sections are
   immutable historical record.
 - **Never delete an action-item file.** Finished items (`done` or
-  `skipped`) are moved to `docs/audit/<RUN_ID>/done/` — they stay as
+  `skipped`) are moved to `<output-root>/<RUN_ID>/done/` — they stay as
   a record. Deferred items remain in the run root until resolved.
 - **No `git add -A`.** Stage only the files listed in the item's
   `files:`. The audit's per-item granularity is the whole point —

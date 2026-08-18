@@ -32,7 +32,7 @@ export const CATEGORIES = [
 ];
 
 export const PLACEHOLDER_RE =
-  /<(typecheck|lint|test|pkg_root|pkg_alias|pkg_responsibility|all_pkg_roots|alias_prefix|pkg_manager|run|RUN_ID)>/;
+  /<(typecheck|lint|test|pkg_root|pkg_alias|pkg_responsibility|all_pkg_roots|alias_prefix|pkg_manager|run|RUN_ID|output-root)>/;
 
 export const FINDING_RE = /^### (F\d{4})\s*$/m;
 
@@ -255,6 +255,82 @@ function parseConventionValue(key, raw) {
     );
   }
   throw new Error(`## Conventions has an unknown key \`${key}\`.`);
+}
+
+export const DEFAULT_OUTPUT_ROOT = "docs/audit";
+export const DEFAULT_ARCHITECTURE_ROOT = "docs/architecture-review";
+
+export function architectureOutputRoot(outputRoot) {
+  const normalized = outputRoot.replace(/\/$/, "");
+  if (normalized === DEFAULT_OUTPUT_ROOT) return DEFAULT_ARCHITECTURE_ROOT;
+  return `${normalized}/architecture-review`;
+}
+
+export function parseAuditSettings(contextText) {
+  const settings = {
+    categories: [...CATEGORIES],
+    outputRoot: DEFAULT_OUTPUT_ROOT,
+  };
+  const heading = contextText.search(/^## Audit Settings\s*$/m);
+  if (heading === -1) return settings;
+
+  const rest = contextText.slice(heading);
+  const next = rest.search(/\n## /);
+  const section = next === -1 ? rest : rest.slice(0, next);
+
+  for (const line of section.split(/\r?\n/)) {
+    if (!line.startsWith("|")) continue;
+    const cells = line
+      .split("|")
+      .slice(1, -1)
+      .map((cell) => cell.trim());
+    if (cells.length < 2) continue;
+    if (/^-+$/.test(cells[0].replace(/:/g, "-"))) continue;
+    const key = stripTicks(cells[0]);
+    if (!key || /^setting$/i.test(key)) continue;
+    const raw = stripTicks(cells[1]);
+    if (key === "categories") {
+      settings.categories = parseCategorySetting(raw);
+    } else if (key === "output-root") {
+      settings.outputRoot = parseOutputRootSetting(raw);
+    }
+  }
+  return settings;
+}
+
+function parseCategorySetting(raw) {
+  if (!raw || raw === "all") return [...CATEGORIES];
+  const names = raw
+    .split(",")
+    .map((part) => stripTicks(part.trim()))
+    .filter(Boolean);
+  if (!names.length) {
+    throw new Error(
+      "## Audit Settings has an empty `categories` value. Expected `all` or a comma-separated list of category names.",
+    );
+  }
+  const unknown = names.filter((name) => !CATEGORIES.includes(name));
+  if (unknown.length) {
+    throw new Error(
+      `## Audit Settings has unknown categor${unknown.length === 1 ? "y" : "ies"}: ${unknown
+        .map((name) => `\`${name}\``)
+        .join(", ")}.`,
+    );
+  }
+  return [...new Set(names)];
+}
+
+function parseOutputRootSetting(raw) {
+  if (!raw) {
+    throw new Error("## Audit Settings has an empty `output-root`.");
+  }
+  const segments = raw.split(/[/\\]/);
+  if (path.isAbsolute(raw) || raw.startsWith("~") || segments.includes("..")) {
+    throw new Error(
+      `## Audit Settings has an invalid \`output-root\`: \`${raw}\`. Expected a relative path with no \`..\`.`,
+    );
+  }
+  return raw.replace(/\/$/, "");
 }
 
 function parseEdgeBullets(section) {
@@ -611,9 +687,11 @@ function loadFindingsInput(filePath) {
 function cmdResolveRun(flags) {
   const root = flags.root || process.cwd();
   const date = flags.date || utcDate();
-  const auditRoot = path.join(root, "docs", "audit");
+  const outputRoot = readOutputRoot(root);
+  const auditRoot = path.join(root, outputRoot);
   const existing = listRunIds(auditRoot);
   const resumeCandidates = inProgressRuns(auditRoot, date);
+  const architectureRoot = architectureOutputRoot(outputRoot);
   if (flags.resume) {
     const runId =
       flags.resume === true ? resumeCandidates.at(-1) : flags.resume;
@@ -623,6 +701,8 @@ function cmdResolveRun(flags) {
       runId,
       path: runDir,
       action: "resume",
+      outputRoot,
+      architectureRoot,
       inProgress: resumeCandidates,
     });
     return;
@@ -634,8 +714,20 @@ function cmdResolveRun(flags) {
     runId,
     path: runDir,
     action: "create",
+    outputRoot,
+    architectureRoot,
     inProgress: resumeCandidates,
   });
+}
+
+function readOutputRoot(repoRoot) {
+  const contextPath = path.join(repoRoot, ".agents", "lodestar", "context.md");
+  if (!fs.existsSync(contextPath)) return DEFAULT_OUTPUT_ROOT;
+  try {
+    return parseAuditSettings(fs.readFileSync(contextPath, "utf8")).outputRoot;
+  } catch (error) {
+    fail(error.message, 2);
+  }
 }
 
 function cmdValidateInput(flags) {
@@ -657,8 +749,10 @@ function cmdValidateInput(flags) {
   const commands = parseCommands(contextText);
   const directionGraph = parseDirection(contextText);
   let conventions;
+  let auditSettings;
   try {
     conventions = parseConventions(contextText);
+    auditSettings = parseAuditSettings(contextText);
   } catch (error) {
     fail(error.message, 2);
   }
@@ -668,6 +762,9 @@ function cmdValidateInput(flags) {
     direction: directionGraph.chain ?? [],
     directionGraph,
     conventions,
+    categories: auditSettings.categories,
+    outputRoot: auditSettings.outputRoot,
+    architectureRoot: architectureOutputRoot(auditSettings.outputRoot),
     commands,
     pkgManager: detected.pkgManager,
     run: detected.run,

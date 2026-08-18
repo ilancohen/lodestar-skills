@@ -112,6 +112,25 @@ A repo that throws typed errors and uses Tailwind would set
 `result-types` to `no` and `design-tokens` to `no`; the other rows stay
 at their defaults.
 
+## Audit Settings
+
+How the audit runs — not the repo's style (that's `## Conventions`).
+**Absent means default:** every category, output under `docs/audit`.
+Setup writes this section at those defaults and does not ask about it.
+`lodestar-audit` may offer to persist a category subset here after a run.
+
+| Setting        | Value         | Notes                                                                                          |
+| -------------- | ------------- | ---------------------------------------------------------------------------------------------- |
+| `categories`   | `all`         | `all`, or a comma-separated list of category names (`imports`, `types`, …)                     |
+| `output-root`  | `docs/audit`  | Where audit runs land (`<output-root>/<RUN_ID>/`). Relative, no `..`.                          |
+
+Architecture reports derive from the same root so the two stay together:
+`docs/audit` → `docs/architecture-review`; any other root →
+`<output-root>/architecture-review`.
+
+Unknown keys are ignored. A typo in a known value is an error at audit
+time, not a silent default.
+
 ## Principles
 
 The principles, TypeScript rules, testability and error-handling rules,
@@ -126,17 +145,18 @@ The following skills are available. To use one, read its `SKILL.md` and follow i
 | Skill               | File                                            | When to use                                                                                   |
 | ------------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | Setup               | `.agents/skills/lodestar-setup/SKILL.md`        | Re-scaffold or refresh this file                                                              |
-| Audit               | `.agents/skills/lodestar-audit/SKILL.md`        | Scan the codebase and emit action-item files into `docs/audit/<run-id>/`                      |
+| Audit               | `.agents/skills/lodestar-audit/SKILL.md`        | Scan the codebase and emit action-item files under the `output-root` in `## Audit Settings`   |
 | Fix audit items     | `.agents/skills/lodestar-fix/SKILL.md`          | Triage and apply fixes from an audit run                                                      |
 | Review architecture | `.agents/skills/lodestar-architecture/SKILL.md` | Get an advisory second opinion on the layout above; optionally have it propose an alternative |
 
 ## Audit Output
 
 The audit skill writes one self-contained `.md` file per violation into
-`docs/audit/<run-id>/`. Each file is independently fixable — hand it
+`<output-root>/<run-id>/` (see `## Audit Settings`; default
+`docs/audit/<run-id>/`). Each file is independently fixable — hand it
 to an LLM with a prompt like:
 
-> Read `docs/audit/<RUN_ID>/<filename>.md`. Implement the fix exactly as
+> Read `<output-root>/<RUN_ID>/<filename>.md`. Implement the fix exactly as
 > specified. Do not modify files outside the `files:` list. Run
 > `[typecheck]` and `[test]` before committing. Stop if any scope rule is hit.
 

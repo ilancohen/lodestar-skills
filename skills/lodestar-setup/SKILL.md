@@ -231,6 +231,10 @@ This is the load-bearing file. Start from `context-md.md`. Fill in:
 - The Conventions table — the five keys from Step 3, with the confirmed
   values. Use the skip-value polarity from the template (`barrel-exports:
   yes` means barrels are allowed).
+- The Audit Settings table — defaults (`categories: all`, `output-root:
+  docs/audit`). Do not ask about these. If the user later persists a
+  category subset from `lodestar-audit`, leave that row as they wrote it
+  on a re-run unless they ask to reset it.
 
 Leave the `## Principles` and `## Skills` sections as the template has
 them — the principles link must stay pointed at
@@ -240,7 +244,10 @@ If the file already exists, replace the `## Build & Test`,
 `## Dependency Direction`, `## Package Layout`, and `## Conventions`
 sections and leave any other content the user added alone. If
 `## Conventions` is missing (a pre-0.5 file), insert it between
-`## Package Layout` and `## Principles`.
+`## Package Layout` and `## Principles`. If `## Audit Settings` is
+missing, insert it between `## Conventions` and `## Principles` with
+the defaults above. If it already exists, leave it — a stored category
+subset or output-root must survive a setup re-run.
 
 Create the `.agents/lodestar/` directory if needed, and write to
 `.agents/lodestar/context.md`. Write it in both enforcement modes — the
@@ -454,7 +461,7 @@ the audit will skip: `result-types: no` (errors #B), `branded-types: no`
 none` (the coverage floor). If every row is at its default, say so.
 Ask: "Does this look right? If so, run the `lodestar-audit`
 skill to scan the codebase and produce action-item files in
-`docs/audit/<run-id>/`. If the layout itself feels off, run
+`<output-root>/<run-id>/` (default `docs/audit/<run-id>/`). If the layout itself feels off, run
 `lodestar-architecture` instead — it produces an advisory report and never
 modifies source."
 

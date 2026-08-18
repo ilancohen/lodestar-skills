@@ -80,7 +80,7 @@ For each category:
    `eslint-disable`-guarded `any`.
 4. Append finding objects. Do not write action-item files here.
 5. Checkpoint:
-   `node scripts/audit-state.mjs checkpoint --run-dir docs/audit/<RUN_ID> --category <name> --status complete --count N`
+   `node scripts/audit-state.mjs checkpoint --run-dir <output-root>/<RUN_ID> --category <name> --status complete --count N`
    A category whose gated subtypes were skipped still checkpoints here
    (count is findings actually emitted, which may be 0).
 
@@ -124,7 +124,7 @@ category name when that category is finished for every package.
 Validate:
 
 ```text
-node scripts/audit-state.mjs validate-output --path docs/audit/<RUN_ID>/findings.md
+node scripts/audit-state.mjs validate-output --path <output-root>/<RUN_ID>/findings.md
 ```
 
 Any unresolved placeholder is a bug. Fix the block in place.

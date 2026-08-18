@@ -59,7 +59,7 @@ re-verification.
 
 `.audit-fallow-seed.json` is a temporary working file. Delete it after
 Phase 1 completes; never commit it. (The audit skill is read-only outside
-`docs/audit/`, but the seed is allowed in the repo root because it's
+`<output-root>/` (default `docs/audit/`), but the seed is allowed in the repo root because it's
 ephemeral and reproducible.)
 
 ---

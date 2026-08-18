@@ -5,7 +5,7 @@ Load this file before writing or merging findings.
 ## Layout
 
 ```
-docs/audit/<RUN_ID>/
+<output-root>/<RUN_ID>/
   findings.md
   INDEX.md
   001-<category>-<slug>.md
@@ -51,7 +51,7 @@ Invariants:
 ## Merge
 
 ```text
-node scripts/audit-state.mjs merge-findings --in a.json --in b.json --out docs/audit/<RUN_ID>/findings.md --run-id <RUN_ID>
+node scripts/audit-state.mjs merge-findings --in a.json --in b.json --out <output-root>/<RUN_ID>/findings.md --run-id <RUN_ID>
 ```
 
 Dedupes by category, subtype, package, files, and evidence. Sorts by
@@ -64,7 +64,7 @@ node scripts/audit-state.mjs validate-output --path <file>
 ```
 
 Fails on unresolved
-`<(typecheck|lint|test|pkg_root|pkg_alias|pkg_responsibility|all_pkg_roots|alias_prefix|pkg_manager|run|RUN_ID)>`
+`<(typecheck|lint|test|pkg_root|pkg_alias|pkg_responsibility|all_pkg_roots|alias_prefix|pkg_manager|run|RUN_ID|output-root)>`
 markers, unknown categories, missing fields, or non-sequential IDs.
 
 Malformed JSON or markdown exits non-zero and writes nothing.
@@ -72,6 +72,6 @@ Malformed JSON or markdown exits non-zero and writes nothing.
 ## Discovery immutability
 
 Validate-input, merge, checkpoint, recover, and validate-output must not
-create or change files outside `docs/audit/` (and must not touch
+create or change files outside `<output-root>/` (and must not touch
 application source). Assert this in tests by comparing a source-tree
 checksum before and after.

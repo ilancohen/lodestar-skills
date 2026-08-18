@@ -64,7 +64,7 @@ entirely if there are no dependencies.>
 <A ready-to-paste prompt the user can drop into an LLM. Should reference
 this file's path. Example:
 
-> Read `docs/audit/<RUN_ID>/<this-file>.md`. Implement the fix exactly as
+> Read `<output-root>/<RUN_ID>/<this-file>.md`. Implement the fix exactly as
 > specified. Do not modify files outside the `files:` list. Run
 > `<typecheck>` and `<test>` before committing. If any scope rule is hit,
 > stop and report rather than guessing.>

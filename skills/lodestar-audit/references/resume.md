@@ -8,17 +8,20 @@ Load this file before creating or resuming a run.
 Later same-day runs use `YYYY-MM-DD-NNN` starting at `002`.
 
 ```text
-docs/audit/2026-05-15/
-docs/audit/2026-05-15-002/
-```
-
-Resolve with:
-
-```text
 node scripts/audit-state.mjs resolve-run --root <repo>
 ```
 
-That command never overwrites an existing run directory. To resume:
+That command never overwrites an existing run directory. It reads
+`output-root` from `context.md` `## Audit Settings` (default
+`docs/audit`) and returns `outputRoot`, `architectureRoot`, and `path`.
+Examples below use `<output-root>` for that value.
+
+```text
+<output-root>/2026-05-15/
+<output-root>/2026-05-15-002/
+```
+
+To resume:
 
 ```text
 node scripts/audit-state.mjs resolve-run --root <repo> --resume <RUN_ID>
@@ -30,7 +33,7 @@ from today (findings exist, INDEX missing, or a category is incomplete).
 ## Recover
 
 ```text
-node scripts/audit-state.mjs recover --run-dir docs/audit/<RUN_ID>
+node scripts/audit-state.mjs recover --run-dir <output-root>/<RUN_ID>
 ```
 
 Returns:
@@ -47,7 +50,7 @@ Findings are deduplicated and re-IDed. Partial work is kept.
 After each category:
 
 ```text
-node scripts/audit-state.mjs checkpoint --run-dir docs/audit/<RUN_ID> --category imports --status complete --count 4
+node scripts/audit-state.mjs checkpoint --run-dir <output-root>/<RUN_ID> --category imports --status complete --count 4
 ```
 
 Writes are atomic. A failed write must not corrupt the previous

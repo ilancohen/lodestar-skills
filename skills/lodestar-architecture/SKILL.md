@@ -32,12 +32,17 @@ the user to run `/lodestar-setup` first:
   for repo context — `AGENTS.md` is never read, even if an older setup left
   a layout table there.
 
-Capture from `.agents/lodestar/context.md`:
+Capture from `.agents/lodestar/context.md` (or `validate-input` JSON):
 
 - `<packages>` — the ordered list of rows in `## Package Layout`, each
   with `{name, path, alias, responsibility}`.
 - `<direction>` — the dependency-direction chain.
 - `<typecheck>`, `<lint>`, `<test>` — the build commands.
+- `<architecture-root>` — `architectureRoot` from `validate-input`
+  (default `docs/architecture-review`). Derived from `output-root` so
+  audit runs and architecture reports stay together: `docs/audit` →
+  `docs/architecture-review`; any other root →
+  `<output-root>/architecture-review`. Do not hardcode the path.
 
 Also note whether `.fallowrc.json` exists; if so, its zones should match
 `<packages>` (the setup skill writes it that way).
@@ -105,16 +110,16 @@ Orchestrator fills "Matches contents?" and folds `notable` into Risks.
 ## Step 3 — Compute `<RUN_ID>` and report path
 
 `<RUN_ID>` is the UTC date `YYYY-MM-DD` (e.g. `2026-05-15`) for the
-first review on that day. If a file at `docs/architecture-review/<RUN_ID>.md`
+first review on that day. If a file at `<architecture-root>/<RUN_ID>.md`
 already exists, append a zero-padded same-day counter starting at `-002`
-(e.g. `2026-05-15-002.md`). Output path: `docs/architecture-review/<RUN_ID>.md`.
+(e.g. `2026-05-15-002.md`). Output path: `<architecture-root>/<RUN_ID>.md`.
 One file per run — no per-finding fan-out. Never overwrite a previous run.
 
 ---
 
 ## Step 4 — Write the report
 
-Write `docs/architecture-review/<RUN_ID>.md` with the sections below. Be
+Write `<architecture-root>/<RUN_ID>.md` with the sections below. Be
 specific (cite package names and file paths) and be brief — the report
 exists to drive a conversation, not to be a textbook.
 
@@ -256,7 +261,7 @@ Print:
 
 ```
 Architecture review complete.
-Report: docs/architecture-review/<RUN_ID>.md
+Report: <architecture-root>/<RUN_ID>.md
 
 This report is advisory. It does not modify any application source file and does
 not produce audit-style action items.
@@ -275,7 +280,7 @@ To act:
 ## Rules
 
 - **Read-only.** Never modify application source. The only filesystem
-  write is `docs/architecture-review/<RUN_ID>.md`.
+  write is `<architecture-root>/<RUN_ID>.md`.
 - **One report per run.** No fan-out into per-finding files. The audit
   skill exists for per-violation action items; this skill is the
   opposite shape.

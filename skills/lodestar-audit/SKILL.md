@@ -2,7 +2,8 @@
 name: lodestar-audit
 description: >-
   Audits a codebase against the engineering principles documented by lodestar-setup
-  and writes self-contained findings and action items under docs/audit/.
+  and writes self-contained findings and action items under the
+  output-root in context.md (default docs/audit/).
   Discovery only; never modifies application source. Restartable from
   findings.md. Do not load unless the user explicitly invokes lodestar-audit
   by name.
@@ -29,7 +30,7 @@ path to that file.
 ## Structure model
 
 This audit is **structure-agnostic**. It does not assume roles like
-`core`, `api`, or `ui`. It uses three things from
+`core`, `api`, or `ui`. It uses four things from
 `.agents/lodestar/context.md`:
 
 1. `## Package Layout` — package names, paths, aliases, and a one-sentence
@@ -38,6 +39,8 @@ This audit is **structure-agnostic**. It does not assume roles like
 3. `## Conventions` — which style conventions the repo follows. Detectors
    skip at a row's skip value (see the Categories table). A missing
    section means every default.
+4. `## Audit Settings` — optional category subset and `output-root`
+   (default `docs/audit`).
 
 Detectors run package-by-package. Kind-of-code rules use the
 Responsibility column and path patterns, never the package name alone.
@@ -47,15 +50,17 @@ Responsibility column and path patterns, never the package name alone.
 ## Two-phase structure
 
 ```
-Phase 1 — DISCOVER     →  docs/audit/<RUN_ID>/findings.md
-Phase 2 — PLAN         →  docs/audit/<RUN_ID>/INDEX.md + NNN-….md files
+Phase 1 — DISCOVER     →  <output-root>/<RUN_ID>/findings.md
+Phase 2 — PLAN         →  <output-root>/<RUN_ID>/INDEX.md + NNN-….md files
 ```
 
 `findings.md` is the seam. Discover writes finding blocks only. Plan
 expands them into action items. A human may edit `findings.md` between
 phases. Both phases are restartable with the same `<RUN_ID>`.
 
-Never overwrite a previous run. Output stays under `docs/audit/<RUN_ID>/`.
+Never overwrite a previous run. Output stays under
+`<output-root>/<RUN_ID>/` (`outputRoot` from `validate-input` /
+`resolve-run`; default `docs/audit`).
 
 ---
 
@@ -75,7 +80,8 @@ node scripts/audit-state.mjs validate-input --root <repo>
 If that command exits non-zero, print its error and stop. It rejects a
 missing Package Layout, placeholder Responsibilities (shorter than 20
 characters, `TODO`/`TBD`/`???`/`one sentence`, or a bare noun like
-`core`), and an unparseable `## Conventions` value.
+`core`), an unparseable `## Conventions` value, and an unparseable
+`## Audit Settings` value.
 
 A category or subtype gated off by `conventions` is reported as skipped
 in `INDEX.md`'s known-blind-spots, not silently absent. Discover still
@@ -129,11 +135,23 @@ before writing action items. Load
 writing or merging `findings.md`.
 
 1. Run `node scripts/audit-state.mjs resolve-run --root <repo>`.
+   Capture `outputRoot` and `path` from the JSON.
 2. If `inProgress` is non-empty, ask: "Resume that run? (yes / start a
    fresh run)". Resume with
    `resolve-run --root <repo> --resume <RUN_ID>`.
-3. Print: "Output → `docs/audit/<RUN_ID>/`."
-4. List categories. Ask: "Proceed? (yes / pick a subset)". Wait.
+3. Print: "Output → `<output-root>/<RUN_ID>/`."
+4. List categories. If `validate-input`'s `categories` is a subset of
+   the nine (not all of them), present that subset as the default:
+   "Proceed with `<list>`? (yes / pick a different subset / all)". The
+   user can widen this run without editing `context.md`. If `categories`
+   is all nine, ask: "Proceed? (yes / pick a subset)". Wait.
+   After they pick a subset (this run, or confirming a stored subset),
+   ask once: "Write this subset into `.agents/lodestar/context.md`
+   `## Audit Settings` so later runs default to it? (yes / no — this
+   run uses it either way)". On yes, replace the `categories` row; do
+   not change `output-root`. Do not ask when they chose all nine, or
+   when the stored subset already matches. This edits `context.md`, not
+   application source.
 5. After Discover, ask: "Proceed to Phase 2 now? (yes / pause)". If
    pause, stop. The run stays resumable.
 
@@ -151,13 +169,15 @@ Follow [references/discover.md](references/discover.md). Summary:
 3. Mechanical pass in category order, then semantic pass.
 4. Merge with `node scripts/audit-state.mjs merge-findings`.
 5. Validate with `node scripts/audit-state.mjs validate-output --path
-docs/audit/<RUN_ID>/findings.md`.
+<output-root>/<RUN_ID>/findings.md`.
 6. Checkpoint a category as complete only after it is finished for every
    package, including the semantic pass for `soc-yagni` and `dry`. During
    a package loop use `checkpoint --status partial --package <name>`.
 
 Discovery never modifies application source. The only filesystem writes
-are `docs/audit/<RUN_ID>/` and the transient `.audit-fallow-seed.json`
+are `<output-root>/<RUN_ID>/`, an optional consented edit of
+`.agents/lodestar/context.md` `## Audit Settings`, and the transient
+`.audit-fallow-seed.json`
 (delete it after Phase 1).
 
 ---
@@ -167,9 +187,9 @@ are `docs/audit/<RUN_ID>/` and the transient `.audit-fallow-seed.json`
 Follow [references/plan.md](references/plan.md). Summary:
 
 1. Recover with `node scripts/audit-state.mjs recover --run-dir
-docs/audit/<RUN_ID>`.
+<output-root>/<RUN_ID>`.
 2. Group findings by `scope_unit`. Write
-   `docs/audit/<RUN_ID>/<NNN>-<category>-<slug>.md` from
+   `<output-root>/<RUN_ID>/<NNN>-<category>-<slug>.md` from
    `templates/action-item.md`. Skip files that already exist.
 3. Validate each file for placeholder leaks.
 4. Write `INDEX.md` from `templates/index.md`. Fill Known blind spots
@@ -184,8 +204,9 @@ testability → dry → styling`.
 
 ## Rules
 
-- **Read-only.** Never modify application source. Writes: `docs/audit/`
-  plus transient `.audit-fallow-seed.json`.
+- **Read-only.** Never modify application source. Writes: `<output-root>/`,
+  an optional consented `## Audit Settings` edit, plus transient
+  `.audit-fallow-seed.json`.
 - **Consent first.** Category subset and Phase 2 start are questions.
   Wait for answers.
 - **Stop conditions:** missing setup files; `validate-input` failure;

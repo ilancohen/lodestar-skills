@@ -22,10 +22,10 @@ testability → dry → styling`
 ## Write action items
 
 For each item write
-`docs/audit/<RUN_ID>/<NNN>-<category>-<slug>.md` from
+`<output-root>/<RUN_ID>/<NNN>-<category>-<slug>.md` from
 `templates/action-item.md`. Fill every section. Copy fix steps, scope
 rules, and acceptance check from `categories/<category>.md` with real
-`<typecheck>` / `<lint>` / `<test>` values.
+`<typecheck>` / `<lint>` / `<test>` / `<output-root>` values.
 
 Slugs are kebab-case, at most five words.
 
@@ -38,7 +38,7 @@ Fix leftover placeholders in place before the next item.
 
 ## INDEX.md
 
-Write `docs/audit/<RUN_ID>/INDEX.md` from `templates/index.md`:
+Write `<output-root>/<RUN_ID>/INDEX.md` from `templates/index.md`:
 
 - Run ID (directory name)
 - Commands from `context.md` (`.agents/lodestar/context.md`)

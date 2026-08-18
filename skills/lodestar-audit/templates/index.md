@@ -60,7 +60,7 @@ for this run, do a manual pass:
 
 Each `NNN-*.md` file is self-contained. To hand one to an LLM:
 
-> Read `docs/audit/<RUN_ID>/<filename>.md`. Implement the fix exactly as
+> Read `<output-root>/<RUN_ID>/<filename>.md`. Implement the fix exactly as
 > specified. Do not modify files outside the `files:` list. Run `<typecheck>`
 > and `<test>` before committing. Stop and report if any scope rule is hit.
 
