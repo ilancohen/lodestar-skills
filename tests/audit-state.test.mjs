@@ -28,6 +28,9 @@ import {
   parseAuditScope,
   SCOPE_DEFAULTS,
   parsePackageLayout,
+  parseLayoutSource,
+  scriptNameFromCommand,
+  checkFreshness,
   sortFindings,
 } from "../skills/lodestar-audit/scripts/audit-state.mjs";
 import { formatCommitMessage } from "../skills/lodestar-fix/scripts/action-state.mjs";
@@ -43,6 +46,10 @@ const POLYGLOT = path.join(ROOT, "tests/fixtures/repos/polyglot");
 const EXCLUDED = path.join(ROOT, "tests/fixtures/repos/excluded");
 const BUN = path.join(ROOT, "tests/fixtures/repos/bun");
 const CHANGED_SINCE = path.join(ROOT, "tests/fixtures/repos/changed-since");
+const FRESH = path.join(ROOT, "tests/fixtures/repos/fresh-workspace");
+const DRIFT_PKG = path.join(ROOT, "tests/fixtures/repos/drift-missing-package");
+const DRIFT_CMD = path.join(ROOT, "tests/fixtures/repos/drift-commands");
+const DRIFT_EXCL = path.join(ROOT, "tests/fixtures/repos/drift-excluded");
 const SCOPED = path.join(
   ROOT,
   "tests/fixtures/audit-runs/scoped-backlog/findings.md",
@@ -1274,4 +1281,236 @@ test("scoped-backlog fixture mixes in_scope and still validates", () => {
   const inScope = parsed.findings.filter((item) => item.in_scope).length;
   const backlog = parsed.findings.filter((item) => !item.in_scope).length;
   assert.equal(inScope + backlog, parsed.findings.length);
+});
+
+test("scriptNameFromCommand accepts manager run forms and skips the rest", () => {
+  assert.equal(scriptNameFromCommand("pnpm run typecheck", "pnpm"), "typecheck");
+  assert.equal(scriptNameFromCommand("pnpm test", "pnpm"), "test");
+  assert.equal(scriptNameFromCommand("npm run lint", "npm"), "lint");
+  assert.equal(scriptNameFromCommand("npm test", "npm"), "test");
+  assert.equal(scriptNameFromCommand("pnpm install", "pnpm"), null);
+  assert.equal(scriptNameFromCommand("pnpm -r test", "pnpm"), null);
+  assert.equal(scriptNameFromCommand("make test", "pnpm"), null);
+  assert.equal(scriptNameFromCommand("n/a", "pnpm"), null);
+  assert.equal(scriptNameFromCommand("bun test", "bun"), null);
+  assert.equal(scriptNameFromCommand("npm lint", "npm"), null);
+});
+
+test("parseLayoutSource reads the Build & Test row and ignores absence", () => {
+  assert.equal(
+    parseLayoutSource(
+      "## Build & Test\n\n| Command | Run |\n| --- | --- |\n| layout-source | pnpm-workspace.yaml |\n\n## Package Layout\n",
+    ),
+    "pnpm-workspace.yaml",
+  );
+  assert.equal(parseLayoutSource("## Build & Test\n\n| test | pnpm test |\n"), null);
+});
+
+test("check-freshness fresh-workspace exits 0 and skips install", () => {
+  const result = run(["check-freshness", "--root", FRESH]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.fresh, true);
+  assert.equal(payload.layoutSource, "pnpm-workspace.yaml");
+  assert.equal(payload.drift.length, 0);
+  assert.equal(
+    payload.skipped.some(
+      (item) => item.fact === "install" && item.reason === "not script-shaped",
+    ),
+    true,
+  );
+});
+
+test("check-freshness names a workspace package missing from the layout table", () => {
+  const result = run(["check-freshness", "--root", DRIFT_PKG]);
+  assert.equal(result.status, 2, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.fresh, false);
+  const missing = payload.drift.filter((item) => item.fact === "missing-package");
+  assert.equal(missing.length, 1);
+  assert.equal(missing[0].observed, "packages/worker");
+  assert.match(result.stderr, /missing package: packages\/worker/);
+});
+
+test("check-freshness reports a renamed root script as stale", () => {
+  const result = run(["check-freshness", "--root", DRIFT_CMD]);
+  assert.equal(result.status, 2, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  const stale = payload.drift.filter((item) => item.fact === "stale-command");
+  assert.equal(stale.length, 1);
+  assert.equal(stale[0].name, "test");
+  assert.equal(stale[0].recorded, "pnpm test");
+  assert.match(result.stderr, /stale command `test`/);
+});
+
+test("check-freshness skips n/a, make, and Scannable no", () => {
+  const result = run(["check-freshness", "--root", DRIFT_EXCL]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.fresh, true);
+  assert.equal(payload.drift.length, 0);
+  const reasons = payload.skipped.map((item) => `${item.fact}:${item.reason}`);
+  assert.equal(reasons.includes("typecheck:n/a"), true);
+  assert.equal(reasons.includes("test:not script-shaped"), true);
+});
+
+test("check-freshness valid fixture skips both checks and exits 0", () => {
+  const result = run(["check-freshness", "--root", VALID]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.fresh, true);
+  assert.equal(payload.layoutSource, null);
+  assert.equal(
+    payload.skipped.some(
+      (item) =>
+        item.check === "missing-package" && item.reason === "no layout-source row",
+    ),
+    true,
+  );
+  assert.equal(
+    payload.skipped.some((item) => item.reason === "no root package.json"),
+    true,
+  );
+});
+
+test("check-freshness bun fixture skips command facts", () => {
+  const result = run(["check-freshness", "--root", BUN]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.fresh, true);
+  assert.equal(
+    payload.skipped.some((item) => item.reason === "no root package.json"),
+    true,
+  );
+});
+
+test("check-freshness pkg-manager row skips command facts", () => {
+  const result = run(["check-freshness", "--root", SINGLE]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(
+    payload.skipped.some(
+      (item) => item.reason === "pkg-manager row rather than a lockfile",
+    ),
+    true,
+  );
+});
+
+test("checkFreshness --facts commands ignores layout drift", () => {
+  const full = checkFreshness(DRIFT_PKG);
+  const commandsOnly = checkFreshness(DRIFT_PKG, {
+    facts: { layout: false, commands: true },
+  });
+  assert.equal(full.fresh, false);
+  assert.equal(commandsOnly.fresh, true);
+});
+
+test("check-freshness --facts commands does not parse Package Layout", () => {
+  const result = run([
+    "check-freshness",
+    "--root",
+    PLACEHOLDER,
+    "--facts",
+    "commands",
+  ]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.fresh, true);
+});
+
+test("check-freshness unknown --facts exits 1", () => {
+  const result = run([
+    "check-freshness",
+    "--root",
+    FRESH,
+    "--facts",
+    "nope",
+  ]);
+  assert.equal(result.status, 1, result.stderr);
+  assert.match(result.stderr, /unknown --facts value: nope/);
+});
+
+test("check-freshness glob layout rows cover matching members", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-fresh-glob-"));
+  fs.writeFileSync(path.join(tmp, "pnpm-lock.yaml"), "");
+  fs.writeFileSync(
+    path.join(tmp, "pnpm-workspace.yaml"),
+    'packages:\n  - "apps/*"\n',
+  );
+  fs.writeFileSync(
+    path.join(tmp, "package.json"),
+    JSON.stringify({ private: true, scripts: { test: "echo" } }),
+  );
+  fs.mkdirSync(path.join(tmp, "apps/web/src"), { recursive: true });
+  fs.writeFileSync(path.join(tmp, "apps/web/src/index.ts"), "export {};\n");
+  fs.mkdirSync(path.join(tmp, ".agents/lodestar"), { recursive: true });
+  fs.writeFileSync(
+    path.join(tmp, ".agents/lodestar/context.md"),
+    `# Fixture
+
+## Build & Test
+
+| Command       | Run                 |
+| ------------- | ------------------- |
+| test          | pnpm test           |
+| layout-source | pnpm-workspace.yaml |
+
+## Package Layout
+
+| Package | Path        | Alias | Responsibility                     |
+| ------- | ----------- | ----- | ---------------------------------- |
+| web     | apps/*/src  | n/a   | HTTP routes and request validation |
+`,
+  );
+  const result = run(["check-freshness", "--root", tmp]);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout).fresh, true);
+});
+
+test("check-freshness skips the root workspace member .", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-fresh-dot-"));
+  fs.writeFileSync(path.join(tmp, "pnpm-lock.yaml"), "");
+  fs.writeFileSync(
+    path.join(tmp, "pnpm-workspace.yaml"),
+    'packages:\n  - "."\n  - "packages/*"\n',
+  );
+  fs.writeFileSync(
+    path.join(tmp, "package.json"),
+    JSON.stringify({ private: true, scripts: { test: "echo" } }),
+  );
+  fs.mkdirSync(path.join(tmp, "src"), { recursive: true });
+  fs.writeFileSync(path.join(tmp, "src/index.ts"), "export {};\n");
+  fs.mkdirSync(path.join(tmp, "packages/core/src"), { recursive: true });
+  fs.writeFileSync(
+    path.join(tmp, "packages/core/src/index.ts"),
+    "export {};\n",
+  );
+  fs.mkdirSync(path.join(tmp, ".agents/lodestar"), { recursive: true });
+  fs.writeFileSync(
+    path.join(tmp, ".agents/lodestar/context.md"),
+    `# Fixture
+
+## Build & Test
+
+| Command       | Run                 |
+| ------------- | ------------------- |
+| test          | pnpm test           |
+| layout-source | pnpm-workspace.yaml |
+
+## Package Layout
+
+| Package | Path              | Alias      | Responsibility                            |
+| ------- | ----------------- | ---------- | ----------------------------------------- |
+| app     | src               | n/a        | HTTP routes and request validation        |
+| core    | packages/core/src | @repo/core | Domain entities and use cases for billing |
+`,
+  );
+  const result = run(["check-freshness", "--root", tmp]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.fresh, true);
+  assert.equal(
+    payload.drift.some((item) => item.observed === "."),
+    false,
+  );
 });

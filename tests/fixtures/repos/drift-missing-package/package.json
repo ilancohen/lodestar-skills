@@ -1,0 +1,10 @@
+{
+  "name": "drift-missing-package",
+  "private": true,
+  "scripts": {
+    "build": "echo build",
+    "typecheck": "echo types",
+    "lint": "echo lint",
+    "test": "echo test"
+  }
+}

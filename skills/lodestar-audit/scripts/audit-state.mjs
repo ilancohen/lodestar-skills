@@ -2,8 +2,8 @@
 /**
  * Deterministic audit-state helper. Installed with lodestar-audit.
  *
- * Subcommands: resolve-run, validate-input, changed-files, merge-findings,
- * validate-output, checkpoint, recover
+ * Subcommands: resolve-run, validate-input, check-freshness, changed-files,
+ * merge-findings, validate-output, checkpoint, recover
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -44,6 +44,7 @@ function usage() {
 Commands:
   resolve-run --root DIR [--date YYYY-MM-DD] [--resume RUN_ID]
   validate-input --root DIR
+  check-freshness --root DIR [--facts layout,commands]
   changed-files --root DIR --since REF
   merge-findings --in FILE [--in FILE ...] [--out FILE] [--changed-files JSON]
   validate-output --path FILE
@@ -249,15 +250,408 @@ export function responsibilityProblem(row) {
   return null;
 }
 
+export const COMMAND_NAMES = [
+  "install",
+  "build",
+  "typecheck",
+  "lint",
+  "test",
+];
+
 export function parseCommands(contextText) {
   const commands = {};
-  for (const name of ["typecheck", "lint", "test"]) {
+  for (const name of COMMAND_NAMES) {
     const match = contextText.match(
       new RegExp(`\\|\\s*${name}\\s*\\|\\s*([^|]+)\\|`, "i"),
     );
     if (match) commands[name] = match[1].trim();
   }
   return commands;
+}
+
+export function parseLayoutSource(contextText) {
+  const heading = String(contextText).search(/^## Build & Test\s*$/m);
+  if (heading === -1) return null;
+  const rest = String(contextText).slice(heading);
+  const next = rest.search(/\n## /);
+  const section = next === -1 ? rest : rest.slice(0, next);
+  for (const line of section.split(/\r?\n/)) {
+    if (!line.startsWith("|")) continue;
+    const match = line.match(/\|\s*`?layout-source`?\s*\|\s*([^|]+)\|/i);
+    if (!match) continue;
+    const raw = match[1].replace(/^`+|`+$/g, "").trim();
+    if (!raw || /^\[/.test(raw) || /omit this row/i.test(raw)) continue;
+    return raw;
+  }
+  return null;
+}
+
+function posixPath(value) {
+  return String(value)
+    .replace(/\\/g, "/")
+    .replace(/\/+$/, "");
+}
+
+export function pathSitsUnder(rowPath, memberDir) {
+  const row = posixPath(rowPath);
+  const member = posixPath(memberDir);
+  return row === member || row.startsWith(`${member}/`);
+}
+
+function rowCoversMember(root, rowPath, memberDir) {
+  const member = posixPath(memberDir);
+  if (member === "." || member === "") return false;
+  const paths = new Set([posixPath(rowPath)]);
+  for (const abs of packageDirs(root, rowPath)) {
+    const rel = posixPath(path.relative(root, abs));
+    if (rel && !rel.startsWith("..")) paths.add(rel);
+  }
+  return [...paths].some((row) => pathSitsUnder(row, member));
+}
+
+function parsePnpmWorkspacePackages(text) {
+  const jsonish = String(text).match(/packages:\s*\[([^\]]*)\]/);
+  if (jsonish) {
+    return jsonish[1]
+      .split(",")
+      .map((item) => item.trim().replace(/^['"]|['"]$/g, ""))
+      .filter(Boolean);
+  }
+  const packages = [];
+  let inPackages = false;
+  for (const line of String(text).split(/\r?\n/)) {
+    if (/^packages:\s*$/.test(line)) {
+      inPackages = true;
+      continue;
+    }
+    if (!inPackages) continue;
+    const item = line.match(/^\s+-\s+['"]?([^'"#]+?)['"]?\s*(?:#.*)?$/);
+    if (item) {
+      packages.push(item[1].trim());
+      continue;
+    }
+    if (!line.trim() || line.trim().startsWith("#")) continue;
+    if (/^\S/.test(line)) break;
+  }
+  return packages;
+}
+
+function parseWorkspaceGlobs(fileName, text) {
+  if (fileName === "pnpm-workspace.yaml") {
+    return parsePnpmWorkspacePackages(text);
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  if (fileName === "package.json") {
+    if (Array.isArray(parsed.workspaces)) return parsed.workspaces;
+    if (Array.isArray(parsed.workspaces?.packages)) {
+      return parsed.workspaces.packages;
+    }
+    return [];
+  }
+  if (fileName === "lerna.json") {
+    return Array.isArray(parsed.packages) ? parsed.packages : [];
+  }
+  if (fileName === "nx.json") {
+    if (Array.isArray(parsed.projects)) return parsed.projects;
+    if (parsed.projects && typeof parsed.projects === "object") {
+      return Object.values(parsed.projects)
+        .map((value) => (typeof value === "string" ? value : value?.root))
+        .filter(Boolean);
+    }
+    return null;
+  }
+  return null;
+}
+
+function expandWorkspaceGlobs(root, globs) {
+  const include = [];
+  const exclude = [];
+  for (const glob of globs) {
+    if (String(glob).startsWith("!")) exclude.push(glob.slice(1));
+    else include.push(glob);
+  }
+  const members = new Set();
+  for (const glob of include) {
+    const hits =
+      /[*?\[]/.test(glob) && !glob.startsWith("!")
+        ? fs.globSync(glob, { cwd: root })
+        : fs.existsSync(path.join(root, glob))
+          ? [glob]
+          : [];
+    for (const hit of hits) {
+      const posix = posixPath(hit);
+      const abs = path.join(root, posix);
+      if (!fs.existsSync(abs) || !fs.statSync(abs).isDirectory()) continue;
+      members.add(posix);
+    }
+  }
+  return [...members]
+    .filter(
+      (member) => !exclude.some((glob) => matchesGlob(member, glob)),
+    )
+    .sort();
+}
+
+export function listDeclaredMembers(root, layoutSource) {
+  const relative = posixPath(layoutSource);
+  const abs = path.join(root, relative);
+  if (!fs.existsSync(abs)) {
+    return {
+      members: [],
+      skipReason: `layout-source file missing: ${relative}`,
+    };
+  }
+  const fileName = path.basename(relative);
+  const globs = parseWorkspaceGlobs(fileName, fs.readFileSync(abs, "utf8"));
+  if (globs == null) {
+    return {
+      members: [],
+      skipReason: `unrecognized layout-source: ${relative}`,
+    };
+  }
+  if (!globs.length) {
+    return {
+      members: [],
+      skipReason: `no workspace members in ${relative}`,
+    };
+  }
+  return { members: expandWorkspaceGlobs(root, globs), skipReason: null };
+}
+
+function memberHasScannableSource(root, member) {
+  return (
+    walk(path.join(root, member), DEFAULT_INCLUDE, false, [], { cwd: root })
+      .length > 0
+  );
+}
+
+const NON_SCRIPT_BUILTINS = new Set([
+  "install",
+  "ci",
+  "i",
+  "add",
+  "remove",
+  "rm",
+  "uninstall",
+  "un",
+  "dlx",
+  "exec",
+  "x",
+  "publish",
+  "pack",
+  "link",
+  "unlink",
+  "update",
+  "up",
+  "outdated",
+  "audit",
+  "init",
+  "create",
+  "import",
+  "config",
+  "help",
+  "why",
+  "store",
+  "fetch",
+  "list",
+  "ls",
+]);
+
+const SCRIPT_COMMAND_RE = {
+  npm: /^npm(?:\s+(run))?\s+([A-Za-z0-9:_-]+)$/,
+  pnpm: /^pnpm(?:\s+(run))?\s+([A-Za-z0-9:_-]+)$/,
+  yarn: /^yarn(?:\s+(run))?\s+([A-Za-z0-9:_-]+)$/,
+};
+
+export function scriptNameFromCommand(command, pkgManager) {
+  const trimmed = String(command || "")
+    .trim()
+    .replace(/^`+|`+$/g, "");
+  if (!trimmed || /^n\/a$/i.test(trimmed)) return null;
+  const regex = SCRIPT_COMMAND_RE[pkgManager];
+  if (!regex) return null;
+  const match = trimmed.match(regex);
+  if (!match) return null;
+  const usedRun = Boolean(match[1]);
+  const token = match[2];
+  if (!usedRun && NON_SCRIPT_BUILTINS.has(token)) return null;
+  if (
+    pkgManager === "npm" &&
+    !usedRun &&
+    !["test", "start", "stop", "restart"].includes(token)
+  ) {
+    return null;
+  }
+  return token;
+}
+
+function checkMissingPackages(root, packages, layoutSource) {
+  if (!layoutSource) {
+    return {
+      skipped: [{ check: "missing-package", reason: "no layout-source row" }],
+      drift: [],
+    };
+  }
+  const listed = listDeclaredMembers(root, layoutSource);
+  if (listed.skipReason) {
+    return {
+      skipped: [{ check: "missing-package", reason: listed.skipReason }],
+      drift: [],
+    };
+  }
+  const drift = [];
+  for (const member of listed.members) {
+    const posix = posixPath(member);
+    if (posix === "." || posix === "") continue;
+    if (!memberHasScannableSource(root, member)) continue;
+    const covered = packages.some((row) =>
+      rowCoversMember(root, row.path, member),
+    );
+    if (!covered) {
+      drift.push({
+        fact: "missing-package",
+        recorded: "no matching row in ## Package Layout",
+        observed: member,
+        remedy: `Re-run lodestar-setup to add \`${member}\` to ## Package Layout.`,
+      });
+    }
+  }
+  return { skipped: [], drift };
+}
+
+function checkStaleCommands(root, commands, detected) {
+  const skipped = [];
+  const drift = [];
+  const skipRemaining = (reason) => {
+    for (const name of COMMAND_NAMES) {
+      if (commands[name]) {
+        skipped.push({ check: "stale-command", fact: name, reason });
+      }
+    }
+    return { skipped, drift };
+  };
+  if (!fs.existsSync(path.join(root, "package.json"))) {
+    return skipRemaining("no root package.json");
+  }
+  if (detected.provenance === "context.md") {
+    return skipRemaining("pkg-manager row rather than a lockfile");
+  }
+  if (!detected.pkgManager || detected.ambiguous) {
+    return skipRemaining("package manager not resolved from a lockfile");
+  }
+  if (detected.pkgManager === "bun") {
+    return skipRemaining("bun commands are not decidable as scripts");
+  }
+  let pkg;
+  try {
+    pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+  } catch {
+    return skipRemaining("root package.json is not valid JSON");
+  }
+  const scripts =
+    pkg.scripts && typeof pkg.scripts === "object" ? pkg.scripts : {};
+  for (const name of COMMAND_NAMES) {
+    const recorded = commands[name];
+    if (!recorded) continue;
+    if (/^n\/a$/i.test(recorded.trim())) {
+      skipped.push({ check: "stale-command", fact: name, reason: "n/a" });
+      continue;
+    }
+    const script = scriptNameFromCommand(recorded, detected.pkgManager);
+    if (!script) {
+      skipped.push({
+        check: "stale-command",
+        fact: name,
+        reason: "not script-shaped",
+      });
+      continue;
+    }
+    if (!Object.hasOwn(scripts, script)) {
+      drift.push({
+        fact: "stale-command",
+        name,
+        recorded,
+        observed: Object.keys(scripts).length
+          ? `package.json has no \`${script}\` script`
+          : "package.json has no scripts",
+        remedy: `Re-run lodestar-setup to update the \`${name}\` command.`,
+      });
+    }
+  }
+  return { skipped, drift };
+}
+
+function parseFactsFlag(raw) {
+  if (!raw || raw === true) return { layout: true, commands: true };
+  const parts = String(raw)
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (!parts.length) {
+    throw new Error(
+      "check-freshness --facts requires layout and/or commands",
+    );
+  }
+  const facts = { layout: false, commands: false };
+  for (const part of parts) {
+    if (part === "layout" || part === "missing-package") facts.layout = true;
+    else if (part === "commands" || part === "stale-command") {
+      facts.commands = true;
+    } else {
+      throw new Error(
+        `unknown --facts value: ${part}. Use layout, commands.`,
+      );
+    }
+  }
+  return facts;
+}
+
+export function checkFreshness(root, options = {}) {
+  const facts = options.facts || { layout: true, commands: true };
+  const contextPath = path.join(root, ".agents", "lodestar", "context.md");
+  if (!fs.existsSync(contextPath)) {
+    throw new Error(
+      ".agents/lodestar/context.md is missing. Run lodestar-setup first.",
+    );
+  }
+  const contextText = fs.readFileSync(contextPath, "utf8");
+  const commands = parseCommands(contextText);
+  const layoutSource = parseLayoutSource(contextText);
+  const detected = resolvePkgManager(root, parsePkgManagerRow(contextText));
+  const skipped = [];
+  const drift = [];
+  if (facts.layout) {
+    const packages = parsePackageLayout(contextText);
+    const missing = checkMissingPackages(root, packages, layoutSource);
+    skipped.push(...missing.skipped);
+    drift.push(...missing.drift);
+  }
+  if (facts.commands) {
+    const stale = checkStaleCommands(root, commands, detected);
+    skipped.push(...stale.skipped);
+    drift.push(...stale.drift);
+  }
+  return { fresh: drift.length === 0, layoutSource, drift, skipped };
+}
+
+function printDriftHuman(drift) {
+  process.stderr.write(
+    ".agents/lodestar/context.md no longer matches the repo:\n",
+  );
+  for (const item of drift) {
+    if (item.fact === "missing-package") {
+      process.stderr.write(`- missing package: ${item.observed}\n`);
+    } else {
+      process.stderr.write(
+        `- stale command \`${item.name}\`: recorded \`${item.recorded}\` but ${item.observed}\n`,
+      );
+    }
+  }
 }
 
 export function parseDirection(contextText) {
@@ -1111,6 +1505,19 @@ function readOutputRoot(repoRoot) {
   }
 }
 
+function cmdCheckFreshness(flags) {
+  const root = flags.root || process.cwd();
+  let result;
+  try {
+    result = checkFreshness(root, { facts: parseFactsFlag(flags.facts) });
+  } catch (error) {
+    fail(error.message, 1);
+  }
+  if (result.drift.length) printDriftHuman(result.drift);
+  printJson(result);
+  if (result.drift.length) process.exit(2);
+}
+
 function cmdValidateInput(flags) {
   const root = flags.root || process.cwd();
   const contextPath = path.join(root, ".agents", "lodestar", "context.md");
@@ -1391,6 +1798,7 @@ function cmdRecover(flags) {
 const COMMANDS = {
   "resolve-run": cmdResolveRun,
   "validate-input": cmdValidateInput,
+  "check-freshness": cmdCheckFreshness,
   "changed-files": cmdChangedFiles,
   "merge-findings": cmdMergeFindings,
   "validate-output": cmdValidateOutput,

@@ -1,0 +1,10 @@
+{
+  "name": "drift-commands",
+  "private": true,
+  "scripts": {
+    "build": "echo build",
+    "typecheck": "echo types",
+    "lint": "echo lint",
+    "test:unit": "echo test"
+  }
+}
