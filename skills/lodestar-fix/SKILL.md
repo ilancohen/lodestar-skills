@@ -7,7 +7,7 @@ description: >-
   name.
 disable-model-invocation: true
 license: MIT
-compatibility: Requires git and the target repository's declared typecheck and test commands. Shell examples assume a POSIX-compatible environment.
+compatibility: Requires git and the target repository's declared typecheck and test commands (`n/a` skips that check). npm, pnpm, yarn, and Bun are detected from lockfiles; any other manager works when recorded in context.md. Deno and Bazel are not supported. Shell examples assume a POSIX-compatible environment.
 metadata:
   author: Ilan Cohen
   version: "0.5.0"
@@ -44,8 +44,9 @@ Capture from `.agents/lodestar/context.md` (the file `lodestar-setup`
 writes; `AGENTS.md` is not read):
 
 - `<typecheck>`, `<lint>`, `<test>` — the build commands used to verify
-  each fix. If any is missing, stop and ask the user to re-run
-  `lodestar-setup`.
+  each fix. `n/a` means that check does not exist: skip it and say so
+  in the report. Stop and ask to re-run `lodestar-setup` only when a
+  command is missing from the table entirely.
 
 ---
 
@@ -147,7 +148,9 @@ touching a file outside that list, stop, set `status: deferred` with
 
 Run the commands listed under **Acceptance check** in the item. By
 default this is `<typecheck>` and (where the item requires it)
-`<test>`.
+`<test>`. Skip any command whose value is `n/a` and note the skip in
+the item's `note:` (or the session report). A repo with no typecheck
+is still fixable.
 
 **Batched mode (opt-in).** For categories where every item's
 acceptance check is `<typecheck>`-only (typically `imports`, `types`,
@@ -313,6 +316,7 @@ unstarted), skip this step and leave the run in place.
   preserve it in the commit history.
 - **Stop conditions:**
   - The run directory has no `INDEX.md` or no action-item files.
-  - `<typecheck>` or `<test>` is not declared in
-    `.agents/lodestar/context.md`.
+  - `<typecheck>` and `<test>` are both `n/a` or missing from
+    `.agents/lodestar/context.md` (nothing to verify). A single `n/a`
+    is not a stop — skip that check.
   - The user says stop.

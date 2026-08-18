@@ -6,7 +6,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { detectPkgManager, installFallowCommand } from "./pkg-manager.mjs";
+import {
+  installFallowCommand,
+  parsePkgManagerRow,
+  resolvePkgManager,
+} from "./pkg-manager.mjs";
 import {
   atomicWrite,
   fail,
@@ -20,6 +24,25 @@ import {
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CONTRACT_PATH = path.join(HERE, "fallow-contract.json");
 const COMPAT_FILE = ".agents/lodestar/fallow-compat.json";
+
+function resolvePkgManagerForRoot(root) {
+  if (!root) {
+    return {
+      pkgManager: null,
+      run: null,
+      addDev: null,
+      ambiguous: true,
+      lockfiles: [],
+      provenance: "none",
+    };
+  }
+  const contextPath = path.join(root, ".agents", "lodestar", "context.md");
+  let recorded = null;
+  if (fs.existsSync(contextPath)) {
+    recorded = parsePkgManagerRow(fs.readFileSync(contextPath, "utf8"));
+  }
+  return resolvePkgManager(root, recorded);
+}
 
 export function loadContract(filePath = CONTRACT_PATH) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
@@ -82,11 +105,16 @@ export function remediation(contract, details, extras = {}) {
   const installed = extras.installed || "unknown";
   const schema = extras.schema === undefined ? "n/a" : String(extras.schema);
   const kind = extras.kind || "n/a";
+  const addDev = extras.addDev || null;
 
   if (extras.aboveBaseline) {
     // A newer Fallow schema dropped a field the audit reads — pin backwards.
     const goodVersion = contract.last_good_version || contract.tool_version;
-    const install = installFallowCommand(`~${goodVersion}`, extras.manager);
+    const install = installFallowCommand(
+      `~${goodVersion}`,
+      extras.manager,
+      addDev,
+    );
     return [
       details,
       `Installed Fallow: ${installed}.`,
@@ -97,7 +125,11 @@ export function remediation(contract, details, extras = {}) {
   }
 
   const range = fallowInstallSpec(contract.tool_version);
-  const install = installFallowCommand(range, extras.manager);
+  const install = installFallowCommand(
+    range,
+    extras.manager,
+    extras.addDev || null,
+  );
   return [
     details,
     `Installed Fallow: ${installed}.`,
@@ -283,13 +315,15 @@ export function detectVersion(bin) {
 }
 
 export function resolveFallow(root, contract = loadContract()) {
-  const manager = detectPkgManager(root).pkgManager;
+  const resolved = resolvePkgManagerForRoot(root);
+  const manager = resolved.pkgManager;
   const bin = which("fallow", root);
   if (!bin) {
     throw new Error(
       remediation(contract, "fallow is required for this audit.", {
         installed: "none",
         manager,
+        addDev: resolved.addDev,
       }),
     );
   }
@@ -299,6 +333,7 @@ export function resolveFallow(root, contract = loadContract()) {
       remediation(contract, `unsupported Fallow installed ${version}.`, {
         installed: version,
         manager,
+        addDev: resolved.addDev,
       }),
     );
   }
@@ -370,12 +405,14 @@ function cmdValidate(flags, contract) {
     } catch {
       // ignore
     }
+    const resolved = root ? resolvePkgManagerForRoot(root) : null;
     fail(
       remediation(contract, `${error.message}.`, {
         installed,
         schema,
         kind: receivedKind,
-        manager: root ? detectPkgManager(root).pkgManager : null,
+        manager: resolved?.pkgManager ?? null,
+        addDev: resolved?.addDev ?? null,
         aboveBaseline: error.schemaTooNew,
       }),
       2,

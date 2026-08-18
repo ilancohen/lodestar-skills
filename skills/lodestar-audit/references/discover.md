@@ -16,6 +16,7 @@ returns `packages`, `direction` (acyclic chain order, empty when cyclic),
 `conventions` (every key present; defaults filled when `## Conventions`
 is missing or a row is missing), `commands`,
 `pkgManager`, `run`, `pkgManagerAmbiguous`, `pkgManagerLockfiles`,
+`pkgManagerProvenance` (`lockfile` / `context.md` / `none`),
 `allPkgRoots`, `aliasPrefix`, `excludedPaths`, and `testGlobs`.
 
 Each `packages` row includes `scannable` (`yes` / `no`; default `yes`
@@ -39,20 +40,22 @@ count 0 so resume logic is unaffected. Do not omit it from the scan
 loop's checkpoint — skip its detectors, then checkpoint it complete.
 
 If `pkgManager` is `null` / `pkgManagerAmbiguous` is true, **ask the
-user** which of npm, yarn, or pnpm to use before running any install or
-`dlx`/`npx` command. Do not default to npm.
+user** for the manager, its exec prefix, and its add-dev command before
+any install or `dlx`/`npx`/`bunx` command. Do not offer only npm /
+yarn / pnpm when none of those lockfiles is present. Do not default to
+npm. Honor `pkgManagerProvenance: context.md` and do not re-ask.
 
 Substitute placeholders literally before any detector command:
 
-| Placeholder                       | Resolved to                    |
-| --------------------------------- | ------------------------------ |
-| `<typecheck>`, `<lint>`, `<test>` | Commands from `context.md`     |
-| `<pkg_root>`                      | Current row `path`             |
-| `<pkg_alias>`                     | Current row `alias`            |
-| `<pkg_responsibility>`            | Current row `responsibility`   |
-| `<all_pkg_roots>`                 | Space-separated paths          |
-| `<alias_prefix>`                  | Longest common alias prefix    |
-| `<pkg_manager>`, `<run>`          | From lockfiles; ask if unclear |
+| Placeholder                       | Resolved to                                                                                   |
+| --------------------------------- | --------------------------------------------------------------------------------------------- |
+| `<typecheck>`, `<lint>`, `<test>` | Commands from `context.md` (`n/a` → skip that probe)                                          |
+| `<pkg_root>`                      | Current row `path`                                                                            |
+| `<pkg_alias>`                     | Current row `alias`                                                                           |
+| `<pkg_responsibility>`            | Current row `responsibility`                                                                  |
+| `<all_pkg_roots>`                 | Space-separated paths                                                                         |
+| `<alias_prefix>`                  | Longest common alias prefix                                                                   |
+| `<pkg_manager>`, `<run>`          | `validate-input` `pkgManager` / `run` (recorded row wins; ask only when provenance is `none`) |
 
 Never run a command that still contains `<placeholder>` text. The
 Responsibility column is advisory context for judgment detectors, not a

@@ -7,7 +7,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { detectPkgManager } from "./pkg-manager.mjs";
+import { parsePkgManagerRow, resolvePkgManager } from "./pkg-manager.mjs";
 import {
   atomicWrite,
   fail,
@@ -18,7 +18,7 @@ import {
 } from "./runtime.mjs";
 import { DEFAULT_INCLUDE, walk } from "./source-scan.mjs";
 
-export { detectPkgManager } from "./pkg-manager.mjs";
+export { detectPkgManager, resolvePkgManager } from "./pkg-manager.mjs";
 
 export const CATEGORIES = [
   "imports",
@@ -910,7 +910,7 @@ function cmdValidateInput(flags) {
   } catch (error) {
     fail(error.message, 2);
   }
-  const detected = detectPkgManager(root);
+  const detected = resolvePkgManager(root, parsePkgManagerRow(contextText));
   const scannablePackages = packages.filter((row) => row.scannable !== "no");
   printJson({
     packages,
@@ -928,6 +928,7 @@ function cmdValidateInput(flags) {
     run: detected.run,
     pkgManagerAmbiguous: detected.ambiguous,
     pkgManagerLockfiles: detected.lockfiles,
+    pkgManagerProvenance: detected.provenance,
     allPkgRoots: scannablePackages.map((row) => row.path).join(" "),
     aliasPrefix: aliasPrefix(scannablePackages),
   });

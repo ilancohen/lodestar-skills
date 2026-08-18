@@ -13,7 +13,7 @@ description: >-
   Do not load unless the user explicitly invokes lodestar-setup by name.
 disable-model-invocation: true
 license: MIT
-compatibility: Requires filesystem write access and a POSIX-compatible shell for optional Fallow setup, plus network access if you accept the optional Fallow install. Supports npm, pnpm, and yarn repositories.
+compatibility: Requires filesystem write access and a POSIX-compatible shell for optional Fallow setup, plus network access if you accept the optional Fallow install. npm, pnpm, yarn, and Bun are detected from lockfiles; any other manager works when recorded in context.md. Deno and Bazel are not supported.
 metadata:
   author: Ilan Cohen
   version: "0.5.0"
@@ -63,25 +63,23 @@ only. Tally other extensions (`.py`, `.go`, `.rs`, …) in the same pass.
 
 Read only what's needed to fill in the template placeholders:
 
-- **Package manager** — check for exactly one of `pnpm-lock.yaml`
-  (pnpm), `yarn.lock` (yarn), or `package-lock.json` (npm). That sets
-  the command prefix (`pnpm`, `yarn`, or `npm` / `npx`). If none or
-  more than one is present, **ask the user** which of npm, yarn, or
-  pnpm to use. Do not guess. Do not default to npm.
-- **Build scripts** — read the root `package.json` `scripts` field.
-  Identify the build, typecheck, lint, and test commands.
-- **Package layout** — observe, in order: workspace files
-  (`pnpm-workspace.yaml`, `package.json` `workspaces`, `nx.json`,
-  `turbo.json`, `lerna.json`); else every non-root `package.json`
-  (reasonable depth, skip Excluded Paths); else single-package: look
-  one level into `src/` (or `main`/`exports`) for feature/module dirs
-  and offer those as rows, or one row for the source root. Record how
-  it was found. Directory rows are valid. For each:
-  - Name, path glob, alias (`package.json` `name`, `tsconfig` `paths`,
-    `imports` map, or bundler alias; else `n/a`).
-  - Entry points: `exports` subpaths, `typesVersions`, or `main` /
-    `module` / `types`; else `index.ts`.
-  - One-sentence responsibility. `Scannable: no` + language if none.
+- **Package manager** — exactly one of pnpm / yarn / npm / Bun
+  (`bun.lock` or `bun.lockb`; both still count as Bun). Several → ask.
+  None recognized → ask name, exec prefix, add-dev; write `pkg-manager`.
+  Do not offer only npm / yarn / pnpm when none of those lockfiles exist.
+- **Build commands** — `package.json` `scripts` first, then Makefile /
+  justfile / Taskfile / Nx / Turbo / README. Record what a developer
+  types. Missing → `n/a`.
+- **Package layout** — find whatever declares the workspace; record the
+  file. Hints, not a closed set: `pnpm-workspace.yaml`, `package.json`
+  `workspaces`, `nx.json`, `turbo.json`, `lerna.json`. Several → prefer
+  the manager's own file and name the others. Only if none: every
+  non-root `package.json` (skip Excluded Paths); else single-package:
+  feature dirs one level into `src/` (or `main`/`exports`), or one row
+  for the source root. Directory rows are valid. For each: name, path,
+  alias (`name` / `paths` / `imports` / bundler; else `n/a`); entry
+  points (`exports` / `typesVersions` / `main`; else `index.ts`);
+  responsibility; `Scannable: no` + language if none.
 - **Excluded paths** — gitignored paths inside layout globs; codegen
   configs (`prisma/schema.prisma`, `codegen.yml`/`ts`, `*.proto`,
   `openapi*.y?ml`) and their output; dirs named `generated`,
@@ -128,8 +126,9 @@ the table you write is keyed by the repo's own package names.
 
 Present a single short summary:
 
-- The package manager you detected (or that you could not tell).
-- The commands you found.
+- The package manager you detected (or that you could not tell), and
+  where commands came from (`package.json` scripts, Makefile, …).
+- The commands you found (`n/a` if a check does not exist).
 - The observed package import graph — acyclic chain or cyclic edge list,
   using the repo's actual package names.
 - How the layout was found, and the table — name, path, alias, entry
@@ -141,9 +140,9 @@ edges, and say they will be recorded as-is and reported by the audit as
 circular dependencies. Ask the user to correct the graph only if the
 _observation_ is wrong — do not ask them to declare a target layout.
 
-If the package manager is unclear, ask which of npm, yarn, or pnpm to
-use as part of this same confirmation. Do not proceed with install or
-script prefixes until that is answered.
+If the manager is unclear, ask here. When none of npm / yarn / pnpm /
+Bun was detected, ask name, exec prefix, and add-dev — not a closed
+list. Do not proceed with install prefixes until that is answered.
 
 Ask the user to correct anything wrong. One round of feedback only.
 Do not ask about conventions here — that is Step 3. Do not ask whether
@@ -362,11 +361,12 @@ compatible version with: <command>`, built for the manager it detected
 3. Before installing in a repo with more than one package, ask where it
    goes: the workspace root, or a named package. Adjust the quoted command
    for the answer — root is `pnpm add -D -w` / `npm install --save-dev` /
-   `yarn add -D` at the root, and a named package is
+   `yarn add -D` / `bun add -d` at the root, and a named package is
    `pnpm --filter <name> add -D` / `npm install --save-dev --workspace
-<name>` / `yarn workspace <name> add -D`. Recommend the root: a
-   package-local install has to be verified and audited from that package.
-   Do not proceed without an answer.
+<name>` / `yarn workspace <name> add -D` / `bun add -d --cwd <package>`.
+   Recommend the root. Bun installs
+   into `node_modules` by default, so `resolve-bin` finds it the same
+   way as npm. Do not proceed without an answer.
 4. On "yes", run the final command from items 2 and 3 of this step, then
    re-run `resolve-bin` and say which version resolved. A binary that still
    doesn't resolve, or still falls outside the range, counts as a failed

@@ -126,6 +126,7 @@ test("validate-input accepts a real layout and does not touch source", () => {
   assert.equal(payload.packages[0].name, "core");
   assert.equal(payload.pkgManager, null);
   assert.equal(payload.pkgManagerAmbiguous, true);
+  assert.equal(payload.pkgManagerProvenance, "none");
   assert.deepEqual(payload.conventions, CONVENTION_DEFAULTS);
   assert.deepEqual(payload.categories, CATEGORIES);
   assert.equal(payload.outputRoot, DEFAULT_OUTPUT_ROOT);
@@ -369,6 +370,37 @@ test("validate-input accepts one package with an empty dependency graph", () => 
   assert.deepEqual(payload.packages[0].entryPoints, ["index.ts"]);
   assert.deepEqual(payload.direction, []);
   assert.deepEqual(payload.directionGraph.edges, []);
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test("validate-input reports context.md provenance from a pkg-manager row", () => {
+  const tmp = writeLayoutRepo(
+    `## Package Layout
+
+| Package | Path | Alias | Responsibility |
+| ------- | ---- | ----- | -------------- |
+| app | src | n/a | HTTP routes and request validation |
+`,
+    { "src/index.ts": "export const value = 1;\n" },
+  );
+  const contextPath = path.join(tmp, ".agents/lodestar/context.md");
+  fs.writeFileSync(
+    contextPath,
+    fs
+      .readFileSync(contextPath, "utf8")
+      .replace(
+        /\| test\s+\|[^|]+\|/,
+        "| test | npm test |\n| pkg-manager | pixi; pixi run; pixi add --dev <pkg> |",
+      ),
+  );
+  fs.writeFileSync(path.join(tmp, "pnpm-lock.yaml"), "");
+  const result = run(["validate-input", "--root", tmp]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.pkgManager, "pixi");
+  assert.equal(payload.run, "pixi run");
+  assert.equal(payload.pkgManagerProvenance, "context.md");
+  assert.equal(payload.pkgManagerAmbiguous, false);
   fs.rmSync(tmp, { recursive: true, force: true });
 });
 

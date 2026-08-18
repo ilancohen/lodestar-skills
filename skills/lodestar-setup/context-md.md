@@ -22,6 +22,18 @@ HTTP layer, a background worker, and shared types/utilities."]
 | `[lint]`      | Lint all packages                               |
 | `[test]`      | Full test suite                                 |
 
+`n/a` in a command cell means that check does not exist. Do not invent
+one. `lodestar-fix` runs the checks that are present and reports which
+acceptance step was skipped. The audit's linter probe degrades to
+heuristics when `<lint>` is `n/a` — it must not error.
+
+A `pkg-manager` row records an unrecognized (or overridden) manager:
+name, exec prefix (`dlx` / `npx` / `bunx` equivalent), and add-dev
+command with a `<pkg>` placeholder. Write it only when needed, as a
+table row whose value is `pixi; pixi run; pixi add --dev <pkg>`.
+**Absent means detect from the lockfile.** The recorded row wins over
+detection. Do not leave a placeholder row in the table.
+
 ## Dependency Direction
 
 Observed package import graph — not an intended or target layout. The audit

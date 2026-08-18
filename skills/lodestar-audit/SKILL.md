@@ -9,7 +9,7 @@ description: >-
   by name.
 disable-model-invocation: true
 license: MIT
-compatibility: Requires git, a POSIX-compatible shell, Node.js, and Fallow ^3.15.0 (combined schema 10 or newer) installed in the target project or available on PATH unless Audit Settings records fallow: optional. Designed for JavaScript/TypeScript repositories.
+compatibility: Requires git, a POSIX-compatible shell, Node.js, and Fallow ^3.15.0 (combined schema 10 or newer) installed in the target project or available on PATH unless Audit Settings records fallow: optional. Designed for JavaScript/TypeScript repositories. npm, pnpm, yarn, and Bun are detected from lockfiles; any other manager works when recorded in context.md. Deno and Bazel are not supported.
 metadata:
   author: Ilan Cohen
   version: "0.5.0"
@@ -97,8 +97,12 @@ checkpoints it complete with count 0. Exception: `coverage-floor: none`
 drops the coverage-floor line from known-blind-spots and does not add a
 skip row — there is nothing to check.
 
-If `pkgManager` is null, ask which of npm, yarn, or pnpm this repository
-uses before any install or `dlx`/`npx` command. Do not guess.
+If `pkgManager` is null, ask for the manager, its exec prefix, and its
+add-dev command before any install or `dlx`/`npx`/`bunx` command. Do
+not offer only npm / yarn / pnpm when none of those lockfiles is
+present. Do not guess. `pkgManagerProvenance` is `lockfile`,
+`context.md`, or `none`. If `<lint>` is `n/a`, skip linter probes and
+use grep heuristics — do not error.
 
 Read `.agents/lodestar/context.md` for commands, direction, conventions,
 and the layout table, then follow its link to
