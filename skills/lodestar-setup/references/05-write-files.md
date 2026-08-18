@@ -1,7 +1,8 @@
 # Step 5 — Write the files
 
 Use the templates beside `SKILL.md`. Fill every `[bracketed
-placeholder]` with real values. Announce each file before writing it.
+placeholder]` with real values. Do not announce each file; the Step 9
+summary lists them.
 
 `principles.md` (beside `SKILL.md`) is the SSOT for principles.
 The install always lands a copy at
@@ -21,19 +22,19 @@ This is the load-bearing file. Start from `context-md.md`. Fill in:
 - The Package Layout table — one row per package discovered in Step 1,
   using the repo's own names. Fill Responsibility, `Scannable`, and
   Entry points (`index.ts` if undeclared).
-- The Conventions table — the five keys from Step 3, with the confirmed
-  values. Use the skip-value polarity from the template (`barrel-exports:
-yes` means barrels are allowed).
+- The Conventions table — the five keys from the review screen, with the
+  confirmed values. Use the skip-value polarity from the template
+  (`barrel-exports: yes` means barrels are allowed).
 - The Audit Configuration table — defaults (`categories: all`,
-  `output-root: docs/audit`, `fallow: required`) plus Step 2 scope
-  (`mode: all` with no baseline rows, or `mode: changed-since` plus
-  `baseline-ref` and `baseline-date`) and Step 3a git keys. Do not ask
-  about categories, output-root, or fallow. If the user later persists a
-  category subset from `lodestar-audit`, leave that row as they wrote it
-  on a re-run unless they ask to reset it. If `mode` rows already exist,
-  leave them — the baseline does not move on a re-run.
-- Excluded Paths — Step 2 globs as `### Excluded Paths` under Audit
-  Configuration; replace wholesale.
+  `output-root: docs/audit`, `fallow: required`) plus review-screen
+  scope (`mode: all` with no baseline rows, or `mode: changed-since` plus
+  `baseline-ref` and `baseline-date`) and review-screen git keys. Do not
+  ask about categories, output-root, or fallow. If the user later
+  persists a category subset from `lodestar-audit`, leave that row as
+  they wrote it on a re-run unless they ask to reset it. If `mode` rows
+  already exist, leave them — the baseline does not move on a re-run.
+- Excluded Paths — review-screen globs as `### Excluded Paths` under
+  Audit Configuration; replace wholesale.
 
 Leave the `## Reference` section as the template has it — the principles
 link must stay pointed at `.agents/skills/lodestar-setup/principles.md`.
