@@ -49,12 +49,23 @@ string to pattern-match.
 
 ## Fallow seed
 
-Read `categories/fallow-seed.md` once. Fallow is required. Run
+Read `categories/fallow-seed.md` once. Run
 `scripts/fallow-contract.mjs` to resolve the binary and validate every
 envelope before writing findings. Cache JSON in memory or write
 `.audit-fallow-seed.json` at the repo root and delete it at the end of
-Phase 1. If Fallow is missing, out of the supported range, or the
-envelope fails the contract, **stop** before writing findings.
+Phase 1.
+
+If Fallow is missing, out of the supported range, or the envelope fails
+the contract:
+
+- `fallow: required` (default, including a missing `## Audit Settings`
+  section) — **stop** before writing findings.
+- `fallow: optional` — continue with grep-only detectors. Do not write
+  a seed file. Record for `INDEX.md` that these subtypes were **not
+  checked at all**: `imports` #7–#9, `dry` A, `soc-yagni` A ranking.
+  Put that list at the top of known-blind-spots, not buried. Still run
+  every grep-only detector the category docs name (`boundaries` B is
+  among them).
 
 The seed never modifies source.
 

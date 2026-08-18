@@ -232,7 +232,7 @@ This is the load-bearing file. Start from `context-md.md`. Fill in:
   values. Use the skip-value polarity from the template (`barrel-exports:
   yes` means barrels are allowed).
 - The Audit Settings table — defaults (`categories: all`, `output-root:
-  docs/audit`). Do not ask about these. If the user later persists a
+  docs/audit`, `fallow: required`). Do not ask about these. If the user later persists a
   category subset from `lodestar-audit`, leave that row as they wrote it
   on a re-run unless they ask to reset it.
 
@@ -294,7 +294,8 @@ unread copy of the layout and that `context.md` is the one that counts.
 ## Step 7 — Fallow and `.fallowrc.json` for the audit's fallow seed
 
 The audit skill **requires** [fallow](https://docs.fallow.tools) as the
-primary graph-based detector for `imports`, `dry`, and `soc-yagni`. When
+primary graph-based detector for `imports`, `dry`, and `soc-yagni`
+unless `## Audit Settings` records `fallow: optional`. When
 configured, Fallow also supplies wrong-direction import findings. Without `.fallowrc.json`, boundary
 violations are not detected by fallow and the audit falls back to a
 heuristic grep for direction violations.
@@ -361,7 +362,7 @@ heuristic grep for direction violations.
    package — that would narrow the scan to that package.
 5. On "no", or on a failed install: print the command verbatim, say plainly
    that `lodestar-audit` will refuse to run until a compatible fallow is
-   present, and carry on — the `.fallowrc.json` question is asked either
+   present (`fallow: required`, the default this step writes), and carry on — the `.fallowrc.json` question is asked either
    way. Installs fail for ordinary reasons (no network, or a platform with
    no fallow binary — it ships as platform-specific optional dependencies).
    That is not a setup failure and must not skip the rest of this step.

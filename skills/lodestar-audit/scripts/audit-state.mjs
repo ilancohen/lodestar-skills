@@ -270,6 +270,7 @@ export function parseAuditSettings(contextText) {
   const settings = {
     categories: [...CATEGORIES],
     outputRoot: DEFAULT_OUTPUT_ROOT,
+    fallow: "required",
   };
   const heading = contextText.search(/^## Audit Settings\s*$/m);
   if (heading === -1) return settings;
@@ -293,6 +294,8 @@ export function parseAuditSettings(contextText) {
       settings.categories = parseCategorySetting(raw);
     } else if (key === "output-root") {
       settings.outputRoot = parseOutputRootSetting(raw);
+    } else if (key === "fallow") {
+      settings.fallow = parseFallowSetting(raw);
     }
   }
   return settings;
@@ -318,6 +321,13 @@ function parseCategorySetting(raw) {
     );
   }
   return [...new Set(names)];
+}
+
+function parseFallowSetting(raw) {
+  if (raw === "required" || raw === "optional") return raw;
+  throw new Error(
+    `## Audit Settings has an invalid value for \`fallow\`: \`${raw}\`. Expected required or optional.`,
+  );
 }
 
 function parseOutputRootSetting(raw) {
@@ -765,6 +775,7 @@ function cmdValidateInput(flags) {
     categories: auditSettings.categories,
     outputRoot: auditSettings.outputRoot,
     architectureRoot: architectureOutputRoot(auditSettings.outputRoot),
+    fallow: auditSettings.fallow,
     commands,
     pkgManager: detected.pkgManager,
     run: detected.run,

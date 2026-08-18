@@ -126,6 +126,7 @@ test("validate-input accepts a real layout and does not touch source", () => {
   assert.deepEqual(payload.categories, CATEGORIES);
   assert.equal(payload.outputRoot, DEFAULT_OUTPUT_ROOT);
   assert.equal(payload.architectureRoot, "docs/architecture-review");
+  assert.equal(payload.fallow, "required");
   assert.equal(sha(source), before);
 });
 
@@ -393,6 +394,21 @@ test("parseAuditSettings defaults when the section is absent", () => {
   const parsed = parseAuditSettings("# Fixture\n");
   assert.deepEqual(parsed.categories, CATEGORIES);
   assert.equal(parsed.outputRoot, DEFAULT_OUTPUT_ROOT);
+  assert.equal(parsed.fallow, "required");
+});
+
+test("parseAuditSettings parses fallow optional", () => {
+  const parsed = parseAuditSettings(
+    auditSettingsMarkdown([["fallow", "optional"]]),
+  );
+  assert.equal(parsed.fallow, "optional");
+});
+
+test("parseAuditSettings rejects a bad fallow value", () => {
+  assert.throws(
+    () => parseAuditSettings(auditSettingsMarkdown([["fallow", "maybe"]])),
+    /invalid value for `fallow`/,
+  );
 });
 
 test("parseAuditSettings honors a custom output-root and category subset", () => {

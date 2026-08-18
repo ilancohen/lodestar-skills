@@ -15,11 +15,14 @@ All notable changes to this project will be documented here.
   the defaults; it points at the table instead of copying values.
 
 - **`context.md` `## Audit Settings`.** Optional `categories` (default
-  all) and `output-root` (default `docs/audit`). Setup does not ask;
-  `lodestar-audit` may persist a subset if the user asks after a run.
-  Architecture reports stay beside the audit root (`docs/audit` →
+  all), `output-root` (default `docs/audit`), and `fallow` (`required` |
+  `optional`, default `required`). Setup does not ask; `lodestar-audit`
+  may persist a subset if the user asks after a run. Architecture
+  reports stay beside the audit root (`docs/audit` →
   `docs/architecture-review`; any other root →
-  `<output-root>/architecture-review`).
+  `<output-root>/architecture-review`). `fallow: optional` continues
+  without Fallow using grep-only detectors and lists unchecked subtypes
+  in `INDEX.md` (`imports` #7–#9, `dry` A, `soc-yagni` A ranking).
 
 ### Changed
 

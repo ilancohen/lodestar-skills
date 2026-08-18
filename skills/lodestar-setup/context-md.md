@@ -115,14 +115,16 @@ at their defaults.
 ## Audit Settings
 
 How the audit runs — not the repo's style (that's `## Conventions`).
-**Absent means default:** every category, output under `docs/audit`.
-Setup writes this section at those defaults and does not ask about it.
-`lodestar-audit` may offer to persist a category subset here after a run.
+**Absent means default:** every category, output under `docs/audit`,
+Fallow required. Setup writes this section at those defaults and does
+not ask about it. `lodestar-audit` may offer to persist a category
+subset here after a run.
 
 | Setting        | Value         | Notes                                                                                          |
 | -------------- | ------------- | ---------------------------------------------------------------------------------------------- |
 | `categories`   | `all`         | `all`, or a comma-separated list of category names (`imports`, `types`, …)                     |
 | `output-root`  | `docs/audit`  | Where audit runs land (`<output-root>/<RUN_ID>/`). Relative, no `..`.                          |
+| `fallow`       | `required`    | `required` (default) stops the audit if Fallow is missing or out of range. `optional` continues with grep-only detectors and lists unchecked subtypes in `INDEX.md`. |
 
 Architecture reports derive from the same root so the two stay together:
 `docs/audit` → `docs/architecture-review`; any other root →

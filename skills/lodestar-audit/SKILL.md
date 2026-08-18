@@ -9,7 +9,7 @@ description: >-
   by name.
 disable-model-invocation: true
 license: MIT
-compatibility: Requires git, a POSIX-compatible shell, Node.js, and Fallow ^3.15.0 (combined schema 10 or newer) installed in the target project or available on PATH. Designed for JavaScript/TypeScript repositories.
+compatibility: Requires git, a POSIX-compatible shell, Node.js, and Fallow ^3.15.0 (combined schema 10 or newer) installed in the target project or available on PATH unless Audit Settings records fallow: optional. Designed for JavaScript/TypeScript repositories.
 metadata:
   author: Ilan Cohen
   version: "0.5.0"
@@ -39,8 +39,8 @@ This audit is **structure-agnostic**. It does not assume roles like
 3. `## Conventions` — which style conventions the repo follows. Detectors
    skip at a row's skip value (see the Categories table). A missing
    section means every default.
-4. `## Audit Settings` — optional category subset and `output-root`
-   (default `docs/audit`).
+4. `## Audit Settings` — optional category subset, `output-root`
+   (default `docs/audit`), and `fallow` (default `required`).
 
 Detectors run package-by-package. Kind-of-code rules use the
 Responsibility column and path patterns, never the package name alone.
@@ -115,7 +115,10 @@ Read the category sub-doc before scanning that category. Read
 | `ssot`        | `categories/ssot.md`        | low–medium  | mechanical                    | —                                                     |
 | `styling`     | `categories/styling.md`     | low–medium  | mechanical                    | whole category when `design-tokens` is `no`           |
 
-Known blind spots (copy into `INDEX.md`): coverage floor when it is a
+Known blind spots (copy into `INDEX.md`): if this run skipped the Fallow
+seed (`fallow: optional` and Fallow missing or invalid), put this first
+and prominently: **not checked at all** — `imports` #7–#9, `dry` A,
+`soc-yagni` A ranking. Then: coverage floor when it is a
 number and `<test>` does not emit coverage; wide-diff DRY as `dry.C`
 advisory only; Rule of Three beyond `soc-yagni.D`; whether the documented
 layout is the right one (`lodestar-architecture`). Append any
@@ -165,7 +168,10 @@ Follow [references/discover.md](references/discover.md). Summary:
 
 1. Resolve the package set from `validate-input` JSON.
 2. Run the Fallow seed from `categories/fallow-seed.md`. If Fallow is
-   missing or invalid, **stop**. Do not write findings.
+   missing or invalid: stop when `fallow` is `required` (the default);
+   when `optional`, continue with grep-only detectors and list the
+   unchecked subtypes in `INDEX.md` (`imports` #7–#9, `dry` A,
+   `soc-yagni` A ranking).
 3. Mechanical pass in category order, then semantic pass.
 4. Merge with `node scripts/audit-state.mjs merge-findings`.
 5. Validate with `node scripts/audit-state.mjs validate-output --path
@@ -210,7 +216,7 @@ testability → dry → styling`.
 - **Consent first.** Category subset and Phase 2 start are questions.
   Wait for answers.
 - **Stop conditions:** missing setup files; `validate-input` failure;
-  Fallow missing or invalid; zero files in documented package paths;
+  Fallow missing or invalid when `fallow` is `required`; zero files in documented package paths;
   required commands missing; the user says stop.
 - **One concern per action item.** Split "and also…".
 - **Self-contained.** No "see the audit skill" in generated files.
