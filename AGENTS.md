@@ -37,7 +37,15 @@ to use — do not guess.
 pnpm check
 pnpm test
 pnpm dlx skills add . --list
+pnpm run publish -- patch   # or minor / major / x.y.z
 ```
+
+## Versioning
+
+Do not hand-edit version fields. `pnpm run publish -- patch` (or
+`minor` / `major` / `x.y.z`) bumps `VERSION`, manifests, and skill
+metadata, commits, and tags `vX.Y.Z`. Push separately
+(`git push --follow-tags`) when the tag should go to GitHub.
 
 ## Rules
 
@@ -49,9 +57,9 @@ pnpm dlx skills add . --list
 - Describe all source mutation in the skill's discovery description.
 - `lodestar-fix` remains the only skill that modifies application source.
 - Preserve consent gates, scope limits, and restartability.
-- Keep manifest and skill metadata versions synchronized.
+- Don't hand-edit versions; use `pnpm run publish`.
 - Update `docs/evals.md` when behavior or triggering changes.
-- Validate every skill and local package discovery before release.
+- Validate every skill and local package discovery before a version bump.
 
 ## Scope
 

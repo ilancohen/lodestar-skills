@@ -24,7 +24,8 @@ Before committing suite changes:
    (`disable-model-invocation: true`), and adapters never auto-load
    `lodestar-fix`
 
-Keep versions synchronized via `VERSION` / `scripts/set_version.mjs`.
+Version with `pnpm run publish -- patch` (or `minor` / `major` /
+`x.y.z`). Push separately. See `AGENTS.md`.
 
 ## Deliberate duplication
 
