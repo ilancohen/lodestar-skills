@@ -38,8 +38,8 @@ Full definitions: [`skills/lodestar-setup/principles.md`](skills/lodestar-setup/
 
 ## Will this fight my codebase?
 
-Defaults are opinionated. Five of them are negotiable at setup — one
-multi-select, pre-checked from what the repo already does, written into
+Defaults are opinionated. Five of them are negotiable at setup — stated
+on the review screen from what the repo already does, written into
 `.agents/lodestar/context.md` `## Conventions`:
 
 - expected failures as `Result<T, E>` (`result-types`)
@@ -68,8 +68,9 @@ records layout, entry points, generated-code exclusions, and how
 - A POSIX-ish shell (macOS, Linux, or Windows via bash/WSL — plain
   PowerShell/cmd isn't supported for most steps).
 - [Fallow](https://docs.fallow.tools) **^3.15.0**, only if you'll run
-  `lodestar-audit`. `lodestar-setup` offers to install it for you (it asks
-  first, and asks where in a monorepo), or add it yourself with
+  `lodestar-audit`. `lodestar-setup` offers to install it on the
+  permissions screen (pre-ticked; a monorepo defaults to the repo root),
+  or add it yourself with
   `pnpm add -D fallow@^3.15.0` or the npm/yarn equivalent.
 
 ## Install
@@ -122,11 +123,11 @@ Skills don't activate on their own — you have to invoke them by name
 1. Run `lodestar-setup` once, in the target repo. It writes
    `.agents/lodestar/context.md` — your package layout, dependency
    direction, build commands, exclusions, conventions, audit scope, and
-   commit policy — which is the only file the other skills read. It also asks whether
-   principles should apply to every task automatically (full suite: a
-   short pointer section is added to `AGENTS.md`) or only when you
-   explicitly run a lodestar skill (skills-only: `AGENTS.md` is left
-   alone). Either way it documents your layout and configures Fallow.
+   commit policy — which is the only file the other skills read. Adding a
+   `## Lodestar` pointer to `AGENTS.md` (principles on every task) is
+   unticked on the permissions screen; skills-only is the default and
+   leaves `AGENTS.md` alone. Either way it documents your layout and
+   configures Fallow.
 2. Run `lodestar-audit`. It writes to `docs/audit/<run-id>/` unless
    `## Audit Configuration` names a different `output-root`.
 3. Read the index it produces and decide what to act on.

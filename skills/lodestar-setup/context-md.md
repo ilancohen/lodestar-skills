@@ -199,14 +199,15 @@ stay in `findings.md` and are counted as a backlog in `INDEX.md`.
 Unknown keys are ignored. A typo in a known value, or a `subject-format`
 with no `<slug>`, is an error at audit time, not a silent default.
 
-Setup detects commit policy, then asks once with the table pre-filled:
-commitlint (`commitlint.config.*`, `.commitlintrc*`, `package.json`
-`commitlint`; use its type list — `fix` → `fix(<category>): <slug>`,
-else `chore` or the first type); last ~20 `git log --format=%s`
-subjects; hooks (`.husky/`, `lefthook.y*ml`, non-sample `.git/hooks`);
-current branch (`main`/`master` → propose for `protected`). Defaults
-otherwise: `commits: ask`, trailer `Closes <item>.`, `require-clean:
-no`.
+Setup detects commit policy; the review screen states **ask each time**
+as the default. Detection uses commitlint (`commitlint.config.*`,
+`.commitlintrc*`, `package.json` `commitlint`; use its type list —
+`fix` → `fix(<category>): <slug>`, else `chore` or the first type);
+last ~20 `git log --format=%s` subjects; hooks (`.husky/`,
+`lefthook.y*ml`, non-sample `.git/hooks`); current branch
+(`main`/`master` → propose for `protected`). Format keys are written,
+not shown. Defaults otherwise: `commits: ask`, trailer `Closes
+<item>.`, `require-clean: no`.
 
 ### Excluded Paths
 

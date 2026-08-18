@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented here.
 
+## [0.10.0] - 2026-08-18
+
+### Changed
+
+- **Two consent screens instead of ten.** `lodestar-setup` asks once
+  to review everything it observed, and once for every write outside
+  `.agents/`. An undetectable (or ambiguous) package manager stays its
+  own question and comes before the review. Defaults replaced the
+  old questions: audit scope uses the existing 80-files / 30% rule
+  rather than asking; commit policy is **ask each time**; enforcement
+  is `skills-only`. Conventions, excluded paths, and the commit
+  default are on the review screen for one round of correction. The
+  permissions screen pre-ticks Fallow install, `.fallowrc.json`, and
+  gitignore; **`AGENTS.md` and linter edits start unticked**.
+
 ## [0.9.1] - 2026-08-18
 
 ### Changed
