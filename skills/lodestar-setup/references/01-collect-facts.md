@@ -3,9 +3,12 @@
 Read only what's needed to fill in the template placeholders:
 
 - **Package manager** — exactly one of pnpm / yarn / npm / Bun
-  (`bun.lock` or `bun.lockb`; both still count as Bun). Several → ask.
-  None recognized → ask name, exec prefix, add-dev; write `pkg-manager`.
-  Do not offer only npm / yarn / pnpm when none of those lockfiles exist.
+  (`bun.lock` or `bun.lockb`; both still count as Bun). Several
+  lockfiles, or none recognized → ask **now**, before the review
+  screen: name, exec prefix, and add-dev — not a closed list. Write
+  `pkg-manager`. Do not offer only npm / yarn / pnpm when none of those
+  lockfiles exist. Do not proceed with install prefixes until that is
+  answered. An unambiguous lockfile is not a question.
 - **Build commands** — `package.json` `scripts` first, then Makefile /
   justfile / Taskfile / Nx / Turbo / README. Record what a developer
   types. Missing → `n/a`.
@@ -34,11 +37,12 @@ Read only what's needed to fill in the template placeholders:
   content. Older installs kept the layout table and command table in
   `AGENTS.md` — if you find them there, reuse those values for
   `context.md` and then strip those sections from `AGENTS.md` (see
-  Step 6).
-- **Conventions evidence** — a short, bounded sweep so Step 3 can
-  pre-check from evidence. Record paths (or "not found"), not a
+  Step 6). A value already in `## Conventions` is never overwritten by a
+  sweep that misses it.
+- **Conventions evidence** — a short, bounded sweep so the review screen
+  can pre-check from evidence. Record paths (or "not found"), not a
   judgment. Stop at the first hit per signal; do not walk the whole
-  tree.
+  tree. A recorded `## Conventions` value beats a later miss.
   - `result-types`: a `Result` / `Either` type or `ok:` discriminant
     exported from a package in the layout table (search those packages'
     public `index.ts` and a file named `result.ts` / `either.ts` if
