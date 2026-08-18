@@ -28,7 +28,6 @@ All notable changes to this project will be documented here.
 
 ## [0.6.0] - 2026-08-18
 
-
 ### Fixed
 
 - **Non-TS repos no longer look clean.** Setup stops before writing

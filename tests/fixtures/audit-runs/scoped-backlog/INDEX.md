@@ -29,10 +29,10 @@ a slice.
 In-scope finding count plus backlog count must equal the `findings.md`
 total (not the action-item count).
 
-| Category | Out of scope |
-| -------- | ------------ |
-| imports  | 1            |
-| **Total** | 1           |
+| Category  | Out of scope |
+| --------- | ------------ |
+| imports   | 1            |
+| **Total** | 1            |
 
 ## Known blind spots
 

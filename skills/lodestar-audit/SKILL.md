@@ -192,8 +192,7 @@ writing or merging `findings.md`.
    answer to `context.md`): keep the baseline / expand every finding /
    expand the backlog for one category / expand the backlog for one
    package. Widen-all → omit `--changed-files`. One category or package
-   → after merge, flip those findings to `in_scope: true` before Phase
-   2. A one-run widening is not a policy change.
+   → after merge, flip those findings to `in_scope: true` before Phase 2. A one-run widening is not a policy change.
 6. After Discover, ask: "Proceed to Phase 2 now? (yes / pause)". If
    pause, stop. The run stays resumable.
 

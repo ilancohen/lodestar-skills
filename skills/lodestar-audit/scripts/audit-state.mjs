@@ -605,15 +605,9 @@ export function listChangedFiles(root, since, excludedPaths = []) {
     `${since}...HEAD`,
   ]);
   if (diff.status !== 0) {
-    throw new Error(
-      diff.stderr.trim() || `git diff ${since}...HEAD failed`,
-    );
+    throw new Error(diff.stderr.trim() || `git diff ${since}...HEAD failed`);
   }
-  const untracked = gitAt(root, [
-    "ls-files",
-    "--others",
-    "--exclude-standard",
-  ]);
+  const untracked = gitAt(root, ["ls-files", "--others", "--exclude-standard"]);
   if (untracked.status !== 0) {
     throw new Error(untracked.stderr.trim() || "git ls-files failed");
   }
@@ -629,7 +623,9 @@ export function listChangedFiles(root, since, excludedPaths = []) {
     paths.add(filePath.replace(/\\/g, "/"));
   }
   return [...paths]
-    .filter((filePath) => !excludedPaths.some((glob) => matchesGlob(filePath, glob)))
+    .filter(
+      (filePath) => !excludedPaths.some((glob) => matchesGlob(filePath, glob)),
+    )
     .sort();
 }
 
@@ -654,7 +650,9 @@ function parseGitSubjectFormat(raw) {
 
 function parseGitTrailer(raw) {
   if (!raw) {
-    throw new Error("## Git has an empty `trailer`. Use `none` for no trailer.");
+    throw new Error(
+      "## Git has an empty `trailer`. Use `none` for no trailer.",
+    );
   }
   return raw;
 }

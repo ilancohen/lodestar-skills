@@ -272,7 +272,12 @@ test("applyChangedFiles marks only overlapping files in scope", () => {
 
 test("applyChangedFiles keeps advisory findings in scope", () => {
   const findings = applyChangedFiles(
-    [sampleFinding({ scope_unit: "advisory", files: ["packages/core/src/old.ts:1"] })],
+    [
+      sampleFinding({
+        scope_unit: "advisory",
+        files: ["packages/core/src/old.ts:1"],
+      }),
+    ],
     ["packages/api/src/new.ts"],
   );
   assert.equal(findings[0].in_scope, true);
@@ -1255,10 +1260,7 @@ test("changed-since fixture parses mode and baseline", () => {
     ),
   );
   assert.equal(parsed.mode, "changed-since");
-  assert.equal(
-    parsed.baselineRef,
-    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-  );
+  assert.equal(parsed.baselineRef, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
   assert.equal(parsed.baselineDate, "2026-08-18");
 });
 
@@ -1273,4 +1275,3 @@ test("scoped-backlog fixture mixes in_scope and still validates", () => {
   const backlog = parsed.findings.filter((item) => !item.in_scope).length;
   assert.equal(inScope + backlog, parsed.findings.length);
 });
-

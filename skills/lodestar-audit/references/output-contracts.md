@@ -23,13 +23,14 @@ by deleting the block.
 ## category: imports — complete (4 findings)
 
 ### F0001
+
 - category: imports
 - subtype: cross-package-src
 - package: server
 - files:
   - packages/server/src/routes/users.ts:12
 - evidence: |
-    import { userService } from '@repo/core/src/user/user.service';
+  import { userService } from '@repo/core/src/user/user.service';
 - scope_unit: one-file
 - requires_decision: false
 - in_scope: true

@@ -51,11 +51,11 @@ changed since `<baseline-ref>` (`<baseline-date>`). They remain in
 In-scope finding count plus backlog count must equal the `findings.md`
 total (not the action-item count).
 
-| Category     | Out of scope |
-| ------------ | ------------ |
-| `<imports>`  | `<n>`        |
-| …            | …            |
-| **Total**    | `<N>`        |
+| Category    | Out of scope |
+| ----------- | ------------ |
+| `<imports>` | `<n>`        |
+| …           | …            |
+| **Total**   | `<N>`        |
 
 ## Known blind spots
 

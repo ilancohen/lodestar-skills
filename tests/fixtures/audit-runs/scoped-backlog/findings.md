@@ -7,31 +7,33 @@ by deleting the block.
 ## category: imports — complete (2 findings)
 
 ### F0001
+
 - category: imports
 - subtype: cross-package-src
 - package: api
 - files:
   - packages/api/src/routes/users.ts:12
 - evidence: |
-    import { userService } from '@repo/core/src/user/user.service';
+  import { userService } from '@repo/core/src/user/user.service';
 - scope_unit: one-file
 - requires_decision: false
 - in_scope: true
 - notes: |
 
 ### F0002
+
 - category: imports
 - subtype: wrong-direction
 - package: core
 - files:
   - packages/core/src/billing/refunds.ts:3
 - evidence: |
-    import { httpClient } from '@repo/api';
+  import { httpClient } from '@repo/api';
 - scope_unit: one-file
 - requires_decision: true
 - in_scope: false
 - notes: |
-    core importing from api
+  core importing from api
 
 ## category: types — complete (0 findings)
 

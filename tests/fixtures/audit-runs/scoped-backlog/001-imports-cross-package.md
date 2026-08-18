@@ -2,4 +2,5 @@
 
 category: imports
 files:
-  - packages/api/src/routes/users.ts
+
+- packages/api/src/routes/users.ts

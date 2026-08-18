@@ -66,12 +66,12 @@ the failed category.
 
 ## Interrupted states
 
-| When | What to do |
-|---|---|
-| Before any output | `resolve-run` without `--resume` |
-| During finding merge | `recover`, then `merge-findings` again |
-| After checkpoint | skip completed categories |
-| During Plan | skip existing `NNN-*.md`, continue |
+| When                  | What to do                                               |
+| --------------------- | -------------------------------------------------------- |
+| Before any output     | `resolve-run` without `--resume`                         |
+| During finding merge  | `recover`, then `merge-findings` again                   |
+| After checkpoint      | skip completed categories                                |
+| During Plan           | skip existing `NNN-*.md`, continue                       |
 | Done, backlog remains | flip the slice's `in_scope`, Plan only — do not Discover |
 
 To re-run Plan from scratch after editing `findings.md`, delete
