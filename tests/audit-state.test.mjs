@@ -273,6 +273,103 @@ test("parsePackageLayout is used by validate-input", () => {
   assert.equal(rows[1].alias, "@repo/api");
 });
 
+test("parsePackageLayout defaults Scannable to yes when the column is absent", () => {
+  const rows = parsePackageLayout(
+    fs.readFileSync(path.join(VALID, ".agents/lodestar/context.md"), "utf8"),
+  );
+  assert.equal(rows[0].scannable, "yes");
+  assert.equal(rows[1].scannable, "yes");
+  assert.equal(rows[0].language, "");
+});
+
+test("parsePackageLayout reads the Scannable column", () => {
+  const rows = parsePackageLayout(`## Package Layout
+
+| Package | Path | Alias | Responsibility | Scannable |
+| ------- | ---- | ----- | -------------- | --------- |
+| core | packages/core/src | @repo/core | Domain entities and use cases for billing | yes |
+| worker | services/worker | n/a | Background jobs and queue consumers | no (Go) |
+`);
+  assert.equal(rows[0].scannable, "yes");
+  assert.equal(rows[1].scannable, "no");
+  assert.equal(rows[1].language, "Go");
+});
+
+function writeLayoutRepo(layoutMarkdown, files = {}) {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-audit-"));
+  const contextDir = path.join(tmp, ".agents", "lodestar");
+  fs.mkdirSync(contextDir, { recursive: true });
+  const base = fs.readFileSync(
+    path.join(VALID, ".agents/lodestar/context.md"),
+    "utf8",
+  );
+  const replaced = base.replace(
+    /## Package Layout[\s\S]*$/,
+    `${layoutMarkdown.trim()}\n`,
+  );
+  fs.writeFileSync(path.join(contextDir, "context.md"), replaced);
+  for (const [rel, contents] of Object.entries(files)) {
+    const full = path.join(tmp, rel);
+    fs.mkdirSync(path.dirname(full), { recursive: true });
+    fs.writeFileSync(full, contents);
+  }
+  return tmp;
+}
+
+test("validate-input fails when a Scannable yes row has no scannable files", () => {
+  const tmp = writeLayoutRepo(`## Package Layout
+
+| Package | Path | Alias | Responsibility |
+| ------- | ---- | ----- | -------------- |
+| core | packages/core/src | @repo/core | Domain entities and use cases for billing |
+`);
+  const result = run(["validate-input", "--root", tmp]);
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /Scannable: yes but contains no TypeScript or JavaScript/);
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test("validate-input omits Scannable no rows from allPkgRoots", () => {
+  const tmp = writeLayoutRepo(
+    `## Package Layout
+
+| Package | Path | Alias | Responsibility | Scannable |
+| ------- | ---- | ----- | -------------- | --------- |
+| core | packages/core/src | @repo/core | Domain entities and use cases for billing | yes |
+| worker | services/worker | n/a | Background jobs and queue consumers | no (Go) |
+`,
+    {
+      "packages/core/src/index.ts": "export const value = 1;\n",
+      "services/worker/main.go": "package main\n",
+    },
+  );
+  const result = run(["validate-input", "--root", tmp]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.packages.length, 2);
+  assert.equal(payload.packages[1].scannable, "no");
+  assert.equal(payload.packages[1].language, "Go");
+  assert.equal(payload.packages[1].scannableCount, 0);
+  assert.equal(payload.allPkgRoots, "packages/core/src");
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test("validate-input does not count non-scannable files matched by a glob", () => {
+  const tmp = writeLayoutRepo(
+    `## Package Layout
+
+| Package | Path | Alias | Responsibility |
+| ------- | ---- | ----- | -------------- |
+| docs | notes/* | n/a | Operator runbooks and incident notes |
+`,
+    { "notes/README.md": "# notes\n" },
+  );
+  const result = run(["validate-input", "--root", tmp]);
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /Scannable: yes but contains no TypeScript or JavaScript/);
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
 test("validate-input stops when the context file is missing", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-audit-"));
   fs.writeFileSync(path.join(tmp, "AGENTS.md"), "# AGENTS.md\n");

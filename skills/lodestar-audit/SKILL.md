@@ -33,8 +33,9 @@ This audit is **structure-agnostic**. It does not assume roles like
 `core`, `api`, or `ui`. It uses four things from
 `.agents/lodestar/context.md`:
 
-1. `## Package Layout` — package names, paths, aliases, and a one-sentence
-   responsibility per package.
+1. `## Package Layout` — package names, paths, aliases, a one-sentence
+   responsibility per package, and optional `Scannable` (`yes` / `no`;
+   absent means `yes`). Rows marked `no` are not scanned.
 2. The declared dependency direction — allowed import direction.
 3. `## Conventions` — which style conventions the repo follows. Detectors
    skip at a row's skip value (see the Categories table). A missing
@@ -80,8 +81,13 @@ node scripts/audit-state.mjs validate-input --root <repo>
 If that command exits non-zero, print its error and stop. It rejects a
 missing Package Layout, placeholder Responsibilities (shorter than 20
 characters, `TODO`/`TBD`/`???`/`one sentence`, or a bare noun like
-`core`), an unparseable `## Conventions` value, and an unparseable
+`core`), a `Scannable: yes` row with zero TypeScript or JavaScript
+files, an unparseable `## Conventions` value, and an unparseable
 `## Audit Settings` value.
+
+A package marked `Scannable: no` is listed in `INDEX.md`'s
+known-blind-spots by name and reason (`worker` — Python, not scanned).
+It is excluded from `allPkgRoots` and from every detector.
 
 A category or subtype gated off by `conventions` is reported as skipped
 in `INDEX.md`'s known-blind-spots, not silently absent. Discover still
@@ -124,7 +130,8 @@ advisory only; Rule of Three beyond `soc-yagni.D`; whether the documented
 layout is the right one (`lodestar-architecture`). Append any
 convention-gated detector this run skipped (name the category, subtype,
 and key). Do not list `coverage-floor: none` as a skip — omit that
-line entirely.
+line entirely. Append every `Scannable: no` package by name and
+reason (`worker` — Python, not scanned).
 
 ---
 
@@ -199,9 +206,10 @@ Follow [references/plan.md](references/plan.md). Summary:
    `templates/action-item.md`. Skip files that already exist.
 3. Validate each file for placeholder leaks.
 4. Write `INDEX.md` from `templates/index.md`. Fill Known blind spots
-   from the list in Categories above, plus this run's gated skips.
-   Drop the coverage-floor line when `conventions["coverage-floor"]` is
-   `none`.
+   from the list in Categories above, plus this run's gated skips,
+   plus every `Scannable: no` package (`<name>` — `<language>, not
+   scanned`). Drop the coverage-floor line when
+   `conventions["coverage-floor"]` is `none`.
 5. Align category order with `lodestar-fix`:
    `imports → types → ssot → soc-yagni → boundaries → errors →
 testability → dry → styling`.
@@ -215,8 +223,9 @@ testability → dry → styling`.
   `.audit-fallow-seed.json`.
 - **Consent first.** Category subset and Phase 2 start are questions.
   Wait for answers.
-- **Stop conditions:** missing setup files; `validate-input` failure;
-  Fallow missing or invalid when `fallow` is `required`; zero files in documented package paths;
+- **Stop conditions:** missing setup files; `validate-input` failure
+  (including a `Scannable: yes` package with zero scannable files);
+  Fallow missing or invalid when `fallow` is `required`;
   required commands missing; the user says stop.
 - **One concern per action item.** Split "and also…".
 - **Self-contained.** No "see the audit skill" in generated files.

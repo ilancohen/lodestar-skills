@@ -11,11 +11,20 @@ const DEFAULT_INCLUDE = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"];
 const TEST_RE = /\.(spec|test)\./;
 const DTS_RE = /\.d\.ts$/;
 
+export { DEFAULT_INCLUDE };
+
+function includeFile(filePath, include) {
+  const name = path.basename(filePath);
+  const ext = path.extname(name);
+  if (!include.length) return true;
+  return include.includes(ext) || include.includes(name);
+}
+
 export function walk(root, include, excludeTests, files = []) {
   if (!fs.existsSync(root)) return files;
   const stats = fs.statSync(root);
   if (stats.isFile()) {
-    files.push(root);
+    if (includeFile(root, include)) files.push(root);
     return files;
   }
   for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
@@ -25,14 +34,7 @@ export function walk(root, include, excludeTests, files = []) {
       walk(full, include, excludeTests, files);
       continue;
     }
-    const ext = path.extname(entry.name);
-    if (
-      include.length &&
-      !include.includes(ext) &&
-      !include.includes(entry.name)
-    ) {
-      continue;
-    }
+    if (!includeFile(full, include)) continue;
     if (excludeTests && (TEST_RE.test(entry.name) || DTS_RE.test(entry.name)))
       continue;
     files.push(full);

@@ -47,6 +47,9 @@ for this run, do a manual pass:
 - **Rule of Three at implementation time** — partially captured by
   single-call-site export checks; the broader process rule is enforced by
   code review, not by this audit.
+- **Unscannable packages** — `<name>` — `<language>, not scanned`. Fill
+  one bullet per `Scannable: no` row from `validate-input`. Omit this
+  bullet when every package is scannable.
 
 ## Action items
 

@@ -49,6 +49,20 @@ repository, not locations of this installed skill.
   If the user asks for that, point them at `lodestar-architecture` and
   stop — do not silently start a layout review.
 
+## Step 0 — Confirm the repo is scannable
+
+Count TypeScript and JavaScript files (`source-scan`'s include list:
+`.ts` `.tsx` `.js` `.jsx` `.mjs` `.cjs`) by extension across top-level source
+directories, excluding `node_modules` and `.git`. Count only; do not
+read contents. Tally other source extensions (`.py`, `.go`, `.rs`, …)
+in the same pass so you can name languages if you stop.
+
+- **Zero scannable files** → **stop**. Write nothing. Say the suite
+  audits TypeScript and JavaScript only, name the languages found with
+  counts, and say no config was written. Do not offer a partial setup.
+- **Some scannable, some not** → continue; carry per-directory counts
+  into Step 1 so unscannable rows get marked.
+
 ## Step 1 — Collect the minimum required facts
 
 Read only what's needed to fill in the template placeholders:
@@ -73,6 +87,8 @@ Read only what's needed to fill in the template placeholders:
     quick scan of its top-level exports. Keep it short and concrete
     ("HTTP routes and request validation", "domain entities and use
     cases", "DB and queue adapters").
+  - Whether the glob contains scannable files. A row with none gets
+    `Scannable: no` plus a language note (`no (Python)`). Keep the row.
 - **Dependency direction** — build the package-level edge list (which
   packages import which, with a rough count), then check for cycles.
   Acyclic → topological order as a chain. Cyclic → record the edges and
@@ -118,8 +134,9 @@ Present a single short summary:
 - The observed package import graph — acyclic chain or cyclic edge list,
   using the repo's actual package names.
 - The Package Layout table you intend to write — one row per package,
-  with name, path, alias, and the one-sentence responsibility you've
-  drafted.
+  with name, path, alias, responsibility, and `Scannable: yes` / `no`.
+  Name every unscannable package and its language; the audit will
+  report it as not scanned.
 
 When the graph is cyclic, state plainly that it is cyclic, show the cycle
 edges, and say they will be recorded as-is and reported by the audit as
@@ -225,9 +242,9 @@ This is the load-bearing file. Start from `context-md.md`. Fill in:
 - The exact commands in the Build & Test table.
 - The observed import graph in whichever form applies (acyclic chain or
   cyclic edge list), plus a `Basis:` line with the capture date.
-- The Package Layout table — one row per package discovered in Step 1.
-  Use the repo's own names verbatim. Fill the Responsibility column with
-  the one-sentence summary you drafted.
+- The Package Layout table — one row per package discovered in Step 1,
+  using the repo's own names. Fill Responsibility and `Scannable`
+  (`yes`, or `no (Python)`).
 - The Conventions table — the five keys from Step 3, with the confirmed
   values. Use the skip-value polarity from the template (`barrel-exports:
   yes` means barrels are allowed).
@@ -384,14 +401,14 @@ If the user opts in, write `.fallowrc.json` from `fallowrc.md` beside this
 `SKILL.md` (the template document contains the
 JSON inside a fenced block). Substitute:
 
-- One `boundaries.zones[]` entry per row in the `## Package Layout` table
-  in `context.md`. The zone `name` is the package name from the table.
+- One `boundaries.zones[]` entry per **scannable** row (`Scannable: no`
+  has no zone). The zone `name` is the package name from the table.
   Use the literal path glob from the table as the `patterns` value
   (wrapping bare directory paths to `<path>/**`). For a row with a glob
   like `apps/*/src`, prefer `"autoDiscover": ["apps"]` so each app
   becomes its own sub-zone (sibling apps end up isolated from each
   other, which is usually what you want).
-- One `boundaries.rules[]` entry per package. The `allow` list is every
+- One `boundaries.rules[]` entry per scannable package. The `allow` list is every
   package reachable from `from` in the documented graph (including cycle
   partners). For an acyclic chain this matches every package to the right
   in the chain. The tail-of-chain package with no downward edges gets
@@ -460,6 +477,7 @@ the audit will skip: `result-types: no` (errors #B), `branded-types: no`
 (`boundaries` A, `types` #4), `barrel-exports: yes` (`imports` #4),
 `design-tokens: no` (the whole `styling` category), `coverage-floor:
 none` (the coverage floor). If every row is at its default, say so.
+List every unscannable package by name and language (not scanned).
 Ask: "Does this look right? If so, run the `lodestar-audit`
 skill to scan the codebase and produce action-item files in
 `<output-root>/<run-id>/` (default `docs/audit/<run-id>/`). If the layout itself feels off, run

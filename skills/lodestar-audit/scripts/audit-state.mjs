@@ -16,6 +16,7 @@ import {
   printJson,
   utcDate,
 } from "./runtime.mjs";
+import { DEFAULT_INCLUDE, walk } from "./source-scan.mjs";
 
 export { detectPkgManager } from "./pkg-manager.mjs";
 
@@ -105,11 +106,14 @@ export function parsePackageLayout(contextText) {
     if (cells.length < 4) continue;
     if (/^-+$/.test(cells[0].replace(/:/g, "-"))) continue;
     if (/^package$/i.test(cells[0]) || /^name$/i.test(cells[0])) continue;
+    const scannableCell = parseScannableCell(cells[4]);
     rows.push({
       name: cells[0],
       path: cells[1],
       alias: cells[2],
       responsibility: cells[3],
+      scannable: scannableCell.scannable,
+      language: scannableCell.language,
     });
   }
   if (!rows.length) {
@@ -124,6 +128,57 @@ export function parsePackageLayout(contextText) {
     }
   }
   return rows;
+}
+
+function parseScannableCell(raw) {
+  const stripped = String(raw ?? "")
+    .replace(/^`+|`+$/g, "")
+    .trim();
+  if (!stripped) return { scannable: "yes", language: "" };
+  const match = stripped.match(/^(yes|no)(?:\s*\(([^)]+)\))?$/);
+  if (!match) {
+    throw new Error(
+      `Package Layout has an invalid Scannable value: \`${stripped}\`. Expected yes or no.`,
+    );
+  }
+  return { scannable: match[1], language: (match[2] || "").trim() };
+}
+
+export function countScannableFiles(repoRoot, pkgPath) {
+  let count = 0;
+  for (const dir of packageDirs(repoRoot, pkgPath)) {
+    count += walk(dir, DEFAULT_INCLUDE, false).length;
+  }
+  return count;
+}
+
+function packageDirs(repoRoot, pkgPath) {
+  const normalized = String(pkgPath).replace(/\\/g, "/");
+  const isGlob =
+    normalized.includes("*") ||
+    normalized.includes("?") ||
+    normalized.includes("[");
+  if (isGlob) {
+    return fs
+      .globSync(normalized, { cwd: repoRoot })
+      .map((hit) => path.join(repoRoot, hit));
+  }
+  return [path.join(repoRoot, ...normalized.split("/").filter(Boolean))];
+}
+
+export function attachScannableCounts(repoRoot, packages) {
+  return packages.map((row) => {
+    if (row.scannable === "no") {
+      return { ...row, scannableCount: 0 };
+    }
+    const scannableCount = countScannableFiles(repoRoot, row.path);
+    if (scannableCount === 0) {
+      throw new Error(
+        `Package \`${row.name}\` is marked Scannable: yes but contains no TypeScript or JavaScript files under \`${row.path}\`. The glob is stale or wrong — re-run lodestar-setup, or mark the row Scannable: no if it is not a TS/JS package.`,
+      );
+    }
+    return { ...row, scannableCount };
+  });
 }
 
 export function responsibilityProblem(row) {
@@ -766,7 +821,13 @@ function cmdValidateInput(flags) {
   } catch (error) {
     fail(error.message, 2);
   }
+  try {
+    packages = attachScannableCounts(root, packages);
+  } catch (error) {
+    fail(error.message, 2);
+  }
   const detected = detectPkgManager(root);
+  const scannablePackages = packages.filter((row) => row.scannable !== "no");
   printJson({
     packages,
     direction: directionGraph.chain ?? [],
@@ -781,8 +842,8 @@ function cmdValidateInput(flags) {
     run: detected.run,
     pkgManagerAmbiguous: detected.ambiguous,
     pkgManagerLockfiles: detected.lockfiles,
-    allPkgRoots: packages.map((row) => row.path).join(" "),
-    aliasPrefix: aliasPrefix(packages),
+    allPkgRoots: scannablePackages.map((row) => row.path).join(" "),
+    aliasPrefix: aliasPrefix(scannablePackages),
   });
 }
 

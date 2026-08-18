@@ -65,12 +65,19 @@ package does **today** — not what it should do. Keep it concrete
 "DB and queue adapters"). Agents use this column, plus the dependency
 graph above, to reason about boundaries.
 
-| Package         | Path glob(s)                 | Import alias          | Responsibility   |
-| --------------- | ---------------------------- | --------------------- | ---------------- |
-| `[e.g. core]`   | `[e.g. packages/core/src]`   | `[e.g. @repo/core]`   | `[one sentence]` |
-| `[e.g. server]` | `[e.g. packages/server/src]` | `[e.g. @repo/server]` | `[one sentence]` |
-| `[e.g. shared]` | `[e.g. packages/shared/src]` | `[e.g. @repo/shared]` | `[one sentence]` |
-| `[e.g. web]`    | `[e.g. apps/web/src]`        | `[n/a]`               | `[one sentence]` |
+`Scannable` is `yes` or `no`. `no` means the audit skips the package and
+reports it as not scanned — typically because it is not TypeScript or
+JavaScript. An optional language note may follow (`no (Python)`).
+**Absent means `yes`:** a file with no `Scannable` column keeps today's
+behavior; every row is scanned.
+
+| Package         | Path glob(s)                 | Import alias          | Responsibility   | Scannable |
+| --------------- | ---------------------------- | --------------------- | ---------------- | --------- |
+| `[e.g. core]`   | `[e.g. packages/core/src]`   | `[e.g. @repo/core]`   | `[one sentence]` | `yes`     |
+| `[e.g. server]` | `[e.g. packages/server/src]` | `[e.g. @repo/server]` | `[one sentence]` | `yes`     |
+| `[e.g. shared]` | `[e.g. packages/shared/src]` | `[e.g. @repo/shared]` | `[one sentence]` | `yes`     |
+| `[e.g. web]`    | `[e.g. apps/web/src]`        | `[n/a]`               | `[one sentence]` | `yes`     |
+| `[e.g. worker]` | `[e.g. services/worker]`     | `[n/a]`               | `[one sentence]` | `no (Go)` |
 
 Notes for the table:
 
@@ -80,6 +87,8 @@ Notes for the table:
 - If a package has no import alias (e.g. an application root), put `n/a`.
 - Responsibility is short and concrete — it's used by the audit to
   understand which package owns which kind of code.
+- Do not drop a `Scannable: no` row. The audit lists it as a known
+  blind spot rather than omitting it.
 
 ## Conventions
 

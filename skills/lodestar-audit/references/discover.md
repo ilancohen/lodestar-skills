@@ -18,6 +18,16 @@ is missing or a row is missing), `commands`,
 `pkgManager`, `run`, `pkgManagerAmbiguous`, `pkgManagerLockfiles`,
 `allPkgRoots`, and `aliasPrefix`.
 
+Each `packages` row includes `scannable` (`yes` / `no`; default `yes`
+when the column is absent), `language` (empty unless a `no (Python)`
+note was written), and `scannableCount`. `allPkgRoots` and
+`aliasPrefix` omit `scannable: no` rows. Iterate detectors only over
+`scannable: yes` rows. Record `scannable: no` rows for `INDEX.md`
+known-blind-spots (`<name>` — `<language>, not scanned`).
+`validate-input` fails (exit 2) when a `scannable: yes` row contains
+zero TypeScript or JavaScript files. Category sub-docs that say to
+iterate every Package Layout row mean every `scannable: yes` row.
+
 `conventions` keys: `result-types`, `branded-types`, `barrel-exports`,
 `design-tokens` (`yes` / `no`), and `coverage-floor` (positive integer or
 `none`). Defaults: `yes`, `yes`, `no`, `yes`, `80`. Unknown table keys
@@ -85,7 +95,8 @@ For each category:
 2. Run every Detection command that is not gated off by `conventions`.
    Prefer `node scripts/source-scan.mjs`
    recipes over POSIX `grep` pipelines. Iterate `<pkg_root>` per
-   package row with repeated `--root` flags (paths may contain spaces).
+   **scannable** package row with repeated `--root` flags (paths may
+   contain spaces). Skip `scannable: no` rows — do not grep them.
 3. Drop false positives in tests (`*.spec.ts`, `*.test.ts`) unless the
    sub-doc says otherwise, generated code, `*.d.ts`, and
    `eslint-disable`-guarded `any`.
@@ -100,10 +111,10 @@ When resuming, skip categories that already have
 
 ## Optional mechanical fan-out
 
-If a sub-agent tool exists and there are 4+ packages, spawn one
-sub-agent per package (package row, categories, principle text,
+If a sub-agent tool exists and there are 4+ **scannable** packages, spawn one
+sub-agent per scannable package (package row, categories, principle text,
 exclusion list, the `conventions` object, and which categories /
-subtypes this run must skip). Sub-agents skip those detectors the same
+subtypes this run must skip). Do not spawn for `scannable: no` rows. Sub-agents skip those detectors the same
 way the inline loop does. Constraints: read-only, JSON findings only, no
 `findings.md` writes, no nested spawns, no Fallow re-run. Inline loop
 is canonical when fan-out is unavailable.
@@ -114,7 +125,7 @@ missing (package × category) results.
 
 ## Semantic pass
 
-Detectors: `soc-yagni.A`, `dry.B`, `dry.C`. Work one package at a time.
+Detectors: `soc-yagni.A`, `dry.B`, `dry.C`. Work one scannable package at a time.
 
 - `soc-yagni.A`: non-trivial source files (≥ 30 lines, not re-export,
   not type-only). If the file's responsibility needs "and", or sits
