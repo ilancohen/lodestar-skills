@@ -218,15 +218,18 @@ Follow [references/plan.md](references/plan.md). Summary:
 
 1. Recover with `node scripts/audit-state.mjs recover --run-dir
 <output-root>/<RUN_ID>`.
-2. Group findings by `scope_unit`. Write
+2. Group **in-scope** findings (`in_scope: true`) by `scope_unit`. Write
    `<output-root>/<RUN_ID>/<NNN>-<category>-<slug>.md` from
-   `templates/action-item.md`. Skip files that already exist.
+   `templates/action-item.md`. Number `001…0NN` with no gaps. Skip files
+   that already exist. Out-of-scope findings are counted in `INDEX.md`
+   Backlog, never dropped.
 3. Validate each file for placeholder leaks.
 4. Write `INDEX.md` from `templates/index.md`. Fill Known blind spots
    from the list in Categories above, plus this run's gated skips,
    plus every `Scannable: no` package (`<name>` — `<language>, not
 scanned`). Drop the coverage-floor line when
-   `conventions["coverage-floor"]` is `none`.
+   `conventions["coverage-floor"]` is `none`. Fill `## Backlog` even
+   when empty.
 5. Align category order with `lodestar-fix`:
    `imports → types → ssot → soc-yagni → boundaries → errors →
 testability → dry → styling`.
@@ -244,6 +247,8 @@ testability → dry → styling`.
   (including a `Scannable: yes` package with zero scannable files);
   Fallow missing or invalid when `fallow` is `required`;
   required commands missing; the user says stop.
+- **In-scope only.** Write an action item only for `in_scope: true`.
+  The backlog is reported in `INDEX.md`, never silently dropped.
 - **One concern per action item.** Split "and also…".
 - **Self-contained.** No "see the audit skill" in generated files.
 - **No placeholder leaks.** Treat any `<typecheck>`-style leftover as a
