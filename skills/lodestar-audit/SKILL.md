@@ -8,10 +8,10 @@ description: >-
   by name.
 disable-model-invocation: true
 license: MIT
-compatibility: Requires git, a POSIX-compatible shell, Node.js, and Fallow ^3.15.0 (combined schema 10) installed in the target project or available on PATH. Designed for JavaScript/TypeScript repositories.
+compatibility: Requires git, a POSIX-compatible shell, Node.js, and Fallow ^3.15.0 (combined schema 10 or newer) installed in the target project or available on PATH. Designed for JavaScript/TypeScript repositories.
 metadata:
   author: Ilan Cohen
-  version: "0.4.0"
+  version: "0.4.1"
 ---
 
 You are running a lodestar audit. **Discover** and

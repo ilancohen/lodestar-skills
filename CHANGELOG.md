@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented here.
 
+## [0.4.1] - 2026-08-18
+
+### Changed
+
+- **`lodestar-audit` Fallow schema gate changed from exact equality to a
+  floor.** A schema above the contract baseline (combined 10, dupes 8) passes
+  when every field the audit reads is still present. On the first encounter
+  the contract script records the accepted version/schema pair in
+  `.agents/lodestar/fallow-compat.json` in the target repo and prints a
+  one-line note to stderr; subsequent runs with the same recorded schema are
+  silent. Commit `fallow-compat.json` to share the decision with the team.
+
+  This unblocks Fallow 3.17.0 (combined schema 11, dupes schema 9), whose
+  changes are additive — new optional fields, a new counter, a new enum
+  variant. Nothing the audit reads changed.
+
+- **Improved remediation message when a newer Fallow schema drops a required
+  field.** The message now says "Fallow X.Y.Z changed fields the audit reads"
+  and suggests `fallow@~<last-good>` (pinning backwards) instead of
+  `fallow@^3.15.0` (which would resolve to the broken version).
+
+  **Unblocking an affected repo now:** `<pm> add -D fallow@3.16.0` — 3.16
+  still emits combined schema 10.
+
 ## [0.4.0] - 2026-08-18
 
 ### Changed

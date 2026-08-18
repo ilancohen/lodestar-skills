@@ -14,7 +14,7 @@ license: MIT
 compatibility: Requires filesystem write access and a POSIX-compatible shell for optional Fallow setup. Supports npm, pnpm, and yarn repositories.
 metadata:
   author: Ilan Cohen
-  version: "0.4.0"
+  version: "0.4.1"
 ---
 
 Write the agent-neutral config the lodestar skills need. The one file that
@@ -238,7 +238,7 @@ Decide whether to write it:
    node <lodestar-audit-skill>/scripts/fallow-contract.mjs resolve-bin --root <repo>
    ```
 2. If fallow is not found or outside `^3.15.0`, tell the user:
-   "fallow ^3.15.0 (combined schema 10) is required for lodestar-audit. Install with
+   "fallow ^3.15.0 (combined schema 10 or newer) is required for lodestar-audit. Install with
    `<pm add -D fallow@^3.15.0>` using this repo's package manager (pnpm:
    `pnpm add -D fallow@^3.15.0`; npm: `npm install --save-dev fallow@^3.15.0`;
    yarn: `yarn add -D fallow@^3.15.0`). Write `.fallowrc.json` anyway so
@@ -277,6 +277,10 @@ them, add those two entries (`.audit-fallow-seed.json` is the audit's
 transient seed cache; `.fallow/` is fallow's own cache directory). If
 they decline, still write `.fallowrc.json` and say the gitignore entries
 were skipped.
+
+`.agents/lodestar/fallow-compat.json` is written by lodestar-audit when
+it accepts a Fallow schema newer than the baseline. It is a team decision
+and must be committed — never add it to `.gitignore`.
 
 After writing, verify with the lodestar-audit contract script (absolute path to
 the installed `lodestar-audit/scripts/fallow-contract.mjs`):

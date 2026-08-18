@@ -54,6 +54,7 @@ Expected outcomes (once explicitly invoked):
 - `imports` subtype #6 (`wrong-direction`) means an import opposes a documented edge or path in `context.md`; documented cycle edges surface as #3 `circular-import` instead.
 - Honor category subsets and pause after `findings.md` when asked.
 - Stop and point at `lodestar-setup` / Fallow when `.agents/lodestar/context.md` is missing or has no Package Layout. An `AGENTS.md` that still carries an old layout table must not be used as a fallback. Missing `CLAUDE.md` or `.agents/skills/README.md` is not a blocker.
+- Fallow schema acceptance: a schema above the contract baseline passes when every required field is present. On the first encounter the contract script writes `.agents/lodestar/fallow-compat.json` and prints a one-line note to stderr; subsequent runs with that schema are silent. A schema above the baseline that dropped a required field fails with a "pin to last known-good version" message instead of the upgrade message.
 
 ## lodestar-fix
 

@@ -39,10 +39,23 @@ if ($LASTEXITCODE -ne 0) { throw "fallow contract failed" }
 
 On failure the script prints one remediation message with the installed
 version, supported version, received schema/kind, and the install command
-for this repo's package manager (`pnpm add -D fallow@<current>`, or the
-npm / yarn equivalent). If the manager cannot be detected, the message
-lists all three and you must ask which to use. Stop and report that
-message — do not create or change findings.
+for this repo's package manager. Stop and report that message — do not
+create or change findings. Two distinct failure modes:
+
+- **Version below the floor** — message suggests upgrading:
+  `pnpm add -D fallow@^3.15.0` (or the npm / yarn equivalent). If the
+  manager cannot be detected, the message lists all three and you must
+  ask which to use.
+- **Version above the floor but a required field is missing** — the newer
+  Fallow dropped a field the audit reads. Message says "changed fields the
+  audit reads" and suggests pinning to the last known-good version
+  (`fallow@~<last-good>`, typically the previous minor).
+
+A schema higher than the baseline but with all required fields present is
+automatically accepted. The first time this happens, the script records
+the accepted version/schema pair in `.agents/lodestar/fallow-compat.json`
+and prints a note to stderr. Commit that file so teammates and CI skip
+re-verification.
 
 `.audit-fallow-seed.json` is a temporary working file. Delete it after
 Phase 1 completes; never commit it. (The audit skill is read-only outside

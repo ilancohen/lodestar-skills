@@ -66,7 +66,7 @@ If `.audit-fallow-seed.json` exists from Discover, parse `dupes.clone_groups[]`:
   ```
 
   Parse only a `kind: "dupes"` envelope with the contracted
-  `schema_version` (currently 8); a contract
+  `schema_version` (8 or newer); a contract
   failure stops the audit. Each `clone_groups[]` entry from
   this run that is **not** also present in the mild-mode output is a B-style
   finding. Match groups by `fingerprint`. Confirm by reading the bodies

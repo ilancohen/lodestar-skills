@@ -7,10 +7,19 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { detectPkgManager, installFallowCommand } from "./pkg-manager.mjs";
-import { fail, isMain, parseArgs, printJson, which } from "./runtime.mjs";
+import {
+  atomicWrite,
+  fail,
+  isMain,
+  parseArgs,
+  printJson,
+  utcDate,
+  which,
+} from "./runtime.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CONTRACT_PATH = path.join(HERE, "fallow-contract.json");
+const COMPAT_FILE = ".agents/lodestar/fallow-compat.json";
 
 export function loadContract(filePath = CONTRACT_PATH) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
@@ -42,16 +51,57 @@ export function compatibleFallowVersion(version, minVersion) {
   return got.patch >= floor.patch;
 }
 
+/**
+ * Read `.agents/lodestar/fallow-compat.json` from the target repo root.
+ * Returns the parsed record, or null when the file is absent or unreadable.
+ */
+export function readCompatRecord(root) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(root, COMPAT_FILE), "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Write an updated fallow-compat.json. Errors are swallowed — a write
+ * failure must never block the audit.
+ */
+export function writeCompatRecord(root, record) {
+  try {
+    atomicWrite(
+      path.join(root, COMPAT_FILE),
+      `${JSON.stringify(record, null, 2)}\n`,
+    );
+  } catch {
+    // intentionally swallowed
+  }
+}
+
 export function remediation(contract, details, extras = {}) {
   const installed = extras.installed || "unknown";
   const schema = extras.schema === undefined ? "n/a" : String(extras.schema);
   const kind = extras.kind || "n/a";
+
+  if (extras.aboveBaseline) {
+    // A newer Fallow schema dropped a field the audit reads — pin backwards.
+    const goodVersion = contract.last_good_version || contract.tool_version;
+    const install = installFallowCommand(`~${goodVersion}`, extras.manager);
+    return [
+      details,
+      `Installed Fallow: ${installed}.`,
+      `Supported version: ^${contract.tool_version} (schema ${contract.schema_version} or newer, fields must be intact).`,
+      `Received schema/kind: ${schema}/${kind}.`,
+      `Fallow ${installed} changed fields the audit reads. Pin to the last known-good version with: ${install}`,
+    ].join(" ");
+  }
+
   const range = fallowInstallSpec(contract.tool_version);
   const install = installFallowCommand(range, extras.manager);
   return [
     details,
     `Installed Fallow: ${installed}.`,
-    `Supported version: ${range} (schema ${contract.schema_version}).`,
+    `Supported version: ${range} (schema ${contract.schema_version} or newer).`,
     `Received schema/kind: ${schema}/${kind}.`,
     `Install a compatible version with: ${install}`,
   ].join(" ");
@@ -94,18 +144,47 @@ function commandSpec(contract, kindOrId) {
   );
 }
 
-export function validateEnvelope(envelope, spec, contract) {
+/**
+ * Validate a Fallow JSON envelope against a command spec and the contract.
+ *
+ * Schema check is a floor, not equality: a schema above the baseline passes
+ * when every field the audit reads is still present. On the first encounter,
+ * the accepted version/schema pair is recorded in the target repo's
+ * `.agents/lodestar/fallow-compat.json` so subsequent runs treat it as
+ * known-good. Pass `options.root` to enable recording; omit it for pure
+ * validation without side effects.
+ */
+export function validateEnvelope(envelope, spec, contract, options = {}) {
+  const { root } = options;
+  let needsRecord = null;
+
   if (spec.require_schema) {
-    const expectedSchema =
+    const baseline =
       spec.schema_version !== undefined
         ? spec.schema_version
         : contract.schema_version;
-    if (envelope.schema_version !== expectedSchema) {
+    const got = envelope.schema_version;
+
+    if (typeof got !== "number" || got < baseline) {
       throw new Error(
-        `unsupported schema ${envelope.schema_version}; expected ${expectedSchema}`,
+        `unsupported schema ${got}; expected ${baseline} or newer`,
       );
     }
+    if (got > baseline) {
+      const kind = spec.kind || envelope.kind;
+      const fallowVersion = envelope.version;
+      const compat = root ? readCompatRecord(root) : null;
+      const isRecorded =
+        compat &&
+        compat.fallow_version === fallowVersion &&
+        typeof compat.verified?.[kind] === "number" &&
+        compat.verified[kind] >= got;
+      if (!isRecorded) {
+        needsRecord = { kind, schema: got, baseline, fallowVersion };
+      }
+    }
   }
+
   if (spec.kind && envelope.kind !== spec.kind) {
     throw new Error(`expected kind=${spec.kind}, got ${envelope.kind}`);
   }
@@ -119,6 +198,13 @@ export function validateEnvelope(envelope, spec, contract) {
   }
   for (const field of spec.required_fields || []) {
     if (!hasPath(envelope, field)) {
+      if (needsRecord) {
+        const err = new Error(
+          `Fallow ${needsRecord.fallowVersion ?? "unknown"} (schema ${needsRecord.schema}) dropped required field ${field}`,
+        );
+        err.schemaTooNew = true;
+        throw err;
+      }
       throw new Error(`missing required field ${field}`);
     }
   }
@@ -160,6 +246,28 @@ export function validateEnvelope(envelope, spec, contract) {
       }
     }
   }
+
+  // All checks passed — record and announce the accepted schema if new.
+  if (needsRecord && root) {
+    const existing = readCompatRecord(root) ?? {};
+    const baseline = { ...(existing.baseline ?? {}) };
+    const verified = { ...(existing.verified ?? {}) };
+    baseline[needsRecord.kind] = needsRecord.baseline;
+    verified[needsRecord.kind] = needsRecord.schema;
+    writeCompatRecord(root, {
+      fallow_version: needsRecord.fallowVersion,
+      baseline,
+      verified,
+      verified_at: utcDate(),
+      note: "Written by lodestar-audit: Fallow schema versions above the contract baseline that passed field validation. Commit this file. Delete it to force re-verification.",
+    });
+    process.stderr.write(
+      `[lodestar-audit] Fallow ${needsRecord.fallowVersion ?? "unknown"} emits ${needsRecord.kind} schema ${needsRecord.schema}` +
+        ` (baseline ${needsRecord.baseline}). Field validation passed — schema accepted and recorded in` +
+        ` ${COMPAT_FILE}. Commit that file.\n`,
+    );
+  }
+
   return envelope;
 }
 
@@ -240,9 +348,10 @@ function cmdValidate(flags, contract) {
     kind,
     required_fields: [],
   };
+  const root = flags.root || undefined;
   try {
     const envelope = parseEnvelope(fs.readFileSync(filePath, "utf8"));
-    validateEnvelope(envelope, spec, contract);
+    validateEnvelope(envelope, spec, contract, { root });
     printJson({
       ok: true,
       kind: envelope.kind,
@@ -266,7 +375,8 @@ function cmdValidate(flags, contract) {
         installed,
         schema,
         kind: receivedKind,
-        manager: flags.root ? detectPkgManager(flags.root).pkgManager : null,
+        manager: root ? detectPkgManager(root).pkgManager : null,
+        aboveBaseline: error.schemaTooNew,
       }),
       2,
     );
@@ -332,7 +442,7 @@ function cmdRun(flags, contract) {
     );
   }
   try {
-    validateEnvelope(envelope, spec, contract);
+    validateEnvelope(envelope, spec, contract, { root });
     if (flags.out) {
       const outPath = path.isAbsolute(flags.out)
         ? flags.out
@@ -357,6 +467,7 @@ function cmdRun(flags, contract) {
         schema: envelope.schema_version,
         kind: envelope.kind,
         manager: resolved.manager,
+        aboveBaseline: error.schemaTooNew,
       }),
       2,
     );

@@ -9,6 +9,7 @@ import {
   hasPath,
   loadContract,
   parseEnvelope,
+  readCompatRecord,
   remediation,
   validateEnvelope,
 } from "../skills/lodestar-audit/scripts/fallow-contract.mjs";
@@ -44,7 +45,7 @@ test("contract accepts Fallow ^3.15.0", () => {
   assert.equal(false, compatibleFallowVersion("4.0.0", "3.15.0"));
 });
 
-test("current fixtures satisfy every command contract", () => {
+test("baseline fixtures (v3.15.0) satisfy every command contract", () => {
   for (const command of CONTRACT.commands) {
     const file = path.join(FIX, "v3.15.0", `${command.id}.json`);
     const envelope = parseEnvelope(fs.readFileSync(file, "utf8"));
@@ -56,6 +57,34 @@ test("current fixtures satisfy every command contract", () => {
       );
     }
   }
+});
+
+test("current fixtures (v3.17.0) satisfy every command contract (schema floor)", () => {
+  for (const command of CONTRACT.commands) {
+    const file = path.join(FIX, "v3.17.0", `${command.id}.json`);
+    if (!fs.existsSync(file)) continue;
+    const envelope = parseEnvelope(fs.readFileSync(file, "utf8"));
+    validateEnvelope(envelope, command, CONTRACT);
+    for (const field of command.required_fields) {
+      assert.ok(
+        hasPath(envelope, field),
+        `v3.17.0 ${command.id} missing ${field}`,
+      );
+    }
+  }
+});
+
+test("schema-99 envelope with complete fields passes (above baseline, no root)", () => {
+  const result = run([
+    "validate",
+    "--file",
+    path.join(FIX, "negative", "unsupported-schema.json"),
+    "--kind",
+    "combined",
+  ]);
+  assert.equal(result.status, 0, result.stderr);
+  const out = JSON.parse(result.stdout);
+  assert.equal(out.schema_version, 99);
 });
 
 test("clone instances expose file/start_line/end_line", () => {
@@ -82,7 +111,6 @@ test("negative fixtures fail closed with remediation", () => {
     ["malformed.json", "combined", /not JSON|Fallow output is not JSON/i],
     ["command-error.json", "combined", /boom|error/i],
     ["wrong-kind.json", "combined", /expected kind=combined/i],
-    ["unsupported-schema.json", "combined", /unsupported schema/i],
     [
       "unsupported-version.json",
       "combined",
@@ -105,6 +133,20 @@ test("negative fixtures fail closed with remediation", () => {
     assert.match(result.stderr, /pnpm add -D fallow@\^3\.15\.0/);
     assert.match(result.stderr, /npm install --save-dev fallow@\^3\.15\.0/);
   }
+});
+
+test("above-baseline schema with a missing field fails with pin-to-last-good message", () => {
+  const result = run([
+    "validate",
+    "--file",
+    path.join(FIX, "negative", "schema-above-baseline-missing-field.json"),
+    "--kind",
+    "combined",
+  ]);
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /dropped required field/i);
+  assert.match(result.stderr, /Pin to the last known-good version/i);
+  assert.match(result.stderr, /fallow@~3\.16\.0/);
 });
 
 test("empty successful combined envelope validates", () => {
@@ -137,17 +179,117 @@ test("newer same-major envelope version is accepted", () => {
 });
 
 test("remediation names installed version, range, schema/kind, and install command", () => {
-  const message = remediation(CONTRACT, "unsupported schema 99.", {
+  const message = remediation(CONTRACT, "unsupported schema 9.", {
     installed: "3.14.0",
-    schema: 99,
+    schema: 9,
     kind: "combined",
     manager: "npm",
   });
   assert.match(message, /Installed Fallow: 3\.14\.0/);
-  assert.match(message, /Supported version: \^3\.15\.0 \(schema 10\)/);
-  assert.match(message, /Received schema\/kind: 99\/combined/);
+  assert.match(message, /Supported version: \^3\.15\.0 \(schema 10 or newer\)/);
+  assert.match(message, /Received schema\/kind: 9\/combined/);
   assert.match(message, /npm install --save-dev fallow@\^3\.15\.0/);
   assert.doesNotMatch(message, /ask which package manager/);
+});
+
+test("remediation aboveBaseline suggests pinning to last-known-good version", () => {
+  const message = remediation(CONTRACT, "schema 11 dropped field.", {
+    installed: "3.17.0",
+    schema: 11,
+    kind: "combined",
+    manager: "pnpm",
+    aboveBaseline: true,
+  });
+  assert.match(message, /Installed Fallow: 3\.17\.0/);
+  assert.match(message, /schema 10 or newer, fields must be intact/);
+  assert.match(message, /Received schema\/kind: 11\/combined/);
+  assert.match(message, /pnpm add -D fallow@~3\.16\.0/);
+  assert.match(message, /changed fields the audit reads/);
+});
+
+test("higher schema with complete fields passes without root (no compat write)", () => {
+  const result = run([
+    "validate",
+    "--file",
+    path.join(FIX, "v3.17.0", "combined.json"),
+    "--kind",
+    "combined",
+  ]);
+  assert.equal(result.status, 0, result.stderr);
+  const out = JSON.parse(result.stdout);
+  assert.equal(out.ok, true);
+  assert.equal(out.schema_version, 11);
+});
+
+test("higher schema with complete fields writes compat record when root is given", () => {
+  const tmp = fs.mkdtempSync(path.join(ROOT, "tests/fixtures/.tmp-compat-"));
+  try {
+    fs.mkdirSync(path.join(tmp, ".agents/lodestar"), { recursive: true });
+    const result = run([
+      "validate",
+      "--file",
+      path.join(FIX, "v3.17.0", "combined.json"),
+      "--kind",
+      "combined",
+      "--root",
+      tmp,
+    ]);
+    assert.equal(result.status, 0, result.stderr);
+    const record = readCompatRecord(tmp);
+    assert.ok(record, "compat record should be written");
+    assert.equal(record.fallow_version, "3.17.0");
+    assert.equal(record.verified.combined, 11);
+    assert.equal(record.baseline.combined, 10);
+    assert.match(result.stderr, /schema accepted and recorded/i);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("second run with recorded schema passes silently (no re-note)", () => {
+  const tmp = fs.mkdtempSync(path.join(ROOT, "tests/fixtures/.tmp-compat-"));
+  try {
+    fs.mkdirSync(path.join(tmp, ".agents/lodestar"), { recursive: true });
+    const file = path.join(FIX, "v3.17.0", "combined.json");
+    // First run — records
+    run(["validate", "--file", file, "--kind", "combined", "--root", tmp]);
+    // Second run — already recorded
+    const result = run([
+      "validate",
+      "--file",
+      file,
+      "--kind",
+      "combined",
+      "--root",
+      tmp,
+    ]);
+    assert.equal(result.status, 0, result.stderr);
+    assert.doesNotMatch(result.stderr, /schema accepted and recorded/i);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("compat write failure does not fail the audit", () => {
+  // Pass a root whose .agents/lodestar is a file (not a dir) so atomicWrite fails.
+  const tmp = fs.mkdtempSync(path.join(ROOT, "tests/fixtures/.tmp-compat-"));
+  try {
+    fs.mkdirSync(path.join(tmp, ".agents"), { recursive: true });
+    // Make .agents/lodestar a file — directory creation inside it will fail
+    fs.writeFileSync(path.join(tmp, ".agents/lodestar"), "not-a-dir");
+    const result = run([
+      "validate",
+      "--file",
+      path.join(FIX, "v3.17.0", "combined.json"),
+      "--kind",
+      "combined",
+      "--root",
+      tmp,
+    ]);
+    assert.equal(result.status, 0, result.stderr);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
 });
 
 test("live fallow matrix validates every consumed command when enabled", async (t) => {
@@ -178,7 +320,10 @@ test("live fallow matrix validates every consumed command when enabled", async (
       );
     }
     if (command.require_schema) {
-      assert.equal(payload.schema_version, command.schema_version);
+      assert.ok(
+        payload.schema_version >= command.schema_version,
+        `${command.id} schema ${payload.schema_version} should be >= baseline ${command.schema_version}`,
+      );
     }
     assert.equal(payload.kind, command.kind);
   }
