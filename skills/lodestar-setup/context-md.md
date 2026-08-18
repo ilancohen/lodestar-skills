@@ -24,15 +24,33 @@ HTTP layer, a background worker, and shared types/utilities."]
 
 ## Dependency Direction
 
-Packages must only import in this direction:
+Observed package import graph — not an intended or target layout. The audit
+derives allowed imports from this graph: imports that oppose a documented
+edge or path are wrong-direction findings; edges of a documented cycle are
+reported as circular dependencies instead. Any intended-but-not-yet-true
+layout belongs in `lodestar-architecture`'s advisory report, not here.
+
+Basis: observed import graph, captured [YYYY-MM-DD].
+
+**Acyclic** — record the topological order as a chain (one observed
+ordering, not a rule):
 
 ```
 [e.g. web → server → core → shared — use the actual package names from the
 table below, not generic role names]
 ```
 
-Reverse-direction imports are violations. They'll be surfaced by the
-audit skill below.
+**Cyclic** — no single order exists; list observed edges instead:
+
+```
+- core → api (N imports) [cycle]
+- api → core (N imports) [cycle]
+```
+
+The graph is cyclic — no single dependency order exists.
+
+New downward imports consistent with the documented ordering are not
+violations until this section is updated.
 
 ## Package Layout
 
@@ -41,10 +59,11 @@ package or top-level source directory that contains code worth auditing.
 Use the repo's own names — no role mapping is required, and no fixed set
 of role names is assumed.
 
-For each row, provide a one-sentence responsibility. Keep it concrete
+For each row, provide a one-sentence responsibility describing what the
+package does **today** — not what it should do. Keep it concrete
 ("HTTP routes and request validation", "domain entities and use cases",
 "DB and queue adapters"). Agents use this column, plus the dependency
-direction above, to reason about boundaries.
+graph above, to reason about boundaries.
 
 | Package         | Path glob(s)                 | Import alias          | Responsibility   |
 | --------------- | ---------------------------- | --------------------- | ---------------- |
