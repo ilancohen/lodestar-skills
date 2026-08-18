@@ -6,12 +6,13 @@ description: >-
   skills read, which links to the bundled principles.md (never copied or
   inlined). Asks separately whether to add a pointer section to AGENTS.md
   so principles apply to every task (full suite) or to leave AGENTS.md
-  untouched (skills-only). May also configure Fallow, gitignore entries,
-  and existing linter rules with user consent. Do not load unless the
-  user explicitly invokes lodestar-setup by name.
+  untouched (skills-only). With separate user consent it may also install
+  Fallow as a devDependency (writing package.json and the lockfile), write
+  .fallowrc.json, add gitignore entries, and tighten existing linter rules.
+  Do not load unless the user explicitly invokes lodestar-setup by name.
 disable-model-invocation: true
 license: MIT
-compatibility: Requires filesystem write access and a POSIX-compatible shell for optional Fallow setup. Supports npm, pnpm, and yarn repositories.
+compatibility: Requires filesystem write access and a POSIX-compatible shell for optional Fallow setup, plus network access if you accept the optional Fallow install. Supports npm, pnpm, and yarn repositories.
 metadata:
   author: Ilan Cohen
   version: "0.4.1"
@@ -218,7 +219,7 @@ If yes, remove only those sections (plus the `## Lodestar` section if
 untouched. If they decline, say that `AGENTS.md` now holds a second,
 unread copy of the layout and that `context.md` is the one that counts.
 
-## Step 6 — `.fallowrc.json` for the audit's fallow seed
+## Step 6 — Fallow and `.fallowrc.json` for the audit's fallow seed
 
 The audit skill **requires** [fallow](https://docs.fallow.tools) as the
 primary graph-based detector for `imports`, `dry`, and `soc-yagni`. When
@@ -226,7 +227,7 @@ configured, Fallow also supplies wrong-direction import findings. Without `.fall
 violations are not detected by fallow and the audit falls back to a
 heuristic grep for direction violations.
 
-Decide whether to write it:
+### Resolve fallow, and offer to install it
 
 1. Prefer the version already in the project, then check `PATH`, via the
    lodestar-audit contract script (absolute path to
@@ -237,16 +238,74 @@ Decide whether to write it:
    ```powershell
    node <lodestar-audit-skill>/scripts/fallow-contract.mjs resolve-bin --root <repo>
    ```
-2. If fallow is not found or outside `^3.15.0`, tell the user:
-   "fallow ^3.15.0 (combined schema 10 or newer) is required for lodestar-audit. Install with
-   `<pm add -D fallow@^3.15.0>` using this repo's package manager (pnpm:
-   `pnpm add -D fallow@^3.15.0`; npm: `npm install --save-dev fallow@^3.15.0`;
-   yarn: `yarn add -D fallow@^3.15.0`). Write `.fallowrc.json` anyway so
-   it's ready when fallow is installed?"
-   Use the command for the manager already confirmed in Step 2. If that
-   manager is still unknown, ask before quoting an install command.
-3. If `.fallowrc.json` already exists, ask: "merge boundary section / leave
-   alone / overwrite?"
+   A binary that resolves and is in range needs nothing further — **never
+   install over a working copy**. Go straight to `.fallowrc.json` below.
+2. If fallow is missing or outside the supported range, offer to install
+   it. `resolve-bin` fails with a message that already ends in `Install a
+   compatible version with: <command>`, built for the manager it detected
+   from the lockfile — quote that command rather than composing one here,
+   so the version pin and the per-manager syntax have one source. When the
+   lockfile is ambiguous the message lists all three managers instead; use
+   the one confirmed in Step 2, and if that is still unknown, ask before
+   quoting or running anything. Do not guess. That quoted command is the
+   base: settle the location (item 3 of this step) first, since it can
+   change the command, and whatever the final command is, that is the one to
+   run, to show in the prompt, and to print if the answer is "no".
+
+   When nothing resolved:
+
+   > fallow is required by `lodestar-audit` and was not found in this repo
+   > or on `PATH`. Install it as a devDependency with `<command>`?
+   > (yes / no — I'll print the command and carry on)
+
+   When a version resolved but is out of range, name it. This changes a
+   dependency the repo already pins, and something else may be using that
+   binary:
+
+   > This repo has fallow `<found version>`, which `lodestar-audit` can't
+   > use. Upgrade it with `<command>`? (yes / no — I'll print the command
+   > and carry on)
+3. Before installing in a repo with more than one package, ask where it
+   goes: the workspace root, or a named package. Adjust the quoted command
+   for the answer — root is `pnpm add -D -w` / `npm install --save-dev` /
+   `yarn add -D` at the root, and a named package is
+   `pnpm --filter <name> add -D` / `npm install --save-dev --workspace
+   <name>` / `yarn workspace <name> add -D`. Recommend the root: a
+   package-local install has to be verified and audited from that package.
+   Do not proceed without an answer.
+4. On "yes", run the final command from items 2 and 3 of this step, then
+   re-run `resolve-bin` and say which version resolved. A binary that still
+   doesn't resolve, or still falls outside the range, counts as a failed
+   install.
+
+   `resolve-bin` looks in `<root>/node_modules/.bin` and then `PATH`, so it
+   cannot see a binary that landed in one package's own `node_modules`.
+   Package-local installs often hoist to the root anyway — only if the root
+   re-run comes back empty, re-run with `--root` pointed at the package
+   directory. If that is where it resolves, say so: `lodestar-audit`
+   resolves fallow the same way, so the install is invisible from the repo
+   root, and it should be moved to the root or put on `PATH` before the
+   audit runs. Do not tell the user to point the audit's `--root` at the
+   package — that would narrow the scan to that package.
+5. On "no", or on a failed install: print the command verbatim, say plainly
+   that `lodestar-audit` will refuse to run until a compatible fallow is
+   present, and carry on — the `.fallowrc.json` question is asked either
+   way. Installs fail for ordinary reasons (no network, or a platform with
+   no fallow binary — it ships as platform-specific optional dependencies).
+   That is not a setup failure and must not skip the rest of this step.
+
+### Write `.fallowrc.json`
+
+Ask this whether or not fallow ended up installed — the config is useful
+the moment it is:
+
+> Write `.fallowrc.json` so the audit detects wrong-direction imports with
+> fallow instead of a heuristic grep? (yes / no)
+
+If fallow is not installed, say the file will sit ready until it is.
+
+If `.fallowrc.json` already exists, ask instead: "merge boundary section /
+leave alone / overwrite?"
 
 If the user opts in, write `.fallowrc.json` from `fallowrc.md` beside this
 `SKILL.md` (the template document contains the
@@ -282,8 +341,12 @@ were skipped.
 it accepts a Fallow schema newer than the baseline. It is a team decision
 and must be committed — never add it to `.gitignore`.
 
-After writing, verify with the lodestar-audit contract script (absolute path to
-the installed `lodestar-audit/scripts/fallow-contract.mjs`):
+After writing, verify the zones. This needs a compatible fallow: if none
+resolved — absent, or present but out of range and the upgrade declined —
+skip the check, say so, and say the zones stay unverified until fallow is
+installed. Otherwise run the lodestar-audit contract script
+(absolute path to the installed
+`lodestar-audit/scripts/fallow-contract.mjs`):
 
 ```bash
 node <lodestar-audit-skill>/scripts/fallow-contract.mjs run \
@@ -316,7 +379,9 @@ accuracy. If they decline, skip. If they opt in, read
 Print a one-line summary of each file written or updated (including
 `.fallowrc.json` if Step 6 ran), and which `ENFORCEMENT_MODE` was used —
 say plainly whether `AGENTS.md` was edited (`full`) or left alone
-(`skills-only`).
+(`skills-only`). Name the fallow version Step 6 resolved, whether it was
+already there or just installed. If none resolved, say so, repeat the
+install command, and say `lodestar-audit` needs it.
 Ask: "Does this look right? If so, run the `lodestar-audit`
 skill to scan the codebase and produce action-item files in
 `docs/audit/<run-id>/`. If the layout itself feels off, run
