@@ -50,10 +50,19 @@ function addSkills(source, consumer) {
   // is environment-dependent (it can pick different agent directories on a
   // CI runner than locally), which made this smoke test flaky. This test is
   // about install/update/rollback correctness, not agent detection, so a
-  // fixed target keeps it deterministic. Agent detection itself is covered
-  // by tests/detect-agents.test.mjs against this suite's own install.mjs.
+  // fixed target keeps it deterministic.
   const result = runSkillsCli(
-    ["add", source, "--skill", ...SKILLS, "--agent", "cursor", "-y", "-p", "--copy"],
+    [
+      "add",
+      source,
+      "--skill",
+      ...SKILLS,
+      "--agent",
+      "cursor",
+      "-y",
+      "-p",
+      "--copy",
+    ],
     consumer,
   );
   if (result.status !== 0) {

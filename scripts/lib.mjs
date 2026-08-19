@@ -18,13 +18,9 @@ export const MANIFESTS = [
   ".codex-plugin/plugin.json",
   "gemini-extension.json",
 ];
-export const ADAPTER_DIRS = [
-  ".claude-plugin",
-  ".codex-plugin",
-];
+export const ADAPTER_DIRS = [".claude-plugin", ".codex-plugin"];
 export const REPO_URL = "https://github.com/ilancohen/lodestar-skills";
 export const HOMEPAGE_URL = REPO_URL;
-export const INSTALL_SPEC = "ilancohen/lodestar-skills";
 
 export function readVersion(root = ROOT) {
   const text = fs.readFileSync(path.join(root, "VERSION"), "utf8").trim();
@@ -56,7 +52,9 @@ export function frontmatter(markdown, relativePath) {
 }
 
 export function scalar(frontmatterText, field) {
-  const match = frontmatterText.match(new RegExp(`^${field}:\\s*["']?([^"'\\n]+)`, "m"));
+  const match = frontmatterText.match(
+    new RegExp(`^${field}:\\s*["']?([^"'\\n]+)`, "m"),
+  );
   return match ? match[1].trim() : null;
 }
 

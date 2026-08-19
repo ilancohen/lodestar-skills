@@ -88,18 +88,18 @@ today's commit and keep the rest as a counted backlog in `INDEX.md`. A
 `context.md` with no `mode` row in `## Audit Configuration` still expands every
 finding.
 
-| Want to...           | Run                                                                           |
-| -------------------- | ----------------------------------------------------------------------------- |
-| Pick one agent       | `npx skills add ilancohen/lodestar-skills --skill '*' -a cursor -a universal` |
-| Skip the prompts     | `npx skills add ilancohen/lodestar-skills --skill '*' -y`                     |
-| Install from a clone | `node scripts/install.mjs` (same `-y` / `-a cursor` flags)                    |
+| Want to...       | Run                                                                           |
+| ---------------- | ----------------------------------------------------------------------------- |
+| Pick one agent   | `npx skills add ilancohen/lodestar-skills --skill '*' -a cursor -a universal` |
+| Skip the prompts | `npx skills add ilancohen/lodestar-skills --skill '*' -y`                     |
+| Install a clone  | `npx skills add /path/to/lodestar-skills --skill '*' -y`                      |
 
 Agent ids: `cursor`, `claude-code`, `codex`, `gemini-cli`, `github-copilot`,
 `kiro-cli` — see the [skills CLI's supported agents](https://github.com/vercel-labs/skills#supported-agents)
 for the full list.
 
-Every install (via `node scripts/install.mjs` or the plain `npx skills add`
-command above) always also requests the CLI's `universal` pseudo-agent, so a
+Every install via `npx skills add` always also requests the CLI's `universal`
+pseudo-agent, so a
 real copy of each skill — `principles.md` included — lands at the fixed path
 `.agents/skills/<skill-name>/`, no matter which client agent(s) you picked.
 `lodestar-setup` points `.agents/lodestar/context.md` at that fixed path. If
