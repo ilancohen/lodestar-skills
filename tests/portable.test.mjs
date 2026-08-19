@@ -5,7 +5,10 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { scan } from "../skills/lodestar-audit/scripts/source-scan.mjs";
+import {
+  scan,
+  parseScanExtensionsValue,
+} from "../skills/lodestar-audit/scripts/source-scan.mjs";
 import {
   localBin,
   tempDir,
@@ -15,10 +18,7 @@ import { resolveBin } from "../skills/lodestar-setup/scripts/resolve-bin.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ACTION = path.join(ROOT, "skills/lodestar-fix/scripts/action-state.mjs");
-const FIX_READY = path.join(
-  ROOT,
-  "tests/fixtures/audit-runs/fix-ready",
-);
+const FIX_READY = path.join(ROOT, "tests/fixtures/audit-runs/fix-ready");
 
 function run(script, args, cwd = ROOT) {
   return spawnSync(process.execPath, [script, ...args], {
@@ -141,6 +141,30 @@ test("localBin prefers .cmd over the POSIX shim on Windows", () => {
     fs.writeFileSync(cmd, "@echo off\n");
     assert.equal(localBin("fallow", tmp, "win32"), cmd);
     assert.equal(localBin("fallow", tmp, "darwin"), shim);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("source-scan honors custom scan extensions such as .vue", () => {
+  const tmp = tempDir("lodestar-scan-vue-");
+  try {
+    fs.mkdirSync(path.join(tmp, "src"));
+    fs.writeFileSync(
+      path.join(tmp, "src", "App.vue"),
+      '<script setup lang="ts">const x: any = 1</script>\n',
+    );
+    const include = parseScanExtensionsValue(".ts, .vue");
+    const result = scan([
+      "--pattern",
+      ": any\\b",
+      "--root",
+      tmp,
+      "--include",
+      include.map((ext) => ext.slice(1)).join(","),
+    ]);
+    assert.equal(result.count, 1);
+    assert.match(result.hits[0].file, /App\.vue$/);
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }

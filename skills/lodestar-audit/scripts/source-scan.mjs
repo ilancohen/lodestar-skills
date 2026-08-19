@@ -7,11 +7,45 @@ import fs from "node:fs";
 import path from "node:path";
 import { fail, isMain, parseArgs, printJson } from "./runtime.mjs";
 
-const DEFAULT_INCLUDE = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"];
+const BASE_SCAN_EXTENSIONS = [
+  ".ts",
+  ".tsx",
+  ".js",
+  ".jsx",
+  ".mjs",
+  ".cjs",
+  ".mts",
+  ".cts",
+];
+const DEFAULT_INCLUDE = BASE_SCAN_EXTENSIONS;
 const TEST_RE = /\.(spec|test)\./;
 const DTS_RE = /\.d\.ts$/;
 
-export { DEFAULT_INCLUDE };
+export { BASE_SCAN_EXTENSIONS, DEFAULT_INCLUDE };
+
+export function normalizeScanExtension(raw) {
+  const trimmed = String(raw).trim();
+  if (!trimmed) return null;
+  const ext = trimmed.startsWith(".") ? trimmed : `.${trimmed}`;
+  if (!/^\.[a-z0-9]+$/i.test(ext)) return null;
+  return ext.toLowerCase();
+}
+
+export function parseScanExtensionsValue(raw) {
+  if (raw === undefined || raw === null || !String(raw).trim()) {
+    return [...BASE_SCAN_EXTENSIONS];
+  }
+  const parts = String(raw)
+    .split(",")
+    .map((item) => normalizeScanExtension(item))
+    .filter(Boolean);
+  if (!parts.length) {
+    throw new Error(
+      "`scan-extensions` must list at least one extension (for example `.ts, .tsx, .vue`).",
+    );
+  }
+  return [...new Set(parts)];
+}
 
 function includeFile(filePath, include) {
   const name = path.basename(filePath);
@@ -89,7 +123,8 @@ function flagList(value) {
 function isTestFile(filePath, testGlobs, cwd, walkRoot) {
   const name = path.basename(filePath);
   if (DTS_RE.test(name)) return true;
-  if (testGlobs.length) return isExcluded(filePath, testGlobs, cwd, false, walkRoot);
+  if (testGlobs.length)
+    return isExcluded(filePath, testGlobs, cwd, false, walkRoot);
   return TEST_RE.test(name);
 }
 
@@ -103,7 +138,8 @@ export function walk(root, include, excludeTests, files = [], options = {}) {
   const stats = fs.statSync(root);
   if (stats.isFile()) {
     if (isExcluded(root, excludeGlobs, cwd, false, walkRoot)) return files;
-    if (excludeTests && isTestFile(root, testGlobs, cwd, walkRoot)) return files;
+    if (excludeTests && isTestFile(root, testGlobs, cwd, walkRoot))
+      return files;
     if (includeFile(root, include)) files.push(root);
     return files;
   }
