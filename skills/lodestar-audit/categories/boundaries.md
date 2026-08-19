@@ -112,21 +112,11 @@ generated-client skips defer to `### Excluded Paths`.
 grep -rEn "(id|Id): string|(price|amount): number|slug: string" \
   <all_pkg_roots> --include="*.ts"
 
-# B — check if eslint-plugin-boundaries is already configured (read-only probe)
-#   Skip this probe and the grep below when there is one scannable row
+# B — linter probe for eslint-plugin-boundaries (read-only)
+#   Skip when linter.tool is not eslint, or when there is one scannable row
 #   and an empty graph. A, C, D, E stay on.
-#   If so, use linter output as the definitive source and skip the grep.
-eslint --print-config <any-ts-file> 2>/dev/null | grep -q '"boundaries' \
-  && <lint> --format json --max-warnings=999 2>/dev/null \
-     | node -e "
-         const d=JSON.parse(require('fs').readFileSync(0,'utf8'));
-         d.forEach(f=>f.messages
-           .filter(m=>m.ruleId&&m.ruleId.startsWith('boundaries/'))
-           .forEach(m=>console.log(f.filePath+':'+m.line+': '+m.message))
-         )
-       "
-# If the probe above produces output, use those findings for B — no grep needed.
-# If not (plugin not configured), fall through to the grep below.
+#   Follow linter-probe.md "boundaries B". If output exists, use it and
+#   skip the grep below.
 
 # B — misplaced business logic (path-signal heuristic; use only if linter probe found nothing)
 #   Post-filter: drop any hit whose `if` body is a single `return`, `throw`,

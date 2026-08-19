@@ -39,30 +39,14 @@ table in `context.md`. Substitute before running.
 
 ### Linter probe (best-effort, run once before greps)
 
-Before running the greps below, check whether a linter with structured
-JSON output is available.
-
-```bash
-# If ESLint: write JSON into the platform temp directory, not /tmp.
-LINT_DIR="$(node -e "process.stdout.write(require('node:os').tmpdir())")"
-<lint> --format json --max-warnings=999 > "$LINT_DIR/.audit-lint-errors.json"
-
-# If Biome:
-# biome check --reporter=json > "$LINT_DIR/.audit-lint-errors.json"
-```
-
-```powershell
-$LINT_DIR = node -e "process.stdout.write(require('node:os').tmpdir())"
-<lint> --format json --max-warnings=999 | node -e "require('node:fs').writeFileSync(process.argv[1], require('node:fs').readFileSync(0))" "$LINT_DIR/.audit-lint-errors.json"
-```
-
-Delete the cached lint file at the end of Phase 1. Do not
-install linter packages or modify config — read-only probe only.
+Follow [linter-probe.md](../references/linter-probe.md). Use
+`validate-input` `linter`. Skip when `<lint>` is `n/a` or `linter` is
+null.
 
 From the cached output, extract violations for:
 
-- **A** (`no-floating-promises` / biome `noFloatingPromises`) → flag as swallowed-async
-- **B** (`no-throw-literal`, `prefer-promise-reject-errors` / biome equivalents) → flag as expected-failure-thrown (skip when `conventions["result-types"]` is `no`)
+- **A** → swallowed-async
+- **B** → expected-failure-thrown (skip when `conventions["result-types"]` is `no`)
 
 Linter-sourced B findings do not require `requires_decision: true` by
 default (unlike grep-sourced ones). If the probe produces no output,

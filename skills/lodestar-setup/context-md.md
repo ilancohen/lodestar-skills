@@ -28,13 +28,21 @@ HTTP layer, a background worker, and shared types/utilities."]
 | `[install]`   | Install all dependencies                        |
 | `[build]`     | Build all packages                              |
 | `[typecheck]` | TypeScript type check — run before every commit |
-| `[lint]`      | Lint all packages                               |
+| `[lint]`      | Lint all packages — see below                   |
 | `[test]`      | Full test suite                                 |
 
 `n/a` in a command cell means that check does not exist. Do not invent
 one. `lodestar-fix` runs the checks that are present and reports which
-acceptance step was skipped. The audit's linter probe degrades to
-heuristics when `<lint>` is `n/a` — it must not error.
+acceptance step was skipped. The audit's linter probe degrades to heuristics when `<lint>` is `n/a` —
+it must not error.
+
+When lint exists, the `lint` cell carries three semicolon-separated
+parts: `dev-command; tool; probe-command`. Example:
+`npm run lint; eslint; eslint --format json --max-warnings=999
+<all_pkg_roots>`. Setup runs `detect-linter.mjs` for `tool` and
+`probe-command`; the dev command is what Step 1 collected. Use `n/a`
+when there is no lint check. `<lint>` resolves to the dev command only —
+agents run that in fix acceptance; the audit runs `probe-command`.
 
 A `pkg-manager` row records an unrecognized (or overridden) manager:
 name, exec prefix (`dlx` / `npx` / `bunx` equivalent), and add-dev
@@ -174,19 +182,20 @@ after a run.
 Discovery still scans the whole repo; `mode` only decides which findings
 become action items.
 
-| Key              | Value                | Notes                                                                                                                        |
-| ---------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `categories`     | `all`                | `all`, or a comma-separated list of category names (`imports`, `types`, …)                                                   |
-| `output-root`    | `docs/audit`         | Where audit runs land (`<output-root>/<RUN_ID>/`). Relative, no `..`.                                                        |
-| `fallow`         | `required`           | `required` stops if Fallow is missing or out of range. `optional` continues with grep-only detectors.                        |
-| `mode`           | `all`                | `all` expands every finding. `changed-since` expands only findings that touch code changed since `baseline-ref`.             |
-| `baseline-ref`   | `[commit sha]`       | Required when `mode: changed-since`. Omit the row when `mode` is `all`.                                                      |
-| `baseline-date`  | `[YYYY-MM-DD]`       | Human-readable capture date. Informational; never parsed.                                                                    |
-| `commits`        | `ask`                | `ask` keeps today's question. `per-item` commits without asking. `never` never asks and never commits — edits stay unstaged. |
-| `subject-format` | `<category>: <slug>` | Must contain `<slug>`. Also substitutes `<category>`.                                                                        |
-| `trailer`        | `Closes <item>.`     | Body line. `none` for no trailer. `<item>` is the action-item path.                                                          |
-| `protected`      | `none`               | Branches `lodestar-fix` refuses to commit on. Comma-separated names, or `none`.                                              |
-| `require-clean`  | `no`                 | `yes` refuses to start with a dirty working tree.                                                                            |
+| Key               | Value                | Notes                                                                                                                                                                                                                           |
+| ----------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `categories`      | `all`                | `all`, or a comma-separated list of category names (`imports`, `types`, …)                                                                                                                                                      |
+| `output-root`     | `docs/audit`         | Where audit runs land (`<output-root>/<RUN_ID>/`). Relative, no `..`.                                                                                                                                                           |
+| `fallow`          | `required`           | `required` stops if Fallow is missing or out of range. `optional` continues with grep-only detectors.                                                                                                                           |
+| `scan-extensions` | `.ts, .tsx, .vue`    | Comma-separated file extensions (with leading dot) for grep and `source-scan`. **Absent means default:** `.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`, `.mts`, `.cts`. Setup writes a tailored list after observing frameworks. |
+| `mode`            | `all`                | `all` expands every finding. `changed-since` expands only findings that touch code changed since `baseline-ref`.                                                                                                                |
+| `baseline-ref`    | `[commit sha]`       | Required when `mode: changed-since`. Omit the row when `mode` is `all`.                                                                                                                                                         |
+| `baseline-date`   | `[YYYY-MM-DD]`       | Human-readable capture date. Informational; never parsed.                                                                                                                                                                       |
+| `commits`         | `ask`                | `ask` keeps today's question. `per-item` commits without asking. `never` never asks and never commits — edits stay unstaged.                                                                                                    |
+| `subject-format`  | `<category>: <slug>` | Must contain `<slug>`. Also substitutes `<category>`.                                                                                                                                                                           |
+| `trailer`         | `Closes <item>.`     | Body line. `none` for no trailer. `<item>` is the action-item path.                                                                                                                                                             |
+| `protected`       | `none`               | Branches `lodestar-fix` refuses to commit on. Comma-separated names, or `none`.                                                                                                                                                 |
+| `require-clean`   | `no`                 | `yes` refuses to start with a dirty working tree.                                                                                                                                                                               |
 
 Architecture reports derive from the same root: `docs/audit` →
 `docs/architecture-review`; any other root →

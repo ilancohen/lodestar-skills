@@ -14,12 +14,15 @@ Use `node scripts/audit-state.mjs validate-input --root <repo>`. It
 returns `packages`, `direction` (acyclic chain order, empty when cyclic),
 `directionGraph` (`chain`, `edges`, `cyclic`, `reachability`),
 `conventions` (every key present; defaults filled when `## Conventions`
-is missing or a row is missing), `scope` (`mode: all` when `mode` is
+is missing or a row is missing), `linter` (`tool`, `probe`, or `null`
+when the row is `n/a`), `scope` (`mode: all` when `mode` is
 absent from `## Audit Configuration`; `changed-since` includes a resolved `baselineRef`),
 `commands`,
 `pkgManager`, `run`, `pkgManagerAmbiguous`, `pkgManagerLockfiles`,
 `pkgManagerProvenance` (`lockfile` / `context.md` / `none`),
-`allPkgRoots`, `aliasPrefix`, `excludedPaths`, and `testGlobs`.
+`allPkgRoots`, `aliasPrefix`, `excludedPaths`, `testGlobs`, and
+`scanExtensions` (file extensions to scan — from `scan-extensions` in
+`## Audit Configuration`, or the TS/JS base list when absent).
 
 Each `packages` row includes `scannable` (`yes` / `no`; default `yes`
 when the column is absent), `language` (empty unless a `no (Python)`
@@ -29,8 +32,13 @@ note was written), `scannableCount`, and `entryPoints` (array; default
 `scannable: yes` rows. Record `scannable: no` rows for `INDEX.md`
 known-blind-spots (`<name>` — `<language>, not scanned`).
 `validate-input` fails (exit 2) when a `scannable: yes` row contains
-zero TypeScript or JavaScript files. Category sub-docs that say to
+zero files matching `scanExtensions`. Category sub-docs that say to
 iterate every Package Layout row mean every `scannable: yes` row.
+
+Use `scanExtensions` for `source-scan` and for grep `--include` flags
+(repeat one `--include="*<ext>"` per extension, stripping the leading dot).
+The hardcoded includes in category docs are examples — prefer
+`scanExtensions` from `validate-input`.
 
 `check-freshness` already ran in Preconditions. Do not re-run it here.
 A resumed run inherits the `drift` key in `.checkpoint.json`.

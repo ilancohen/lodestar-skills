@@ -16,7 +16,9 @@ no placeholder substitution.
 This is the load-bearing file. Start from `context-md.md`. Fill in:
 
 - One-sentence project description.
-- The exact commands in the Build & Test table.
+- The exact commands in the Build & Test table. When lint exists, write
+  the `lint` cell as `dev-command; tool; probe-command` from
+  `detect-linter.mjs` (or `n/a`).
 - The observed import graph in whichever form applies (acyclic chain or
   cyclic edge list), plus a `Basis:` line with the capture date.
 - The Package Layout table — one row per package discovered in Step 1,
@@ -26,7 +28,8 @@ This is the load-bearing file. Start from `context-md.md`. Fill in:
   confirmed values. Use the skip-value polarity from the template
   (`barrel-exports: yes` means barrels are allowed).
 - The Audit Configuration table — defaults (`categories: all`,
-  `output-root: docs/audit`, `fallow: required`) plus review-screen
+  `output-root: docs/audit`, `fallow: required`, `scan-extensions` from
+  Step 1 framework signals) plus review-screen
   scope (`mode: all` with no baseline rows, or `mode: changed-since` plus
   `baseline-ref` and `baseline-date`) and review-screen git keys. Do not
   ask about categories, output-root, or fallow. If the user later
@@ -48,7 +51,7 @@ already the 0.9 shape, replace `## Build & Test`,
 leave other user content. Do **not** replace `## Audit Configuration`
 wholesale: refresh git keys (`commits`, `subject-format`, `trailer`,
 `protected`, `require-clean`) and `### Excluded Paths` from this run;
-leave `categories`, `output-root`, `fallow`, `mode`, `baseline-ref`,
+leave `categories`, `output-root`, `fallow`, `scan-extensions`, `mode`, `baseline-ref`,
 and `baseline-date` if those rows are present (unless the user asks to
 reset them). Missing `## Conventions` → insert between
 `## Package Layout` and `## Audit Configuration`. Missing

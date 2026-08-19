@@ -5,7 +5,7 @@
 | Command   | Run               |
 | --------- | ----------------- |
 | typecheck | npm run typecheck |
-| lint      | npm run lint      |
+| lint      | npm run lint; eslint; eslint --format json --max-warnings=999 <all_pkg_roots>      |
 | test      | npm test          |
 
 ## Dependency Direction

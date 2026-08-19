@@ -2,11 +2,11 @@
 
 ## Build & Test
 
-| Command   | Run       |
-| --------- | --------- |
-| typecheck | n/a       |
-| lint      | n/a       |
-| test      | bun test  |
+| Command   | Run      |
+| --------- | -------- |
+| typecheck | n/a      |
+| lint      | n/a      |
+| test      | bun test |
 
 ## Dependency Direction
 

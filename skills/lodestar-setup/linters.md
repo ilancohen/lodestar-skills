@@ -1,9 +1,15 @@
 # Linter rules for higher-accuracy audit findings
 
-Read this only when the linter row was ticked. Enabling these rules
+Read this only when the linter permissions row was ticked. Enabling these rules
 in an **existing** linter config makes opportunistic probes in
 `lodestar-audit` definitive rather than heuristic. Do not install a new
 linter or write config without consent.
+
+The sections below document **ESLint** and **Biome** because they are
+common and have stable rule IDs the audit maps directly. For any other
+linter recorded in `context.md` (`oxlint`, `deno`, `ruff`, …), enable
+the closest equivalent rules that tool exposes — the audit reads the
+linter recorded in the `lint` cell and maps violations by rule id or message when possible.
 
 ## ESLint with `@typescript-eslint`
 
@@ -52,3 +58,12 @@ groups. Check that these are enabled:
 
 Biome does not have a boundaries/layer enforcement rule. The grep fallback
 in lodestar-audit handles `boundaries.B` when Biome is the only linter.
+
+## Other linters
+
+When the recorded tool is not ESLint or Biome, look up that linter's
+docs for rules equivalent to the mappings in
+[`lodestar-audit/references/linter-probe.md`](../lodestar-audit/references/linter-probe.md)
+(`types` #1/#3, `errors` A/B). Enable them in the existing config only
+— do not install packages. If the tool has no JSON reporter or no
+matching rule, skip; the audit falls back to grep heuristics.

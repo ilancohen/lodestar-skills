@@ -17,7 +17,16 @@ import {
   printJson,
   utcDate,
 } from "./runtime.mjs";
-import { DEFAULT_INCLUDE, matchesGlob, walk } from "./source-scan.mjs";
+import {
+  DEFAULT_INCLUDE,
+  matchesGlob,
+  parseScanExtensionsValue,
+  walk,
+} from "./source-scan.mjs";
+import {
+  detectLinter,
+  inferProbeFromLintScript,
+} from "../../lodestar-setup/scripts/detect-linter.mjs";
 
 export { detectPkgManager, resolvePkgManager } from "./pkg-manager.mjs";
 
@@ -195,10 +204,15 @@ export function isDeclaredEntryImport(specifier, alias, entryPoints) {
   return entries.includes(subpath);
 }
 
-export function countScannableFiles(repoRoot, pkgPath, excludedPaths = []) {
+export function countScannableFiles(
+  repoRoot,
+  pkgPath,
+  excludedPaths = [],
+  include = DEFAULT_INCLUDE,
+) {
   let count = 0;
   for (const dir of packageDirs(repoRoot, pkgPath)) {
-    count += walk(dir, DEFAULT_INCLUDE, false, [], {
+    count += walk(dir, include, false, [], {
       cwd: repoRoot,
       excludeGlobs: excludedPaths,
     }).length;
@@ -220,7 +234,12 @@ function packageDirs(repoRoot, pkgPath) {
   return [path.join(repoRoot, ...normalized.split("/").filter(Boolean))];
 }
 
-export function attachScannableCounts(repoRoot, packages, excludedPaths = []) {
+export function attachScannableCounts(
+  repoRoot,
+  packages,
+  excludedPaths = [],
+  include = DEFAULT_INCLUDE,
+) {
   return packages.map((row) => {
     if (row.scannable === "no") {
       return { ...row, scannableCount: 0 };
@@ -229,10 +248,11 @@ export function attachScannableCounts(repoRoot, packages, excludedPaths = []) {
       repoRoot,
       row.path,
       excludedPaths,
+      include,
     );
     if (scannableCount === 0) {
       throw new Error(
-        `Package \`${row.name}\` is marked Scannable: yes but contains no TypeScript or JavaScript files under \`${row.path}\`. The glob is stale or wrong — re-run lodestar-setup, or mark the row Scannable: no if it is not a TS/JS package.`,
+        `Package \`${row.name}\` is marked Scannable: yes but contains no scannable source files under \`${row.path}\` (extensions: ${include.join(", ")}). The glob is stale or wrong — re-run lodestar-setup, or mark the row Scannable: no if it is not a scanned package.`,
       );
     }
     return { ...row, scannableCount };
@@ -253,13 +273,48 @@ export function responsibilityProblem(row) {
 
 export const COMMAND_NAMES = ["install", "build", "typecheck", "lint", "test"];
 
+export function parseLintCell(raw) {
+  const trimmed = String(raw)
+    .replace(/^`+|`+$/g, "")
+    .trim();
+  if (!trimmed || /^\[/.test(trimmed)) return null;
+  if (/^n\/a$/i.test(trimmed)) {
+    return { command: "n/a", tool: null, probe: null };
+  }
+  const parts = trimmed
+    .split(";")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (parts.length < 3) {
+    throw new Error(
+      "lint row must be dev-command; tool; probe-command or n/a. Re-run lodestar-setup.",
+    );
+  }
+  return {
+    command: parts[0],
+    tool: parts[1].toLowerCase(),
+    probe: parts.slice(2).join("; "),
+  };
+}
+
 export function parseCommands(contextText) {
   const commands = {};
   for (const name of COMMAND_NAMES) {
     const match = contextText.match(
       new RegExp(`\\|\\s*${name}\\s*\\|\\s*([^|]+)\\|`, "i"),
     );
-    if (match) commands[name] = match[1].trim();
+    if (!match) continue;
+    const raw = match[1].trim();
+    if (name === "lint") {
+      try {
+        const cell = parseLintCell(raw);
+        commands.lint = cell?.command ?? raw.split(";")[0].trim();
+      } catch {
+        commands.lint = raw.split(";")[0].trim();
+      }
+      continue;
+    }
+    commands[name] = raw;
   }
   return commands;
 }
@@ -279,6 +334,113 @@ export function parseLayoutSource(contextText) {
     return raw;
   }
   return null;
+}
+
+export function parseLinter(contextText) {
+  const match = contextText.match(/\|\s*`?lint`?\s*\|\s*([^|]+)\|/i);
+  if (!match) return null;
+  const cell = parseLintCell(match[1]);
+  if (!cell || cell.command === "n/a") return null;
+  return { tool: cell.tool, probe: cell.probe };
+}
+
+function requireLinter(contextText, commands) {
+  const lint = commands.lint?.trim();
+  const hasLint = lint && !/^n\/a$/i.test(lint);
+  let linter;
+  try {
+    linter = parseLinter(contextText);
+  } catch (error) {
+    throw error;
+  }
+  if (hasLint && !linter) {
+    throw new Error(
+      "lint row must include dev-command; tool; probe-command. Re-run lodestar-setup.",
+    );
+  }
+  return linter;
+}
+
+function checkStaleLinter(root, contextText) {
+  const skipped = [];
+  const drift = [];
+  let cell;
+  try {
+    const match = contextText.match(/\|\s*`?lint`?\s*\|\s*([^|]+)\|/i);
+    if (!match) return { skipped, drift };
+    cell = parseLintCell(match[1]);
+  } catch (error) {
+    return {
+      skipped: [{ check: "stale-linter", reason: error.message }],
+      drift,
+    };
+  }
+  const observed = detectLinter(root);
+  const hasLint = cell && cell.command !== "n/a";
+
+  if (!hasLint) {
+    if (cell?.tool) {
+      drift.push({
+        fact: "stale-linter",
+        name: "lint",
+        recorded: `${cell.tool}; ${cell.probe}`,
+        observed: "lint is n/a but a linter probe is still recorded",
+        remedy: "Re-run lodestar-setup to set lint to n/a.",
+      });
+    }
+    return { skipped, drift };
+  }
+
+  if (!cell.tool || !cell.probe) {
+    drift.push({
+      fact: "stale-linter",
+      name: "lint",
+      recorded: cell.command,
+      observed: observed.tool
+        ? `repo now uses ${observed.tool}`
+        : "repo no longer has a detectable linter",
+      remedy: "Re-run lodestar-setup to refresh the lint row.",
+    });
+    return { skipped, drift };
+  }
+
+  if (!observed.tool) {
+    const inferrable = inferProbeFromLintScript(root, cell.tool);
+    if (!inferrable) {
+      skipped.push({
+        check: "stale-linter",
+        reason: "linter not detectable from repo",
+      });
+      return { skipped, drift };
+    }
+    drift.push({
+      fact: "stale-linter",
+      name: "lint",
+      recorded: `${cell.tool}; ${cell.probe}`,
+      observed: "no linter detected in the repo",
+      remedy: "Re-run lodestar-setup to refresh the lint row.",
+    });
+    return { skipped, drift };
+  }
+
+  if (cell.tool !== observed.tool) {
+    drift.push({
+      fact: "stale-linter",
+      name: "lint",
+      recorded: cell.tool,
+      observed: observed.tool,
+      remedy: "Re-run lodestar-setup to refresh the lint row.",
+    });
+  } else if (observed.probe && cell.probe !== observed.probe) {
+    drift.push({
+      fact: "stale-linter",
+      name: "lint",
+      recorded: cell.probe,
+      observed: observed.probe,
+      remedy: "Re-run lodestar-setup to refresh the lint probe command.",
+    });
+  }
+  return { skipped, drift };
 }
 
 function posixPath(value) {
@@ -622,6 +784,9 @@ export function checkFreshness(root, options = {}) {
     const stale = checkStaleCommands(root, commands, detected);
     skipped.push(...stale.skipped);
     drift.push(...stale.drift);
+    const linter = checkStaleLinter(root, contextText);
+    skipped.push(...linter.skipped);
+    drift.push(...linter.drift);
   }
   return { fresh: drift.length === 0, layoutSource, drift, skipped };
 }
@@ -633,6 +798,10 @@ function printDriftHuman(drift) {
   for (const item of drift) {
     if (item.fact === "missing-package") {
       process.stderr.write(`- missing package: ${item.observed}\n`);
+    } else if (item.fact === "stale-linter") {
+      process.stderr.write(
+        `- stale linter \`${item.name}\`: recorded \`${item.recorded}\` but ${item.observed}\n`,
+      );
     } else {
       process.stderr.write(
         `- stale command \`${item.name}\`: recorded \`${item.recorded}\` but ${item.observed}\n`,
@@ -651,11 +820,16 @@ function packageForSpecifier(spec, packages) {
   return null;
 }
 
-function collectImportEdges(root, packages, excludedPaths = []) {
+function collectImportEdges(
+  root,
+  packages,
+  excludedPaths = [],
+  include = DEFAULT_INCLUDE,
+) {
   const counts = new Map();
   for (const from of packages) {
     for (const dir of packageDirs(root, from.path)) {
-      const files = walk(dir, DEFAULT_INCLUDE, true, [], {
+      const files = walk(dir, include, true, [], {
         cwd: root,
         excludeGlobs: excludedPaths,
       });
@@ -734,7 +908,13 @@ export function deriveDirection(root) {
   const packages = parsePackageLayout(contextText);
   const names = packages.map((row) => row.name);
   const excluded = parseExcludedPaths(contextText);
-  const edges = collectImportEdges(root, packages, excluded.excludedPaths);
+  const auditSettings = parseAuditSettings(contextText);
+  const edges = collectImportEdges(
+    root,
+    packages,
+    excluded.excludedPaths,
+    auditSettings.scanExtensions,
+  );
   const cyclic = hasDirectedCycle(edges);
   const chain = cyclic ? null : topologicalChain(names, edges) || names;
   const result = { cyclic, chain, edges };
@@ -876,7 +1056,9 @@ export function rejectPre09Context(contextText) {
   throw new Error(
     `.agents/lodestar/context.md uses the pre-0.9 section layout (found: ${found
       .map((name) => `## ${name}`)
-      .join(", ")}). Re-run lodestar-setup to regenerate it. There is no migration.`,
+      .join(
+        ", ",
+      )}). Re-run lodestar-setup to regenerate it. There is no migration.`,
   );
 }
 
@@ -923,6 +1105,11 @@ export function parseAuditSettings(contextText) {
   }
   if (rows.fallow !== undefined) {
     settings.fallow = parseFallowSetting(rows.fallow);
+  }
+  if (rows["scan-extensions"] !== undefined) {
+    settings.scanExtensions = parseScanExtensionsValue(rows["scan-extensions"]);
+  } else {
+    settings.scanExtensions = parseScanExtensionsValue(undefined);
   }
   return settings;
 }
@@ -1697,12 +1884,14 @@ function cmdValidateInput(flags) {
   let excluded;
   let git;
   let scope;
+  let linter;
   try {
     conventions = parseConventions(contextText);
     auditSettings = parseAuditSettings(contextText);
     excluded = parseExcludedPaths(contextText);
     git = parseGit(contextText);
     scope = parseAuditScope(contextText);
+    linter = requireLinter(contextText, commands);
     if (scope.mode === "changed-since") {
       scope = {
         ...scope,
@@ -1713,7 +1902,12 @@ function cmdValidateInput(flags) {
     fail(error.message, 2);
   }
   try {
-    packages = attachScannableCounts(root, packages, excluded.excludedPaths);
+    packages = attachScannableCounts(
+      root,
+      packages,
+      excluded.excludedPaths,
+      auditSettings.scanExtensions,
+    );
   } catch (error) {
     fail(error.message, 2);
   }
@@ -1728,11 +1922,13 @@ function cmdValidateInput(flags) {
     outputRoot: auditSettings.outputRoot,
     architectureRoot: architectureOutputRoot(auditSettings.outputRoot),
     fallow: auditSettings.fallow,
+    scanExtensions: auditSettings.scanExtensions,
     excludedPaths: excluded.excludedPaths,
     testGlobs: excluded.testGlobs,
     git,
     scope,
     commands,
+    linter,
     pkgManager: detected.pkgManager,
     run: detected.run,
     pkgManagerAmbiguous: detected.ambiguous,

@@ -33,32 +33,14 @@ table in `context.md`. Substitute before running.
 
 ### Linter probe (best-effort, run once before greps)
 
-Before running the greps below, check whether a linter with structured
-JSON output is available — this avoids duplicating findings that the
-linter already catches definitively.
-
-```bash
-# Detect which linter is configured (check devDependencies / config files)
-# Cache JSON in the platform temp directory (Node os.tmpdir()).
-LINT_DIR="$(node -e "process.stdout.write(require('node:os').tmpdir())")"
-<lint> --format json --max-warnings=999 > "$LINT_DIR/.audit-lint-types.json"
-
-# If Biome: use its JSON reporter instead
-# biome check --reporter=json > "$LINT_DIR/.audit-lint-types.json"
-```
-
-```powershell
-$LINT_DIR = node -e "process.stdout.write(require('node:os').tmpdir())"
-<lint> --format json --max-warnings=999 | node -e "require('node:fs').writeFileSync(process.argv[1], require('node:fs').readFileSync(0))" "$LINT_DIR/.audit-lint-types.json"
-```
-
-Delete the cached lint file at the end of Phase 1. This is a
-read-only probe — do not install linter packages or modify config.
+Follow [linter-probe.md](../references/linter-probe.md). Use
+`validate-input` `linter`. Skip when `<lint>` is `n/a` or `linter` is
+null.
 
 From the cached output, extract violations for:
 
-- **#1** (`consistent-type-imports` / biome `useImportType`) → flag as misplaced-type
-- **#3** (`no-explicit-any` / biome `noExplicitAny`) → flag as unguarded-any
+- **#1** → misplaced-type (see rule table in linter-probe.md)
+- **#3** → unguarded-any
 
 If the linter probe produces no output (not configured, wrong rules, error),
 fall through to the greps below silently.
@@ -101,9 +83,8 @@ all #1 findings `requires_decision: true` and explain in `notes:`.
 - #2 — replace with the appropriate utility (`extends`, `Pick`, `Omit`,
   `Partial`, `Required`, `Extract`, `Exclude`, `ReturnType`, `Parameters`, `&`).
   Delete the duplicated fields.
-- #3 — replace with `unknown` + narrowing, or add
-  `// eslint-disable-next-line @typescript-eslint/no-explicit-any` with a
-  one-line comment explaining why.
+- #3 — replace with `unknown` + narrowing, or add that linter's inline
+  disable comment with a one-line reason (see linter-probe.md).
 
 Never widen a type to fix a compile error. If narrowing breaks something,
 mark `requires_decision: true`.

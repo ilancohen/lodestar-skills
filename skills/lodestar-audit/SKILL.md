@@ -11,8 +11,9 @@ disable-model-invocation: true
 license: MIT
 compatibility: >-
   Requires git, a POSIX-compatible shell, Node.js, and Fallow ^3.15.0
-  (combined schema 10 or newer) installed in the target project or
-  available on PATH unless Audit Configuration records fallow optional.
+  (combined schema 10 or newer) declared in root package.json and
+  installed under node_modules/.bin unless Audit Configuration records
+  fallow optional.
   Designed for JavaScript/TypeScript repositories. npm, pnpm, yarn, and
   Bun are detected from lockfiles; any other manager works when recorded
   in context.md. Deno and Bazel are not supported.
@@ -162,7 +163,8 @@ add-dev command before any install or `dlx`/`npx`/`bunx` command. Do
 not offer only npm / yarn / pnpm when none of those lockfiles is
 present. Do not guess. `pkgManagerProvenance` is `lockfile`,
 `context.md`, or `none`. If `<lint>` is `n/a`, skip linter probes and
-use grep heuristics — do not error.
+use grep heuristics — do not error. Otherwise use `validate-input`
+`linter.probe` (see [references/linter-probe.md](references/linter-probe.md)).
 
 Read `.agents/lodestar/context.md` for commands, direction, conventions,
 and the layout table, then follow its link to

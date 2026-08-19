@@ -11,6 +11,7 @@ set up a new linter.
 
 Honor the permissions-screen tick. If the linter row was omitted or
 unticked, skip. If it was ticked, read [linters.md](../linters.md) and
-enable only the in-place ESLint / Biome rules it names. Do not add
-plugins or packages — `eslint-plugin-boundaries` stays advisory, not
-part of this tick.
+enable only the in-place rules it names for the detected linter. Do
+not add plugins or packages — `eslint-plugin-boundaries` stays
+advisory, not part of this tick. For linters not listed there, enable
+equivalent rules when they exist in that tool's docs.

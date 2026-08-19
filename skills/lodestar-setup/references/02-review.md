@@ -13,7 +13,8 @@ a git repo, or `mode` already recorded). Always show **Layout**.
 
 **Commands** — the package manager you detected, where commands came
 from (`package.json` scripts, Makefile, …), and the commands you found
-(`n/a` if a check does not exist).
+(`n/a` if a check does not exist). Name the linter you detected, or
+"none configured".
 
 **Layout** — how the layout was found, and the table: name, path, alias,
 entry points, responsibility, Scannable. Name any package that cannot be
@@ -21,6 +22,19 @@ scanned. Show which package imports which, using the repo's actual
 package names — no per-package import counts. A single-package repo has
 an empty import graph; still show the table. Do not ask whether the
 layout is "right" — that's `lodestar-architecture`'s job, not setup's.
+
+**Frameworks & scan extensions** — name the UI frameworks you believe are
+in use (or "none beyond TS/JS"), and the file extensions the audit will
+scan (for example `.ts`, `.tsx`, `.vue`). Say when an extension was
+added because of observed source files, not just a dependency. Skip this
+heading only when the repo is plain TS/JS with no extra extensions
+beyond the default list.
+
+**Fallow entry points** — skip when the repo is a single app and you
+expect auto-discovery to suffice. Otherwise list each app surface Fallow
+should seed (for example `apps/a/index.html`, `apps/b/src/main.ts`) and
+say you will write them to `.fallowrc.json` `entry` and verify with
+`--minimum N`. When you recorded none, say auto-discovery only.
 
 **Circular imports** — if two packages import each other, say so in
 plain words — "`a` imports `b`, and `b` imports `a` back" — and say you

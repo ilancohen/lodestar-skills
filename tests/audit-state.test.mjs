@@ -31,6 +31,9 @@ import {
   SCOPE_DEFAULTS,
   parsePackageLayout,
   parseLayoutSource,
+  parseLintCell,
+  parseLinter,
+  parseCommands,
   scriptNameFromCommand,
   checkFreshness,
   deriveDirection,
@@ -645,7 +648,7 @@ test("validate-input fails when a Scannable yes row has no scannable files", () 
   assert.equal(result.status, 2);
   assert.match(
     result.stderr,
-    /Scannable: yes but contains no TypeScript or JavaScript/,
+    /Scannable: yes but contains no scannable source files/,
   );
   fs.rmSync(tmp, { recursive: true, force: true });
 });
@@ -689,7 +692,7 @@ test("validate-input does not count non-scannable files matched by a glob", () =
   assert.equal(result.status, 2);
   assert.match(
     result.stderr,
-    /Scannable: yes but contains no TypeScript or JavaScript/,
+    /Scannable: yes but contains no scannable source files/,
   );
   fs.rmSync(tmp, { recursive: true, force: true });
 });
@@ -766,7 +769,7 @@ test("validate-input fails when a yes row is entirely excluded generated code", 
   assert.equal(generated.status, 2);
   assert.match(
     generated.stderr,
-    /Scannable: yes but contains no TypeScript or JavaScript/,
+    /Scannable: yes but contains no scannable source files/,
   );
   fs.rmSync(tmp, { recursive: true, force: true });
 });
@@ -943,6 +946,21 @@ test("parseAuditSettings parses fallow optional", () => {
     auditSettingsMarkdown([["fallow", "optional"]]),
   );
   assert.equal(parsed.fallow, "optional");
+});
+
+test("parseAuditSettings parses scan-extensions", () => {
+  const parsed = parseAuditSettings(
+    auditSettingsMarkdown([["scan-extensions", ".ts, .vue, .svelte"]]),
+  );
+  assert.deepEqual(parsed.scanExtensions, [".ts", ".vue", ".svelte"]);
+});
+
+test("parseAuditSettings defaults scan-extensions to the TS/JS base list", () => {
+  const parsed = parseAuditSettings(auditSettingsMarkdown([]));
+  assert.ok(parsed.scanExtensions.includes(".tsx"));
+  assert.ok(parsed.scanExtensions.includes(".mts"));
+  assert.ok(parsed.scanExtensions.includes(".cts"));
+  assert.equal(parsed.scanExtensions.includes(".vue"), false);
 });
 
 test("parseAuditSettings rejects a bad fallow value", () => {
@@ -1506,6 +1524,172 @@ test("parseLayoutSource reads the Build & Test row and ignores absence", () => {
     parseLayoutSource("## Build & Test\n\n| test | pnpm test |\n"),
     null,
   );
+});
+
+test("parseLintCell splits dev command from tool and probe", () => {
+  assert.deepEqual(parseLintCell("n/a"), {
+    command: "n/a",
+    tool: null,
+    probe: null,
+  });
+  assert.deepEqual(
+    parseLintCell(
+      "npm run lint; eslint; eslint --format json --max-warnings=999 <all_pkg_roots>",
+    ),
+    {
+      command: "npm run lint",
+      tool: "eslint",
+      probe: "eslint --format json --max-warnings=999 <all_pkg_roots>",
+    },
+  );
+  assert.throws(
+    () => parseLintCell("npm run lint"),
+    /dev-command; tool; probe/,
+  );
+});
+
+test("parseCommands uses only the dev lint command", () => {
+  const commands = parseCommands(
+    "## Build & Test\n\n| lint | npm run lint; eslint; eslint --format json . |\n",
+  );
+  assert.equal(commands.lint, "npm run lint");
+});
+
+test("parseLinter reads tool and probe from the lint cell", () => {
+  assert.deepEqual(
+    parseLinter(
+      "## Build & Test\n\n| lint | npm run lint; eslint; eslint --format json --max-warnings=999 <all_pkg_roots> |\n",
+    ),
+    {
+      tool: "eslint",
+      probe: "eslint --format json --max-warnings=999 <all_pkg_roots>",
+    },
+  );
+  assert.equal(parseLinter("## Build & Test\n\n| lint | n/a |\n"), null);
+  assert.throws(
+    () => parseLinter("## Build & Test\n\n| lint | npm run lint |\n"),
+    /dev-command; tool; probe/,
+  );
+});
+
+test("validate-input rejects lint without tool and probe", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-linter-"));
+  fs.mkdirSync(path.join(tmp, ".agents", "lodestar"), { recursive: true });
+  fs.writeFileSync(
+    path.join(tmp, ".agents", "lodestar", "context.md"),
+    `# Fixture
+
+## Build & Test
+
+| Command | Run |
+| --- | --- |
+| lint | npm run lint |
+
+## Dependency Direction
+
+Basis: observed import graph, captured 2026-08-18.
+
+## Package Layout
+
+| Package | Path | Alias | Responsibility |
+| --- | --- | --- | --- |
+| core | packages/core/src | @repo/core | Domain entities and use cases for billing |
+`,
+  );
+  fs.mkdirSync(path.join(tmp, "packages", "core", "src"), { recursive: true });
+  fs.writeFileSync(
+    path.join(tmp, "packages/core/src/index.ts"),
+    "export const x = 1;\n",
+  );
+  const result = run(["validate-input", "--root", tmp]);
+  assert.equal(result.status, 2, result.stderr);
+  assert.match(result.stderr, /lint row must be dev-command; tool; probe/);
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test("validate-input returns linter metadata", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-linter-"));
+  fs.mkdirSync(path.join(tmp, ".agents", "lodestar"), { recursive: true });
+  fs.writeFileSync(
+    path.join(tmp, ".agents", "lodestar", "context.md"),
+    `# Fixture
+
+## Build & Test
+
+| Command | Run |
+| --- | --- |
+| lint | npm run lint; eslint; eslint --format json --max-warnings=999 <all_pkg_roots> |
+
+## Dependency Direction
+
+Basis: observed import graph, captured 2026-08-18.
+
+core → api
+
+## Package Layout
+
+| Package | Path | Alias | Responsibility |
+| --- | --- | --- | --- |
+| core | packages/core/src | @repo/core | Domain entities and use cases for billing |
+`,
+  );
+  fs.mkdirSync(path.join(tmp, "packages", "core", "src"), { recursive: true });
+  fs.writeFileSync(
+    path.join(tmp, "packages/core/src/index.ts"),
+    "export const x = 1;\n",
+  );
+  const result = run(["validate-input", "--root", tmp]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.linter.tool, "eslint");
+  assert.match(payload.linter.probe, /--format json/);
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test("check-freshness reports stale linter tool", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-stale-linter-"));
+  fs.mkdirSync(path.join(tmp, ".agents", "lodestar"), { recursive: true });
+  fs.writeFileSync(
+    path.join(tmp, ".agents", "lodestar", "context.md"),
+    `# Fixture
+
+## Build & Test
+
+| lint | npm run lint; biome; biome check --reporter=json <all_pkg_roots> |
+
+## Dependency Direction
+
+Basis: observed import graph, captured 2026-08-18.
+
+## Package Layout
+
+| Package | Path | Alias | Responsibility |
+| --- | --- | --- | --- |
+| core | packages/core/src | @repo/core | Domain entities and use cases for billing |
+`,
+  );
+  fs.writeFileSync(path.join(tmp, "eslint.config.js"), "export default [];\n");
+  fs.mkdirSync(path.join(tmp, "packages", "core", "src"), { recursive: true });
+  fs.writeFileSync(
+    path.join(tmp, "packages/core/src/index.ts"),
+    "export const x = 1;\n",
+  );
+  fs.writeFileSync(
+    path.join(tmp, "package.json"),
+    JSON.stringify({
+      name: "stale-linter",
+      private: true,
+      scripts: { lint: "eslint ." },
+    }),
+  );
+  const result = run(["check-freshness", "--root", tmp, "--facts", "commands"]);
+  assert.equal(result.status, 2, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(
+    payload.drift.some((item) => item.fact === "stale-linter"),
+    true,
+  );
+  fs.rmSync(tmp, { recursive: true, force: true });
 });
 
 test("check-freshness fresh-workspace exits 0 and skips install", () => {
