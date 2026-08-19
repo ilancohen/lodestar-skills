@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented here.
 
+## [0.12.0] - 2026-08-19
+
+### Added
+
+- **Category and area triage in `lodestar-fix`.** The "work on now" question splits "By area" into "By category" (type of fix) and "By area" (codebase location); area selection suggests candidates from the Package Layout table with per-area fix counts.
+
 ## [0.11.3] - 2026-08-19
 
 ### Added
