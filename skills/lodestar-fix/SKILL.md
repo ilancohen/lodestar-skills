@@ -10,7 +10,7 @@ license: MIT
 compatibility: Requires git and the target repository's declared typecheck and test commands (`n/a` skips that check). npm, pnpm, yarn, and Bun are detected from lockfiles; any other manager works when recorded in context.md. Deno and Bazel are not supported. Shell examples assume a POSIX-compatible environment.
 metadata:
   author: Ilan Cohen
-  version: "0.11.1"
+  version: "0.11.2"
 ---
 
 You are running `lodestar-fix`. The job is to **triage** and **execute** the
