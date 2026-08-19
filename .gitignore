@@ -17,3 +17,4 @@ coverage/
 /docs/plans/
 /docs/plan.md
 /docs/2026-08-16-suite-audit.md
+/tests/fixtures/.tmp-*/
