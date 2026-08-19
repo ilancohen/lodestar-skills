@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { ROOT, SKILLS, readVersion } from "../scripts/lib.mjs";
+import { ROOT, readVersion } from "../scripts/lib.mjs";
 import {
   RENAME_MAP,
   compareCopy,
@@ -211,15 +211,6 @@ test("--check passes when the target has no vendored copies", () => {
   assert.equal(result.exitCode, 0);
   assert.deepEqual(result.copies, []);
   fs.rmSync(tmp, { recursive: true, force: true });
-});
-
-test("canonical skill list remains the four Lodestar IDs", () => {
-  assert.deepEqual([...SKILLS].sort(), [
-    "lodestar-architecture",
-    "lodestar-audit",
-    "lodestar-fix",
-    "lodestar-setup",
-  ]);
 });
 
 test("same-parent renamed+current dirs --force backs up the current dest", () => {

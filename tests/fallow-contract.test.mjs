@@ -13,6 +13,8 @@ import {
   parseEnvelope,
   readCompatRecord,
   remediation,
+  resolveFallow,
+  runFallow,
   validateEnvelope,
 } from "../skills/lodestar-audit/scripts/fallow-contract.mjs";
 
@@ -83,6 +85,135 @@ test("resolve-bin fails when fallow is not declared in package.json", () => {
     const result = run(["resolve-bin", "--root", tmp]);
     assert.equal(result.status, 2);
     assert.match(result.stderr, /not declared in package\.json/i);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+function writeFakeFallow(tmp, script) {
+  fs.mkdirSync(path.join(tmp, "node_modules", ".bin"), { recursive: true });
+  const bin = path.join(tmp, "node_modules", ".bin", "fallow");
+  fs.writeFileSync(bin, `#!/bin/sh\n${script}\n`);
+  fs.chmodSync(bin, 0o755);
+  return bin;
+}
+
+test("resolveFallow fails when declared but node_modules/.bin/fallow is missing", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-fallow-"));
+  try {
+    fs.writeFileSync(
+      path.join(tmp, "package.json"),
+      JSON.stringify({ name: "tmp", devDependencies: { fallow: "^3.15.0" } }),
+    );
+    assert.throws(
+      () => resolveFallow(tmp, CONTRACT),
+      (error) => {
+        assert.match(error.message, /node_modules\/\.bin\/fallow is missing/);
+        assert.match(error.message, /Install dependencies with:/);
+        return true;
+      },
+    );
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("resolveFallow fails when the installed Fallow version is incompatible", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-fallow-"));
+  try {
+    fs.writeFileSync(
+      path.join(tmp, "package.json"),
+      JSON.stringify({ name: "tmp", devDependencies: { fallow: "^3.15.0" } }),
+    );
+    writeFakeFallow(tmp, "echo '3.1.0'");
+    assert.throws(
+      () => resolveFallow(tmp, CONTRACT),
+      (error) => {
+        assert.match(error.message, /unsupported Fallow installed 3\.1\.0/);
+        assert.match(error.message, /Supported version: \^3\.15\.0/);
+        return true;
+      },
+    );
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("resolveFallow succeeds when declared, installed, and compatible", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-fallow-"));
+  try {
+    fs.writeFileSync(
+      path.join(tmp, "package.json"),
+      JSON.stringify({ name: "tmp", devDependencies: { fallow: "^3.15.0" } }),
+    );
+    writeFakeFallow(tmp, "echo '3.15.0'");
+    const resolved = resolveFallow(tmp, CONTRACT);
+    assert.equal(resolved.version, "3.15.0");
+    assert.ok(
+      resolved.bin.endsWith(path.join("node_modules", ".bin", "fallow")),
+    );
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("resolve-bin CLI fails when the installed Fallow version is incompatible", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-fallow-"));
+  try {
+    fs.writeFileSync(
+      path.join(tmp, "package.json"),
+      JSON.stringify({ name: "tmp", devDependencies: { fallow: "^3.15.0" } }),
+    );
+    writeFakeFallow(tmp, "echo '2.0.0'");
+    const result = run(["resolve-bin", "--root", tmp]);
+    assert.equal(result.status, 2);
+    assert.match(result.stderr, /unsupported Fallow installed 2\.0\.0/);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("runFallow treats exit 0 and exit 1 as successful runs", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-fallow-"));
+  try {
+    const clean = writeFakeFallow(tmp, 'echo \'{"kind":"combined"}\'; exit 0');
+    assert.equal(runFallow(clean, []).trim(), '{"kind":"combined"}');
+
+    const findings = writeFakeFallow(
+      tmp,
+      'echo \'{"kind":"combined"}\'; exit 1',
+    );
+    assert.equal(runFallow(findings, []).trim(), '{"kind":"combined"}');
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("runFallow throws on a real failure, preferring an error envelope's message", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-fallow-"));
+  try {
+    const stderrOnly = writeFakeFallow(tmp, "echo 'boom' >&2; exit 2");
+    assert.throws(
+      () => runFallow(stderrOnly, []),
+      (error) => {
+        assert.match(error.message, /boom/);
+        assert.equal(error.exitCode, 2);
+        return true;
+      },
+    );
+
+    const errorEnvelope = writeFakeFallow(
+      tmp,
+      'echo \'{"error":true,"message":"custom failure"}\'; exit 3',
+    );
+    assert.throws(
+      () => runFallow(errorEnvelope, []),
+      (error) => {
+        assert.match(error.message, /custom failure/);
+        assert.equal(error.exitCode, 3);
+        return true;
+      },
+    );
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }

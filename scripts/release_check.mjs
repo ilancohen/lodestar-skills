@@ -5,27 +5,42 @@ import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { ROOT, isMain, readVersion } from "./lib.mjs";
 
-function run(command, args) {
-  return spawnSync(command, args, { cwd: ROOT, encoding: "utf8" });
+function run(command, args, cwd) {
+  return spawnSync(command, args, { cwd, encoding: "utf8" });
 }
 
 export function releaseCheck(options = {}) {
+  // `root` is injectable so tests can exercise the git-status/tag branches
+  // against an isolated fixture repo instead of this checkout. The package
+  // check always validates the real ROOT (check_package.mjs resolves its
+  // own root from its file location, not cwd).
+  const root = options.root || ROOT;
   const errors = [];
-  const version = readVersion();
+  const version = readVersion(root);
   const tag = options.tag || `v${version}`;
-  const status = run("git", ["status", "--porcelain"]);
+  const status = run("git", ["status", "--porcelain"], root);
   if (status.status !== 0) errors.push("git status failed");
-  else if (status.stdout.trim() && !options.allowDirty) errors.push("working tree is dirty");
+  else if (status.stdout.trim() && !options.allowDirty)
+    errors.push("working tree is dirty");
 
-  const existing = run("git", ["rev-parse", "--verify", "--quiet", `refs/tags/${tag}`]);
+  const existing = run(
+    "git",
+    ["rev-parse", "--verify", "--quiet", `refs/tags/${tag}`],
+    root,
+  );
   if (existing.status === 0 && !options.allowExistingTag) {
     errors.push(`tag ${tag} already exists`);
   }
 
-  const pack = run(process.execPath, [path.join(ROOT, "scripts/check_package.mjs")]);
+  const pack = run(
+    process.execPath,
+    [path.join(ROOT, "scripts/check_package.mjs")],
+    root,
+  );
   const output = `${pack.stdout || ""}${pack.stderr || ""}`;
   if (pack.status !== 0) errors.push("package checks failed");
-  if (output.includes("WARNING:")) errors.push("package checks emitted warnings");
+  if (output.includes("WARNING:"))
+    errors.push("package checks emitted warnings");
 
   return { errors, tag, version };
 }

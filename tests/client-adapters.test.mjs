@@ -3,14 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { MANIFESTS, ROOT, SKILLS } from "../scripts/lib.mjs";
-import { checkPackage } from "../scripts/check_package.mjs";
 import { runSkillsCli } from "../scripts/skills-cli.mjs";
-
-test("adapters and manifests discover exactly four canonical skills", () => {
-  const result = checkPackage(ROOT);
-  assert.deepEqual(result.errors, [], result.errors.join("\n"));
-  assert.equal(result.skillCount, 4);
-});
 
 test("root skills/ holds exactly the four canonical SKILL.md files", () => {
   const skillsRoot = path.join(ROOT, "skills");

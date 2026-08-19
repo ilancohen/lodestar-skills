@@ -13,7 +13,7 @@ function run(command, args, cwd, env = process.env) {
   return spawnSync(command, args, { cwd, encoding: "utf8", env });
 }
 
-function installedSkills(consumer) {
+export function installedSkills(consumer) {
   const found = [];
   for (const parent of [".agents/skills", ".cursor/skills", ".claude/skills"]) {
     const root = path.join(consumer, parent);
@@ -26,7 +26,7 @@ function installedSkills(consumer) {
   return found;
 }
 
-function assertInstalled(consumer, version) {
+export function assertInstalled(consumer, version) {
   const found = installedSkills(consumer);
   const names = [...new Set(found.map((item) => item.skill))].sort();
   if (names.join(",") !== [...SKILLS].sort().join(",")) {
