@@ -37,15 +37,18 @@ to use — do not guess.
 pnpm check
 pnpm test
 pnpm dlx skills add . --list
-pnpm run publish -- patch   # or minor / major / x.y.z
+pnpm run publish -- patch   # or minor / major / x.y.z; add --push to publish remotely
 ```
 
 ## Versioning
 
-Do not hand-edit version fields. `pnpm run publish -- patch` (or
-`minor` / `major` / `x.y.z`) bumps `VERSION`, manifests, and skill
-metadata, commits, and tags `vX.Y.Z`. Push separately
-(`git push --follow-tags`) when the tag should go to GitHub.
+Do not hand-edit version fields. Add a `## [X.Y.Z]` section to
+`CHANGELOG.md` first. Keep changelog entries concise: one bullet per
+change, short bold lead-in, one or two sentences max — no
+multi-paragraph bullets or mid-sentence line breaks. `pnpm run publish
+-- patch` (or `minor` / `major` / `x.y.z`) bumps `VERSION`, manifests,
+and skill metadata, commits, and tags `vX.Y.Z`. Push with `--push`, or
+separately: `git push origin HEAD && git push origin vX.Y.Z`.
 
 ## Rules
 

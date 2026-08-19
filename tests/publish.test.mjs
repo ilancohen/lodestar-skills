@@ -5,7 +5,12 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { MANIFESTS, ROOT, SKILLS } from "../scripts/lib.mjs";
-import { nextVersion, publish, versionedFiles } from "../scripts/publish.mjs";
+import {
+  nextVersion,
+  publish,
+  versionedFiles,
+  changelogHasVersion,
+} from "../scripts/publish.mjs";
 
 function git(cwd, args) {
   return spawnSync(
@@ -62,6 +67,15 @@ function fixtureRepo() {
   return tmp;
 }
 
+function writeChangelog(tmp, versions) {
+  const body = versions
+    .map((version) => `## [${version}]\n\n### Changed\n\n- test\n`)
+    .join("\n");
+  fs.writeFileSync(path.join(tmp, "CHANGELOG.md"), `# Changelog\n\n${body}`);
+  git(tmp, ["add", "CHANGELOG.md"]);
+  git(tmp, ["commit", "-q", "-m", "changelog"]);
+}
+
 test("nextVersion bumps patch, minor, and major", () => {
   assert.equal(nextVersion("0.10.0", "patch"), "0.10.1");
   assert.equal(nextVersion("0.10.1", "minor"), "0.11.0");
@@ -78,6 +92,7 @@ test("nextVersion rejects a non-increase or junk spec", () => {
 test("publish commits the bump and tags vX.Y.Z", () => {
   const tmp = fixtureRepo();
   try {
+    writeChangelog(tmp, ["0.10.1"]);
     const result = publish("patch", { root: tmp });
     assert.equal(result.version, "0.10.1");
     assert.equal(result.tag, "v0.10.1");
@@ -113,6 +128,7 @@ test("publish commits the bump and tags vX.Y.Z", () => {
 test("publish --dry-run does not write or tag", () => {
   const tmp = fixtureRepo();
   try {
+    writeChangelog(tmp, ["0.11.0"]);
     const result = publish("minor", { root: tmp, dryRun: true });
     assert.equal(result.version, "0.11.0");
     assert.equal(result.dryRun, true);
@@ -135,12 +151,40 @@ test("publish --dry-run does not write or tag", () => {
 test("publish refuses a dirty tree or an existing tag", () => {
   const tmp = fixtureRepo();
   try {
+    writeChangelog(tmp, ["0.10.1"]);
     fs.writeFileSync(path.join(tmp, "scratch.txt"), "dirty\n");
     assert.throws(() => publish("patch", { root: tmp }), /dirty/);
     fs.rmSync(path.join(tmp, "scratch.txt"));
     const tagged = git(tmp, ["tag", "v0.10.1"]);
     assert.equal(tagged.status, 0, tagged.stderr);
     assert.throws(() => publish("patch", { root: tmp }), /already exists/);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("publish refuses a release without a CHANGELOG section", () => {
+  const tmp = fixtureRepo();
+  try {
+    assert.throws(
+      () => publish("patch", { root: tmp }),
+      /CHANGELOG\.md is missing ## \[0\.10\.1\]/,
+    );
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("changelogHasVersion matches keep-a-changelog headings", () => {
+  const tmp = fixtureRepo();
+  try {
+    writeChangelog(tmp, ["0.10.1", "0.11.0"]);
+    assert.equal(changelogHasVersion("0.10.1", tmp), true);
+    assert.equal(changelogHasVersion("0.11.0", tmp), true);
+    assert.throws(
+      () => changelogHasVersion("0.9.9", tmp),
+      /CHANGELOG\.md is missing ## \[0\.9\.9\]/,
+    );
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }

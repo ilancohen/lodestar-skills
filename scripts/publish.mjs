@@ -2,12 +2,13 @@
 /** Bump suite version files, commit, and tag vX.Y.Z. */
 
 import { spawnSync } from "node:child_process";
+import fs from "node:fs";
 import path from "node:path";
 import { MANIFESTS, ROOT, SKILLS, isMain, readVersion } from "./lib.mjs";
 import { setVersion } from "./set_version.mjs";
 
 const USAGE =
-  "Usage: node scripts/publish.mjs <patch|minor|major|X.Y.Z> [--dry-run]\n";
+  "Usage: node scripts/publish.mjs <patch|minor|major|X.Y.Z> [--dry-run] [--push]\n";
 
 export function versionedFiles() {
   return [
@@ -59,9 +60,23 @@ function requireGitOk(result, action) {
   }
 }
 
+export function changelogHasVersion(version, root = ROOT) {
+  const changelogPath = path.join(root, "CHANGELOG.md");
+  if (!fs.existsSync(changelogPath)) {
+    throw new Error(`CHANGELOG.md is missing ## [${version}]`);
+  }
+  const changelog = fs.readFileSync(changelogPath, "utf8");
+  const escaped = version.replaceAll(".", "\\.");
+  if (!new RegExp(`^## \\[${escaped}\\]`, "m").test(changelog)) {
+    throw new Error(`CHANGELOG.md is missing ## [${version}]`);
+  }
+  return true;
+}
+
 export function publish(spec, options = {}) {
   const root = options.root ?? ROOT;
   const dryRun = Boolean(options.dryRun);
+  const push = Boolean(options.push);
 
   const status = git(root, ["status", "--porcelain"]);
   requireGitOk(status, "git status");
@@ -79,6 +94,8 @@ export function publish(spec, options = {}) {
   ]);
   if (existing.status === 0) throw new Error(`tag ${tag} already exists`);
 
+  changelogHasVersion(version, root);
+
   if (dryRun) {
     return { current, version, tag, dryRun: true, files: versionedFiles() };
   }
@@ -90,14 +107,26 @@ export function publish(spec, options = {}) {
     git(root, ["tag", "-a", tag, "-m", `lodestar ${version}`]),
     "git tag",
   );
-  return { current, version, tag, dryRun: false, files: versionedFiles() };
+  if (push) {
+    requireGitOk(git(root, ["push", "origin", "HEAD"]), "git push branch");
+    requireGitOk(git(root, ["push", "origin", tag]), "git push tag");
+  }
+  return {
+    current,
+    version,
+    tag,
+    dryRun: false,
+    push,
+    files: versionedFiles(),
+  };
 }
 
 function parseArgs(argv) {
-  const flags = { spec: null, dryRun: false };
+  const flags = { spec: null, dryRun: false, push: false };
   for (const arg of argv) {
     if (arg === "--") continue;
     if (arg === "--dry-run") flags.dryRun = true;
+    else if (arg === "--push") flags.push = true;
     else if (arg.startsWith("-")) {
       throw new Error(`unknown flag ${arg}`);
     } else if (flags.spec) {
@@ -120,11 +149,20 @@ function main() {
     process.exit(1);
   }
   try {
-    const result = publish(flags.spec, { dryRun: flags.dryRun });
+    const result = publish(flags.spec, {
+      dryRun: flags.dryRun,
+      push: flags.push,
+    });
     const verb = result.dryRun ? "Would release" : "Released";
+    const pushed = result.push ? " and pushed" : "";
     process.stdout.write(
-      `${verb} ${result.current} → ${result.version} (tag ${result.tag}).\n`,
+      `${verb} ${result.current} → ${result.version} (tag ${result.tag})${pushed}.\n`,
     );
+    if (!result.dryRun && !result.push) {
+      process.stdout.write(
+        `Push with: git push origin HEAD && git push origin ${result.tag}\n`,
+      );
+    }
   } catch (error) {
     process.stderr.write(`ERROR: ${error.message}\n`);
     process.exit(1);

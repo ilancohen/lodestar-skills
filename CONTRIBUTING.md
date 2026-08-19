@@ -24,8 +24,9 @@ Before committing suite changes:
    (`disable-model-invocation: true`), and adapters never auto-load
    `lodestar-fix`
 
-Version with `pnpm run publish -- patch` (or `minor` / `major` /
-`x.y.z`). Push separately. See `AGENTS.md`.
+Add a `CHANGELOG.md` section for the target version, then run
+`pnpm run publish -- patch` (or `minor` / `major` / `x.y.z`). Use
+`--push` or push branch and tag separately. See `AGENTS.md`.
 
 ## Deliberate duplication
 
