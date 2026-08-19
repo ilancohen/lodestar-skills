@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented here.
 
+## [0.11.3] - 2026-08-19
+
+### Added
+
+- **Broader test coverage.** Unit tests for vendored `runtime.mjs` copies, `release_check`, smoke-install validation, and Fallow resolve/run paths; scripts export hooks for testability.
+- **`publish-release` skill.** Contributor skill for validate → commit → changelog → publish → push.
+
 ## [0.11.2] - 2026-08-19
 
 ### Changed
