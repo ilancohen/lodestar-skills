@@ -1,11 +1,13 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import {
   compatibleFallowVersion,
+  fallowProjectStatus,
   hasPath,
   loadContract,
   parseEnvelope,
@@ -43,6 +45,86 @@ test("contract accepts Fallow ^3.15.0", () => {
   assert.equal(true, compatibleFallowVersion("3.16.0", "3.15.0"));
   assert.equal(false, compatibleFallowVersion("3.14.0", "3.15.0"));
   assert.equal(false, compatibleFallowVersion("4.0.0", "3.15.0"));
+});
+
+test("fallowProjectStatus requires package.json declaration and node_modules bin", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-fallow-"));
+  try {
+    fs.writeFileSync(
+      path.join(tmp, "package.json"),
+      JSON.stringify({ name: "tmp", devDependencies: { fallow: "^3.15.0" } }),
+    );
+    const declaredOnly = fallowProjectStatus(tmp, CONTRACT);
+    assert.equal(declaredOnly.declared, true);
+    assert.equal(declaredOnly.needsInstall, true);
+    assert.equal(declaredOnly.bin, null);
+
+    fs.mkdirSync(path.join(tmp, "node_modules", ".bin"), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, "node_modules", ".bin", "fallow"),
+      "#!/bin/sh\n",
+    );
+    fs.chmodSync(path.join(tmp, "node_modules", ".bin", "fallow"), 0o755);
+    const withBin = fallowProjectStatus(tmp, CONTRACT);
+    assert.equal(withBin.needsInstall, false);
+    assert.ok(withBin.bin);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("resolve-bin fails when fallow is not declared in package.json", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-fallow-"));
+  try {
+    fs.writeFileSync(
+      path.join(tmp, "package.json"),
+      JSON.stringify({ name: "tmp" }),
+    );
+    const result = run(["resolve-bin", "--root", tmp]);
+    assert.equal(result.status, 2);
+    assert.match(result.stderr, /not declared in package\.json/i);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("list-entry-points fixture satisfies contract", () => {
+  const envelope = parseEnvelope(
+    fs.readFileSync(
+      path.join(FIX, "v3.15.0", "list-entry-points.json"),
+      "utf8",
+    ),
+  );
+  validateEnvelope(envelope, spec("list-entry-points"), CONTRACT);
+});
+
+test("list-entry-points rejects zero entry_point_count", () => {
+  const envelope = parseEnvelope(
+    fs.readFileSync(
+      path.join(FIX, "negative", "zero-list-entry-points.json"),
+      "utf8",
+    ),
+  );
+  assert.throws(
+    () => validateEnvelope(envelope, spec("list-entry-points"), CONTRACT),
+    /entry_point_count is 0/,
+  );
+});
+
+test("list-entry-points honors --minimum when validating", () => {
+  const envelope = parseEnvelope(
+    fs.readFileSync(
+      path.join(FIX, "v3.15.0", "list-entry-points.json"),
+      "utf8",
+    ),
+  );
+  assert.throws(
+    () =>
+      validateEnvelope(envelope, spec("list-entry-points"), CONTRACT, {
+        minimum: 2,
+      }),
+    /expected at least 2/,
+  );
 });
 
 test("baseline fixtures (v3.15.0) satisfy every command contract", () => {

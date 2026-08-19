@@ -59,6 +59,12 @@ project — the setup skill must always substitute before writing.
   // built-in ignores (dist, .d.ts, node_modules). dupes/health honor
   // ignorePatterns — files are excluded from analysis entirely.
   "ignorePatterns": ["<excluded_glob>"],
+
+  // Optional — additional entry-point globs Fallow should treat as graph
+  // roots. Auto-discovery from package.json and framework plugins is usually
+  // enough for a single app. Multi-app repos often need explicit entries
+  // (index.html, main.ts, server.ts, …). Omit when auto-discovery suffices.
+  // "entry": ["apps/a/index.html", "apps/b/src/main.ts"],
 }
 ```
 
@@ -111,6 +117,30 @@ This makes each app a sibling sub-zone, isolated from the others — usually
 what you want when several apps share lower-level packages but should not
 import from each other.
 
+## Worked example — multi-app with explicit `entry`
+
+When `apps/web` and `apps/admin` are separate Vite apps, auto-discovery
+may miss an HTML shell or second `main.ts`. Step 1 records:
+
+- `apps/web/index.html`
+- `apps/admin/src/main.ts`
+
+Setup writes:
+
+```jsonc
+{
+  "$schema": "./node_modules/fallow/schema.json",
+  "entry": ["apps/web/index.html", "apps/admin/src/main.ts"],
+  "boundaries": {
+    "zones": [{ "name": "apps", "autoDiscover": ["apps"] }],
+    "rules": [{ "from": "apps", "allow": ["apps"] }],
+  },
+}
+```
+
+After writing, run `list-entry-points` with `--minimum 2` so Fallow must
+see both roots before setup finishes.
+
 ## Worked example — cyclic `core` ↔ `api`
 
 For a `context.md` that records a cyclic graph between `core` and `api`:
@@ -153,7 +183,10 @@ The setup skill writes:
 
 ## Verifying the file
 
-After writing, run:
+After writing, run **both** checks when a compatible fallow resolves; if
+none resolved, skip and say unverified.
+
+### Boundaries
 
 ```bash
 # Absolute path to the installed lodestar-audit skill script; --root/--out are
@@ -170,3 +203,33 @@ Directory-level rows still give Fallow real boundaries inside one
 package. A contract failure or a zero-file zone means the
 path glob in the Package Layout table doesn't match the on-disk layout —
 fix the table and re-run setup. Delete the temp JSON after reading it.
+
+### Entry points
+
+Auto-discovery from `package.json` and framework plugins is usually
+enough for a **single-app** repo. **Multi-app** layouts (several apps
+under `apps/*`, multiple Vite/Next roots, …) often need an explicit
+`entry` array — see the template above.
+
+```bash
+node <lodestar-audit-skill>/scripts/fallow-contract.mjs run \
+  --root <repo> \
+  --id list-entry-points \
+  --out <repo>/.audit-fallow-entry-points.json
+```
+
+Every run must report `entry_point_count > 0`. When Step 1 recorded
+`N` distinct app entry surfaces, pass `--minimum N` so the contract
+fails if Fallow sees fewer roots than you expect:
+
+```bash
+node <lodestar-audit-skill>/scripts/fallow-contract.mjs run \
+  --root <repo> \
+  --id list-entry-points \
+  --minimum <N> \
+  --out <repo>/.audit-fallow-entry-points.json
+```
+
+On failure, add or fix paths in the `entry` array (project-root-relative
+globs such as `apps/a/index.html`, `apps/b/src/main.ts`), merge them
+into `.fallowrc.json`, and re-run. Delete the temp JSON after reading it.

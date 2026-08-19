@@ -119,3 +119,33 @@ export function installFallowCommand(version, manager, addDevTemplate) {
     `ask which package manager this repo uses)`
   );
 }
+
+export function readRootPackageJson(root) {
+  const filePath = path.join(root, "package.json");
+  if (!fs.existsSync(filePath)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+/** @returns {{ field: string, range: string } | null} */
+export function findFallowDeclaration(pkg) {
+  if (!pkg || typeof pkg !== "object") return null;
+  for (const field of ["devDependencies", "dependencies"]) {
+    const range = pkg[field]?.fallow;
+    if (range) return { field, range: String(range) };
+  }
+  return null;
+}
+
+export function installDepsCommand(manager) {
+  const commands = {
+    pnpm: "pnpm install",
+    yarn: "yarn install",
+    npm: "npm install",
+    bun: "bun install",
+  };
+  return commands[manager] ?? null;
+}

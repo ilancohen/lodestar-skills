@@ -12,7 +12,7 @@ function main(argv = process.argv.slice(2)) {
   const bin = resolveBin(name, root);
   if (!bin) {
     fail(
-      `${name} is required. Install it as a devDependency at the workspace root, or add it to PATH.`,
+      `${name} is required. Declare it in package.json devDependencies at the workspace root and install dependencies so it resolves under node_modules/.bin.`,
       2,
     );
   }

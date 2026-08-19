@@ -53,6 +53,13 @@
       "zone_fields": ["name", "patterns", "file_count"]
     },
     {
+      "id": "list-entry-points",
+      "argv": ["list", "--entry-points", "--format", "json", "--quiet"],
+      "require_schema": false,
+      "required_fields": ["entry_point_count", "entry_points[]"],
+      "entry_point_fields": ["path"]
+    },
+    {
       "id": "dupes-semantic",
       "argv": ["dupes", "--mode", "semantic", "--format", "json", "--quiet"],
       "kind": "dupes",

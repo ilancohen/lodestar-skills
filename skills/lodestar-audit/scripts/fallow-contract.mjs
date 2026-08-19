@@ -7,18 +7,21 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import {
+  findFallowDeclaration,
+  installDepsCommand,
   installFallowCommand,
   parsePkgManagerRow,
+  readRootPackageJson,
   resolvePkgManager,
 } from "./pkg-manager.mjs";
 import {
   atomicWrite,
   fail,
   isMain,
+  localBin,
   parseArgs,
   printJson,
   utcDate,
-  which,
 } from "./runtime.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -269,6 +272,29 @@ export function validateEnvelope(envelope, spec, contract, options = {}) {
       }
     }
   }
+  if (spec.entry_point_fields?.length && envelope.entry_points) {
+    for (const entry of envelope.entry_points) {
+      for (const field of spec.entry_point_fields) {
+        if (!(field in entry)) {
+          throw new Error(`entry_points entry missing field ${field}`);
+        }
+      }
+    }
+  }
+  if (spec.id === "list-entry-points" || spec.kind === "list-entry-points") {
+    const total = envelope.entry_point_count;
+    if (typeof total !== "number" || total <= 0) {
+      throw new Error(
+        "entry_point_count is 0; Fallow found no entry points — add an `entry` array to .fallowrc.json or fix package.json / framework detection",
+      );
+    }
+    const minimum = options.minimum;
+    if (typeof minimum === "number" && minimum > 0 && total < minimum) {
+      throw new Error(
+        `entry_point_count is ${total}; expected at least ${minimum} for this layout — add missing paths to the \`entry\` array in .fallowrc.json`,
+      );
+    }
+  }
   if (spec.file_score_fields?.length && envelope.health?.file_scores) {
     for (const score of envelope.health.file_scores) {
       for (const field of spec.file_score_fields) {
@@ -314,30 +340,92 @@ export function detectVersion(bin) {
   return match[1];
 }
 
-export function resolveFallow(root, contract = loadContract()) {
+export function fallowProjectStatus(root, contract = loadContract()) {
   const resolved = resolvePkgManagerForRoot(root);
-  const manager = resolved.pkgManager;
-  const bin = which("fallow", root);
-  if (!bin) {
+  const declared = findFallowDeclaration(readRootPackageJson(root));
+  const bin = localBin("fallow", root);
+  let version = null;
+  if (bin) {
+    try {
+      version = detectVersion(bin);
+    } catch {
+      version = null;
+    }
+  }
+  const compatible = version
+    ? compatibleFallowVersion(version, contract.tool_version)
+    : false;
+  return {
+    declared: Boolean(declared),
+    declaredField: declared?.field ?? null,
+    declaredRange: declared?.range ?? null,
+    bin,
+    version,
+    compatible,
+    needsDeclare: !declared,
+    needsInstall: Boolean(declared && !bin),
+    needsUpgrade: Boolean(bin && version && !compatible),
+    manager: resolved.pkgManager,
+    addDev: resolved.addDev,
+  };
+}
+
+export function resolveFallow(root, contract = loadContract()) {
+  const status = fallowProjectStatus(root, contract);
+  const manager = status.manager;
+  const range = fallowInstallSpec(contract.tool_version);
+  const addDev = installFallowCommand(range, manager, status.addDev);
+
+  if (!status.declared && !status.bin) {
     throw new Error(
-      remediation(contract, "fallow is required for this audit.", {
-        installed: "none",
+      remediation(
+        contract,
+        "fallow is not declared in package.json and was not found in node_modules/.bin.",
+        {
+          installed: "none",
+          manager,
+          addDev: status.addDev,
+        },
+      ),
+    );
+  }
+  if (!status.declared) {
+    throw new Error(
+      [
+        "fallow is present in node_modules/.bin but not declared in package.json devDependencies or dependencies.",
+        `Declare and pin it with: ${addDev}`,
+      ].join(" "),
+    );
+  }
+  if (!status.bin) {
+    const install =
+      installDepsCommand(manager) ??
+      "install dependencies (pnpm install / npm install / yarn install / bun install)";
+    throw new Error(
+      [
+        `fallow is declared in package.json (${status.declaredField}: ${status.declaredRange}) but node_modules/.bin/fallow is missing.`,
+        `Install dependencies with: ${install}`,
+        `If it is still missing, add or upgrade with: ${addDev}`,
+      ].join(" "),
+    );
+  }
+  if (!status.compatible) {
+    throw new Error(
+      remediation(contract, `unsupported Fallow installed ${status.version}.`, {
+        installed: status.version,
         manager,
-        addDev: resolved.addDev,
+        addDev: status.addDev,
       }),
     );
   }
-  const version = detectVersion(bin);
-  if (!compatibleFallowVersion(version, contract.tool_version)) {
-    throw new Error(
-      remediation(contract, `unsupported Fallow installed ${version}.`, {
-        installed: version,
-        manager,
-        addDev: resolved.addDev,
-      }),
-    );
-  }
-  return { bin, version, contract, manager };
+  return {
+    bin: status.bin,
+    version: status.version,
+    contract,
+    manager,
+    declaredField: status.declaredField,
+    declaredRange: status.declaredRange,
+  };
 }
 
 export function runFallow(bin, argv, { cwd } = {}) {
@@ -479,7 +567,10 @@ function cmdRun(flags, contract) {
     );
   }
   try {
-    validateEnvelope(envelope, spec, contract, { root });
+    validateEnvelope(envelope, spec, contract, {
+      root,
+      minimum: flags.minimum ? Number(flags.minimum) : undefined,
+    });
     if (flags.out) {
       const outPath = path.isAbsolute(flags.out)
         ? flags.out

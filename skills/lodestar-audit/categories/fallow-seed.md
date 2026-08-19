@@ -83,11 +83,11 @@ ephemeral and reproducible.)
 
 | Fallow JSON field                                   | Consuming category | Subtype                   | Notes                                                                                                                                                                                  |
 | --------------------------------------------------- | ------------------ | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `check.boundary_violations[]`                       | `imports`          | `wrong-direction`         | Replaces `imports` #6 grep when `.fallowrc.json` is configured. Each entry already names `from_path`, `to_path`, `from_zone`, `to_zone`, `import_specifier`, `line`.                |
-| `check.circular_dependencies[]`                     | `imports`          | `circular-import`         | Replaces `imports` #3 detection. Graph-walked, exhaustive across re-export chains.                                                                                                  |
-| `check.unused_files[]`                              | `imports`          | `unused-file`             | Fallow-only subtype — see `imports` #7.                                                                                                                                             |
-| `check.unused_exports[]`                            | `imports`          | `over-broad-index`        | Replaces `imports` #5 per-symbol loop. Cross-reference with each row's `<pkg_root>/index.ts` to flag only the over-export subset.                                                   |
-| `check.unused_dependencies[]`                       | `imports`          | `unused-dependency`       | Fallow-only subtype — see `imports` #8.                                                                                                                                             |
+| `check.boundary_violations[]`                       | `imports`          | `wrong-direction`         | Replaces `imports` #6 grep when `.fallowrc.json` is configured. Each entry already names `from_path`, `to_path`, `from_zone`, `to_zone`, `import_specifier`, `line`.                   |
+| `check.circular_dependencies[]`                     | `imports`          | `circular-import`         | Replaces `imports` #3 detection. Graph-walked, exhaustive across re-export chains.                                                                                                     |
+| `check.unused_files[]`                              | `imports`          | `unused-file`             | Fallow-only subtype — see `imports` #7.                                                                                                                                                |
+| `check.unused_exports[]`                            | `imports`          | `over-broad-index`        | Replaces `imports` #5 per-symbol loop. Cross-reference with each row's `<pkg_root>/index.ts` to flag only the over-export subset.                                                      |
+| `check.unused_dependencies[]`                       | `imports`          | `unused-dependency`       | Fallow-only subtype — see `imports` #8.                                                                                                                                                |
 | `check.unresolved_imports[]`                        | `imports`          | `unresolved-import`       | Fallow-only subtype. Almost always a typo or missing dependency.                                                                                                                       |
 | `dupes.clone_groups[]`                              | `dry`              | `exact-duplication`       | Primary detector for `dry.A`. Each `instances[]` item provides `file`, `start_line`, and `end_line`.                                                                                   |
 | `dupes.clone_groups[]` (run with `--mode semantic`) | `dry`              | `structural-duplication`  | Seeds `dry.B`. Catches renamed-variable and renamed-literal clones the mild mode misses. Confirm with eyes-on-code before flagging — semantic mode has more false positives than mild. |
@@ -139,6 +139,12 @@ The output should list one zone per **scannable** row in the Package
 Layout table, with file counts > 0 for every zone the repo actually has. A zone reporting
 zero files almost always means the path glob is wrong. Delete the temp
 JSON after reading it.
+
+`lodestar-setup` runs the same boundary check after writing
+`.fallowrc.json`. It also runs `list-entry-points` and requires
+`entry_point_count > 0`. Multi-app repos should pass `--minimum N` when
+Step 1 recorded `N` entry surfaces; setup adds an `entry` array when
+auto-discovery is not enough. Delete the temp JSON after reading it.
 
 ---
 
