@@ -19,7 +19,7 @@ compatibility: >-
   in context.md. Deno and Bazel are not supported.
 metadata:
   author: Ilan Cohen
-  version: "0.11.0"
+  version: "0.11.1"
 ---
 
 You are running a lodestar audit. **Discover** and
