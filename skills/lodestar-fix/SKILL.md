@@ -84,6 +84,9 @@ writes; `AGENTS.md` is not read):
   each fix. `n/a` means that check does not exist: skip it and say so
   in the report. Stop and ask to re-run `lodestar-setup` only when a
   command is missing from the table entirely.
+- `## Package Layout` — the Package and Path glob(s) columns, read only
+  when Step 2's "By area" option is chosen. Used to suggest areas; not
+  required otherwise, so a missing table does not stop the skill.
 
 Then run command-only freshness (layout facts are not this skill's):
 
@@ -140,15 +143,41 @@ Print the summary, then ask one question:
 >
 > 1. **The safe ones** — every fix that hasn't been started and is
 >    low-risk. Anything needing a judgement call from you is left out.
-> 2. **By area** — you pick which areas to work through.
-> 3. **Just the judgement calls** — only the fixes that need you to decide
+> 2. **By category** — you pick which types of fixes to work through.
+> 3. **By area** — you pick which areas of the codebase to work through.
+> 4. **Just the judgement calls** — only the fixes that need you to decide
 >    something. I'll walk you through them one by one.
-> 4. **Specific ones** — give me the numbers.
+> 5. **Specific ones** — give me the numbers.
 
-For (1) and (2), order items by category in the suggested sequence
+For (1), (2), and (3), order items by category in the suggested sequence
 `imports → types → ssot → soc-yagni → boundaries → errors →
 testability → dry → styling`, then by ID within each category. This order is
 chosen so mechanical low-risk fixes land first and unblock the rest.
+
+### Step 2a — "By area"
+
+On (3), suggest areas instead of asking the user to invent them from
+scratch:
+
+1. Read `## Package Layout` from `.agents/lodestar/context.md`. For each
+   row, match its Path glob(s) against the `files:` lists of unstarted,
+   non-`done`/`skipped` items to get a per-package item count.
+2. If the table is missing or matches nothing, fall back to the
+   top-level directory segment of each item's `files:` paths as the
+   area instead.
+3. Present the areas with non-zero counts (package/directory name plus
+   count), and ask:
+
+> Which areas? Pick any of these, or name your own (a path, a glob, or
+> part of a filename):
+>
+> - `<area 1>` (N fixes)
+> - `<area 2>` (N fixes)
+> - ...
+
+4. On a custom answer, match it against `files:` as a substring or glob
+   — whatever the user typed. If nothing matches, say so and ask again
+   rather than silently returning to the full item list.
 
 Items with `status: done` or `status: skipped` are never re-touched.
 Items with `status: in_progress` from an earlier interrupted session
