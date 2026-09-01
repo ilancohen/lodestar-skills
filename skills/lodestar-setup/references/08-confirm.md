@@ -45,5 +45,5 @@ To check later whether `context.md` still matches the repo, run
 `check-freshness` — do not re-run this skill just to find out.
 
 Do not run the audit automatically. Do not run `lodestar-architecture`
-automatically. Setup is descriptive — anything evaluative is the other
-skill's job.
+or `lodestar-docs` automatically. Setup is descriptive — anything
+evaluative is the other skill's job.

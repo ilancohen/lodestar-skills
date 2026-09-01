@@ -27,6 +27,9 @@ import {
   detectLinter,
   inferProbeFromLintScript,
 } from "../../lodestar-setup/scripts/detect-linter.mjs";
+import {
+  checkDocsLayoutDrift,
+} from "../../lodestar-setup/scripts/discover-docs.mjs";
 
 export { detectPkgManager, resolvePkgManager } from "./pkg-manager.mjs";
 
@@ -53,7 +56,7 @@ function usage() {
 Commands:
   resolve-run --root DIR [--date YYYY-MM-DD] [--resume RUN_ID] [--drift JSON]
   validate-input --root DIR
-  check-freshness --root DIR [--facts layout,commands]
+  check-freshness --root DIR [--facts layout,commands,docs]
   derive-direction --root DIR
   changed-files --root DIR --since REF
   merge-findings --in FILE [--in FILE ...] [--out FILE] [--changed-files JSON]
@@ -740,28 +743,32 @@ function checkStaleCommands(root, commands, detected) {
 }
 
 function parseFactsFlag(raw) {
-  if (!raw || raw === true) return { layout: true, commands: true };
+  if (!raw || raw === true) return { layout: true, commands: true, docs: true };
   const parts = String(raw)
     .split(",")
     .map((part) => part.trim())
     .filter(Boolean);
   if (!parts.length) {
-    throw new Error("check-freshness --facts requires layout and/or commands");
+    throw new Error("check-freshness --facts requires layout, commands, and/or docs");
   }
-  const facts = { layout: false, commands: false };
+  const facts = { layout: false, commands: false, docs: false };
   for (const part of parts) {
     if (part === "layout" || part === "missing-package") facts.layout = true;
     else if (part === "commands" || part === "stale-command") {
       facts.commands = true;
+    } else if (part === "docs" || part === "docs-layout") {
+      facts.docs = true;
     } else {
-      throw new Error(`unknown --facts value: ${part}. Use layout, commands.`);
+      throw new Error(
+        `unknown --facts value: ${part}. Use layout, commands, docs.`,
+      );
     }
   }
   return facts;
 }
 
 export function checkFreshness(root, options = {}) {
-  const facts = options.facts || { layout: true, commands: true };
+  const facts = options.facts || { layout: true, commands: true, docs: true };
   const contextPath = path.join(root, ".agents", "lodestar", "context.md");
   if (!fs.existsSync(contextPath)) {
     throw new Error(
@@ -788,6 +795,15 @@ export function checkFreshness(root, options = {}) {
     skipped.push(...linter.skipped);
     drift.push(...linter.drift);
   }
+  if (facts.docs) {
+    const auditSettings = parseAuditSettings(contextText);
+    const docs = checkDocsLayoutDrift(root, contextText, {
+      outputRoot: auditSettings.outputRoot,
+      architectureRoot: architectureOutputRoot(auditSettings.outputRoot),
+    });
+    skipped.push(...docs.skipped);
+    drift.push(...docs.drift);
+  }
   return { fresh: drift.length === 0, layoutSource, drift, skipped };
 }
 
@@ -798,6 +814,10 @@ function printDriftHuman(drift) {
   for (const item of drift) {
     if (item.fact === "missing-package") {
       process.stderr.write(`- missing package: ${item.observed}\n`);
+    } else if (item.fact === "missing-docs-path") {
+      process.stderr.write(`- missing docs path: ${item.recorded}\n`);
+    } else if (item.fact === "extra-docs-path") {
+      process.stderr.write(`- extra docs path: ${item.observed}\n`);
     } else if (item.fact === "stale-linter") {
       process.stderr.write(
         `- stale linter \`${item.name}\`: recorded \`${item.recorded}\` but ${item.observed}\n`,

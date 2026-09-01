@@ -2,8 +2,9 @@
 
 Written by `lodestar-setup` to `.agents/lodestar/context.md`. This is the
 only file the lodestar skills read for repo facts — `lodestar-audit`,
-`lodestar-fix`, and `lodestar-architecture` stop and ask for setup if it is
-missing. Keep it accurate; nothing else needs to be kept in sync. To
+`lodestar-fix`, `lodestar-architecture`, and `lodestar-docs` stop and ask
+for setup if it is missing (`lodestar-docs` may continue if you named a
+folder). Keep it accurate; nothing else needs to be kept in sync. To
 see whether this file still matches the repo, run `check-freshness`
 (do not re-run setup just to find out):
 
@@ -139,6 +140,32 @@ Notes for the table:
 - Do not drop a `Scannable: no` row. The audit lists it as a known
   blind spot rather than omitting it.
 
+## Docs Layout
+
+Observed documentation trees. `lodestar-docs` harvests into `home` rows
+and sweeps `staging` rows. `inflight` is left alone. `unknown` is out of
+scope until you re-run setup and classify it.
+
+**Absent means discover at run time:** a file with no `## Docs Layout`
+section is valid. `lodestar-docs` then observes the same way setup
+would. An empty table means there was no docs tree.
+
+Do not invent folders to fill this table.
+
+| Path                                 | Role       | Responsibility                                                |
+| ------------------------------------ | ---------- | ------------------------------------------------------------- |
+| `[e.g. docs/spec]`                   | `home`     | Durable specs. Harvest rescued facts here.                    |
+| `[e.g. docs/rejected-approaches.md]` | `home`     | Dead ends. Do not retry.                                      |
+| `[e.g. docs/audit]`                  | `staging`  | Audit runs. Sweep done/ and abandoned/ only; leave live runs. |
+| `[e.g. docs/architecture-review]`    | `staging`  | Completed architecture reviews.                               |
+| `[e.g. docs/plans]`                  | `inflight` | In-flight plans. Nested done/ and abandoned/ are leftovers.   |
+| `[e.g. docs/notes.md]`               | `unknown`  | Unclassified. Out of scope until classified.                  |
+
+Roles: `home`, `staging`, `inflight`, `unknown`. One row per top-level
+docs folder or file (plus `output-root` / architecture-review when they
+exist). Nested `done/` and `abandoned/` under plans get their own
+staging rows.
+
 ## Conventions
 
 Which of a short list of style conventions this repo actually follows.
@@ -255,6 +282,7 @@ The following skills are available. To use one, read its `SKILL.md` and follow i
 | Audit               | `.agents/skills/lodestar-audit/SKILL.md`        | Scan the codebase and emit action-item files under the `output-root` in Audit Configuration   |
 | Fix audit items     | `.agents/skills/lodestar-fix/SKILL.md`          | Triage and apply fixes from an audit run                                                      |
 | Review architecture | `.agents/skills/lodestar-architecture/SKILL.md` | Get an advisory second opinion on the layout above; optionally have it propose an alternative |
+| Prune leftover docs | `.agents/skills/lodestar-docs/SKILL.md`         | Harvest then delete leftover audit, architecture, and plan writeups; optional                 |
 
 The audit skill writes one self-contained `.md` file per violation into
 `<output-root>/<run-id>/` (see `output-root` above; default

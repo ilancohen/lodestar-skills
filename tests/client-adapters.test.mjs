@@ -5,7 +5,7 @@ import test from "node:test";
 import { MANIFESTS, ROOT, SKILLS } from "../scripts/lib.mjs";
 import { runSkillsCli } from "../scripts/skills-cli.mjs";
 
-test("root skills/ holds exactly the four canonical SKILL.md files", () => {
+test("root skills/ holds exactly the canonical SKILL.md files", () => {
   const skillsRoot = path.join(ROOT, "skills");
   assert.ok(fs.statSync(skillsRoot).isDirectory());
   const entries = fs
@@ -40,7 +40,7 @@ test("contributor guidance is not a root CLAUDE.md runtime file", () => {
   assert.ok(fs.existsSync(path.join(ROOT, "CONTRIBUTING.md")));
 });
 
-test("skills CLI lists exactly four skills from this package", () => {
+test("skills CLI lists every canonical skill from this package", () => {
   const result = runSkillsCli(["add", ".", "--list"], ROOT);
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const out = `${result.stdout}\n${result.stderr}`;

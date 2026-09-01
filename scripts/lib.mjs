@@ -11,6 +11,7 @@ export const SKILLS = [
   "lodestar-audit",
   "lodestar-fix",
   "lodestar-architecture",
+  "lodestar-docs",
 ];
 export const MANIFESTS = [
   "plugin.json",

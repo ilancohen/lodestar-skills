@@ -89,6 +89,14 @@ Read only what's needed to fill in the template placeholders:
   - Record the frameworks you believe are active (for the review screen)
     and the resulting extension list for `scan-extensions` (base TS/JS
     list plus any framework extensions you add).
+- **Docs layout** — run
+  `node <lodestar-setup-skill>/scripts/discover-docs.mjs --root <repo>`
+  (add `--output-root` from an existing `context.md` `output-root` row,
+  else `docs/audit`). Record the JSON rows. Do not invent folders. No
+  `docs/` tree and no audit/architecture output dirs → record an empty
+  list and omit `## Docs Layout`. A path already in `## Docs Layout`
+  keeps its Role and Responsibility even if this run would guess
+  differently; new paths get the script's guess; gone paths are dropped.
 - **Audit-scope measurements** — no source reading. No `.git` → record
   that and skip to `mode: all` with no question. Else four commands:
   `git rev-list --count HEAD`; `git log --reverse --format=%ad

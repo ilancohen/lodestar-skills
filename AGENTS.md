@@ -21,6 +21,7 @@ to use — do not guess.
 | `skills/lodestar-audit/`        | Read-only violation discovery and action-item planning                    |
 | `skills/lodestar-fix/`          | Scoped execution of audit action items                                    |
 | `skills/lodestar-architecture/` | Advisory package-layout review                                            |
+| `skills/lodestar-docs/`         | Optional harvest-then-delete of leftover lodestar docs                    |
 | `.agents/attention-kind/` etc.  | Local reply-style skills (not published; AGPL-3.0)                        |
 | `.cursor/skills/`               | Cursor wrappers for local `.agents/` contributor skills                   |
 | `.cursor/skills/create-plan/`   | Contributor planning skill; Cursor-only (no `.agents/` SSOT; intentional) |

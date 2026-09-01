@@ -31,7 +31,7 @@ export function assertInstalled(consumer, version) {
   const names = [...new Set(found.map((item) => item.skill))].sort();
   if (names.join(",") !== [...SKILLS].sort().join(",")) {
     throw new Error(
-      `expected four installed skills, found ${names.join(", ") || "none"}`,
+      `expected ${SKILLS.length} installed skills, found ${names.join(", ") || "none"}`,
     );
   }
   for (const item of found) {

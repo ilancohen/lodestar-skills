@@ -51,7 +51,7 @@ test("installedSkills discovers skills across multiple agent parents", () => {
   }
 });
 
-test("assertInstalled passes when all four skills are present at the expected version", () => {
+test("assertInstalled passes when all listed skills are present at the expected version", () => {
   const consumer = makeConsumer();
   try {
     for (const skill of SKILLS)
@@ -70,7 +70,7 @@ test("assertInstalled throws when a skill is missing", () => {
       writeSkill(consumer, ".agents/skills", skill, "0.2.0");
     assert.throws(
       () => assertInstalled(consumer, "0.2.0"),
-      /expected four installed skills/,
+      /expected 5 installed skills/,
     );
   } finally {
     fs.rmSync(consumer, { recursive: true, force: true });

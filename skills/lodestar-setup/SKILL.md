@@ -20,11 +20,12 @@ metadata:
 ---
 
 Write the agent-neutral config the lodestar skills need. The one file that
-matters is `.agents/lodestar/context.md`: package layout, dependency
-direction, build commands, conventions, audit scope, and how
-`lodestar-fix` commits.
-`lodestar-audit`, `lodestar-fix`, and `lodestar-architecture` read that
-file and nothing else for repo facts — they never read `AGENTS.md`.
+matters is `.agents/lodestar/context.md`: package layout, documentation
+trees, dependency direction, build commands, conventions, audit scope,
+and how `lodestar-fix` commits.
+`lodestar-audit`, `lodestar-fix`, `lodestar-architecture`, and
+`lodestar-docs` read that file and nothing else for repo facts — they
+never read `AGENTS.md` for layout or commit policy.
 
 This requires only the information needed to fill in the templates — do not
 do a broad repo survey, and do not propose architectural changes (the
@@ -38,8 +39,8 @@ repository, not locations of this installed skill.
 
 - **Does**: discover the packages that already exist, document each one
   (name, path, alias, one-sentence responsibility), record the observed
-  package import graph, conventions, commit policy, and audit scope, and
-  write the config files agents read.
+  package import graph, documentation trees, conventions, commit policy,
+  and audit scope, and write the config files agents read.
 - **Does not**: force packages into a fixed role list (`core`, `api`,
   `ui`), write a target dependency direction, propose an alternative
   layout, or read source to pick a scope. Point layout questions at
@@ -117,5 +118,5 @@ failed install is not a setup failure.
 ## Step 5 — Confirm
 
 Follow [references/08-confirm.md](references/08-confirm.md).
-Consent: does this look right. Do not run `lodestar-audit` or
-`lodestar-architecture` automatically.
+Consent: does this look right. Do not run `lodestar-audit`,
+`lodestar-architecture`, or `lodestar-docs` automatically.

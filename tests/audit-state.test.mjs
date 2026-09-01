@@ -57,6 +57,7 @@ const FRESH = path.join(ROOT, "tests/fixtures/repos/fresh-workspace");
 const DRIFT_PKG = path.join(ROOT, "tests/fixtures/repos/drift-missing-package");
 const DRIFT_CMD = path.join(ROOT, "tests/fixtures/repos/drift-commands");
 const DRIFT_EXCL = path.join(ROOT, "tests/fixtures/repos/drift-excluded");
+const DOCS_HYGIENE = path.join(ROOT, "tests/fixtures/repos/docs-hygiene");
 const SCOPED = path.join(
   ROOT,
   "tests/fixtures/audit-runs/scoped-backlog/findings.md",
@@ -1811,6 +1812,39 @@ test("check-freshness unknown --facts exits 1", () => {
   const result = run(["check-freshness", "--root", FRESH, "--facts", "nope"]);
   assert.equal(result.status, 1, result.stderr);
   assert.match(result.stderr, /unknown --facts value: nope/);
+});
+
+test("check-freshness --facts docs is fresh when Docs Layout matches disk", () => {
+  const result = run([
+    "check-freshness",
+    "--root",
+    DOCS_HYGIENE,
+    "--facts",
+    "docs",
+  ]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.fresh, true);
+  assert.equal(payload.drift.length, 0);
+});
+
+test("check-freshness --facts docs flags an extra docs folder", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-docs-drift-"));
+  try {
+    fs.cpSync(DOCS_HYGIENE, tmp, { recursive: true });
+    fs.mkdirSync(path.join(tmp, "docs/handbook"));
+    fs.writeFileSync(path.join(tmp, "docs/handbook/intro.md"), "hi\n");
+    const result = run(["check-freshness", "--root", tmp, "--facts", "docs"]);
+    assert.equal(result.status, 2, result.stderr);
+    const payload = JSON.parse(result.stdout);
+    const extra = payload.drift.filter(
+      (item) => item.fact === "extra-docs-path",
+    );
+    assert.equal(extra.length, 1);
+    assert.equal(extra[0].observed, "docs/handbook");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
 });
 
 test("check-freshness glob layout rows cover matching members", () => {

@@ -24,6 +24,10 @@ This is the load-bearing file. Start from `context-md.md`. Fill in:
 - The Package Layout table — one row per package discovered in Step 1,
   using the repo's own names. Fill Responsibility, `Scannable`, and
   Entry points (`index.ts` if undeclared).
+- The Docs Layout table — one row per documentation tree from
+  `discover-docs.mjs` plus review-screen corrections. Roles: `home`,
+  `staging`, `inflight`, `unknown`. Omit the whole `## Docs Layout`
+  section when there are no rows. Do not create docs folders.
 - The Conventions table — the five keys from the review screen, with the
   confirmed values. Use the skip-value polarity from the template
   (`barrel-exports: yes` means barrels are allowed).
@@ -47,14 +51,18 @@ Settings`, `## Audit Scope`, `## Git`, `## Excluded Paths`,
 `## Principles`, `## Skills`, `## Audit Output`), rewrite from the
 template — those files fail the parser until regenerated. If it is
 already the 0.9 shape, replace `## Build & Test`,
-`## Dependency Direction`, `## Package Layout`, and `## Conventions`;
+`## Dependency Direction`, `## Package Layout`, `## Docs Layout`, and
+`## Conventions`;
 leave other user content. Do **not** replace `## Audit Configuration`
 wholesale: refresh git keys (`commits`, `subject-format`, `trailer`,
 `protected`, `require-clean`) and `### Excluded Paths` from this run;
 leave `categories`, `output-root`, `fallow`, `scan-extensions`, `mode`, `baseline-ref`,
 and `baseline-date` if those rows are present (unless the user asks to
-reset them). Missing `## Conventions` → insert between
-`## Package Layout` and `## Audit Configuration`. Missing
+reset them). Missing `## Docs Layout` → insert between `## Package Layout`
+and `## Conventions` when Step 1 found docs rows; omit the section when
+the list is empty (and delete a leftover empty section). Missing
+`## Conventions` → insert between
+`## Package Layout` (or `## Docs Layout`) and `## Audit Configuration`. Missing
 `## Audit Configuration` → insert after `## Conventions` (or
 `## Package Layout`) with the defaults above.
 

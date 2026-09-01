@@ -34,7 +34,7 @@ test("package checks pass against this repository", () => {
   const result = checkPackage(ROOT);
   assert.deepEqual(result.errors, []);
   assert.equal(result.version, readVersion());
-  assert.equal(result.skillCount, 4);
+  assert.equal(result.skillCount, 5);
 });
 
 test("set_version updates VERSION, manifests, and skill metadata", () => {

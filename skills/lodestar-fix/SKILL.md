@@ -16,8 +16,8 @@ metadata:
 You are running `lodestar-fix`. The job is to **triage** and **execute** the
 action items produced by a `lodestar-audit` run, marking each with a status
 so re-runs pick up where you left off. Unlike `lodestar-audit` (read-only)
-and `lodestar-architecture` (read-only), this skill modifies
-application source code.
+and `lodestar-architecture` (read-only). `lodestar-docs` edits markdown
+docs only. This skill modifies application source code.
 
 Scripts live beside this `SKILL.md` under `scripts/`. Keep the process
 cwd as the target repository. Invoke scripts with an absolute path to

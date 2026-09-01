@@ -4,12 +4,13 @@
 </h1>
 
 Four skills that document your codebase's architecture, find where it breaks
-the rules, and fix those spots — with your say-so at every step.
+the rules, and fix those spots — with your say-so at every step. An optional
+fifth prunes leftover writeups those skills leave behind.
 
 - **`lodestar-setup`** — writes down how your repo is built: commands,
-  packages, and the rules to follow. It all goes in one file,
-  `.agents/lodestar/context.md`, which is the only file the other three
-  skills read.
+  packages, documentation trees, and the rules to follow. It all goes in
+  one file, `.agents/lodestar/context.md`, which is the only file the
+  other skills read.
 - **`lodestar-audit`** — scans for rule-breaking and writes up each one as a
   standalone action item. Doesn't touch your code. Its `check-freshness`
   command also answers whether `context.md` still matches the repo,
@@ -18,6 +19,10 @@ the rules, and fix those spots — with your say-so at every step.
   time, checking its work as it goes.
 - **`lodestar-architecture`** — a second opinion on the package layout
   itself. Advisory only, never edits code.
+- **`lodestar-docs`** — optional. Harvests leftover knowledge from
+  `staging` docs trees into `home` trees recorded at setup, then deletes
+  what an agent would not miss. Never creates new docs homes. Never edits
+  application source.
 
 Run them in that order. `lodestar-setup` first, always.
 
@@ -79,8 +84,9 @@ records layout, entry points, generated-code exclusions, and how
 npx skills add ilancohen/lodestar-skills
 ```
 
-That's the normal path — it detects your agent, pre-selects all four skills,
-Enter to confirm. A few more ways to run it:
+That's the normal path — it detects your agent, pre-selects all five skills,
+Enter to confirm. Skip `lodestar-docs` if you only want the architecture
+pipeline. A few more ways to run it:
 
 Adopting this in a large, long-lived repo does not have to open with a
 thousand action items. Setup can scope the audit to code changed since
@@ -88,11 +94,12 @@ today's commit and keep the rest as a counted backlog in `INDEX.md`. A
 `context.md` with no `mode` row in `## Audit Configuration` still expands every
 finding.
 
-| Want to...       | Run                                                                           |
-| ---------------- | ----------------------------------------------------------------------------- |
-| Pick one agent   | `npx skills add ilancohen/lodestar-skills --skill '*' -a cursor -a universal` |
-| Skip the prompts | `npx skills add ilancohen/lodestar-skills --skill '*' -y`                     |
-| Install a clone  | `npx skills add /path/to/lodestar-skills --skill '*' -y`                      |
+| Want to...       | Run                                                                                                                                            |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pick one agent   | `npx skills add ilancohen/lodestar-skills --skill '*' -a cursor -a universal`                                                                  |
+| Skip the prompts | `npx skills add ilancohen/lodestar-skills --skill '*' -y`                                                                                      |
+| Install a clone  | `npx skills add /path/to/lodestar-skills --skill '*' -y`                                                                                       |
+| Core four only   | `npx skills add ilancohen/lodestar-skills --skill lodestar-setup --skill lodestar-audit --skill lodestar-fix --skill lodestar-architecture -y` |
 
 Agent ids: `cursor`, `claude-code`, `codex`, `gemini-cli`, `github-copilot`,
 `kiro-cli` — see the [skills CLI's supported agents](https://github.com/vercel-labs/skills#supported-agents)
@@ -134,6 +141,9 @@ Skills don't activate on their own — you have to invoke them by name
 4. Run `lodestar-fix` when you want it to actually change code.
 5. Run `lodestar-architecture` separately, only if the package layout itself
    feels wrong.
+6. Run `lodestar-docs` when staging folders under `docs/` have piled up.
+   It proposes, waits for OK, then harvests and deletes. Default scope is
+   lodestar-owned trees, not the whole `docs/` tree.
 
 ## Contributing
 

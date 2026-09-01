@@ -20,7 +20,7 @@ Before committing suite changes:
 1. `pnpm check`
 2. `pnpm test`
 3. Confirm local discovery with `pnpm dlx skills add . --list`
-4. Confirm adapters still discover exactly four skills, none auto-invoke
+4. Confirm adapters still discover exactly five skills, none auto-invoke
    (`disable-model-invocation: true`), and adapters never auto-load
    `lodestar-fix`
 

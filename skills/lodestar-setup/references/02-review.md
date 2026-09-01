@@ -23,6 +23,18 @@ package names — no per-package import counts. A single-package repo has
 an empty import graph; still show the table. Do not ask whether the
 layout is "right" — that's `lodestar-architecture`'s job, not setup's.
 
+**Docs** — skip when Step 1 found no documentation trees. Otherwise list
+each path with what you will treat it as, in plain words — not the
+file's Role key:
+
+- harvest rescued facts into it
+- sweep leftovers here
+- in progress, leave it
+- not sure yet
+
+One line of what it is for. Corrections at face value (move a path
+between those four, or drop it). Do not create folders to fill gaps.
+
 **Frameworks & scan extensions** — name the UI frameworks you believe are
 in use (or "none beyond TS/JS"), and the file extensions the audit will
 scan (for example `.ts`, `.tsx`, `.vue`). Say when an extension was
@@ -63,6 +75,11 @@ do not flip it to the miss. Corrections still at face value.
   not found
 
 The keys below go in the file; do not put them on screen:
+
+- harvest → `home`
+- sweep leftovers → `staging`
+- in progress → `inflight`
+- not sure yet → `unknown`
 
 - errors as values → `result-types: yes` when yes, `no` when not
 - distinct ID types → `branded-types: yes` when yes, `no` when not
