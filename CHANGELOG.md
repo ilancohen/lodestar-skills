@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented here.
 
+## [0.13.0] - 2026-09-01
+
+### Added
+
+- **Optional `lodestar-docs` skill.** Harvests leftover knowledge from recorded docs staging into existing homes, then deletes what would not help an agent starting fresh. Never creates new homes; never edits application source.
+- **`## Docs Layout` in `context.md`.** Setup observes documentation trees once (via `discover-docs.mjs`), shows them on the review screen, and writes roles (`home` / `staging` / `inflight` / `unknown`). `lodestar-docs` reads that table; `check-freshness` flags missing or extra docs paths. Absent section still discovers at run time.
+
 ## [0.12.0] - 2026-08-19
 
 ### Added
