@@ -183,15 +183,22 @@ Items with `status: done` or `status: skipped` are never re-touched.
 Items with `status: in_progress` from an earlier interrupted session
 surface first (Step 4 — Resuming).
 
-Set `AUTO_COMMIT` from `sessionCommits` (the Step 1 override, not the
-raw `git.commits` payload):
+### Step 2b — Name the files
 
-- `per-item` — `AUTO_COMMIT = yes`. Say so plainly: setup asked for one
-  commit per fix, so each will be committed as it's done, without asking.
-- `never` — `AUTO_COMMIT = no`. Say why in one line — either setup said
-  never commit, or you're on a protected branch — and that changes will be
-  left in the working copy for them to commit. Do not ask.
-- `ask` — ask today's question:
+After the batch is chosen and before Step 3, print the distinct `files:`
+across those items — count first, then the list (group by directory when
+long). Ask once: proceed, or pick again (back to Step 2). No per-item
+prompt here; Step 3.2 still only asks when `requires_decision: true`.
+On pick again, stop here and return to the Step 2 question — do not
+ask about commits yet.
+
+On proceed, set `AUTO_COMMIT` from `sessionCommits` (Step 1 override,
+not raw `git.commits`):
+
+- `per-item` → `AUTO_COMMIT = yes`. Say so: one commit per fix, no ask.
+- `never` → `AUTO_COMMIT = no`. One line why (setup or protected branch);
+  leave edits unstaged. Do not ask.
+- `ask` → ask today's question:
 
 > Should I commit each fix as I finish it, or leave everything for you to
 > review and commit yourself? (commit each one / leave them to me)
@@ -225,7 +232,7 @@ drop it / not now, ask me again later)".
 - `yes` → proceed to Step 3.3.
 
 For items where `requires_decision: false`, no question — proceed
-directly.
+directly (batch blast radius was already confirmed in Step 2b).
 
 ### Step 3.3 — Mark in_progress
 
@@ -468,32 +475,24 @@ does not trigger this.
 
 ## Rules
 
-- **Read each item before acting.** The action item file is the
-  contract. Don't apply a fix from a category template — the per-item
-  scope and files list are the only things the executor is bound by.
-- **Scope rules are stop conditions.** Hitting one means
-  `status: deferred`, never "ignore and proceed".
-- **`requires_decision: true` always asks.** Even when the user picked
-  "all unstarted items", these surface for confirmation.
-- **Never modify the body of an action-item file.** Only the
-  frontmatter gains `status:`, `completed_at:`, `commit:`, and `note:`
-  fields. The problem / fix / scope-rules / acceptance sections are
-  immutable historical record.
-- **Never delete an action-item file.** Finished items (`done` or
-  `skipped`) are moved to `<output-root>/<RUN_ID>/done/` — they stay as
-  a record. Deferred items remain in the run root until resolved.
-- **No `git add -A`.** Stage only the files listed in the item's
-  `files:`. The audit's per-item granularity is the whole point —
-  preserve it in the commit history.
-- **`## Dependency Direction` refresh is the one exception.** Step 4b
-  may rewrite that section of `context.md` on consent after an
-  `imports` #3 fix, in its own commit, because this skill is the one
-  that can invalidate that section. It is not scope-creep.
+- **Read each item before acting.** The action item is the contract —
+  not a category template. Per-item scope and `files:` bind the executor.
+- **Scope rules are stop conditions.** Hitting one → `status: deferred`,
+  never "ignore and proceed".
+- **`requires_decision: true` always asks.** Even under a bulk pick.
+- **Never modify the body of an action-item file.** Only frontmatter
+  gains `status:`, `completed_at:`, `commit:`, `note:`. Problem / fix /
+  scope / acceptance stay immutable.
+- **Never delete an action-item file.** `done`/`skipped` move to
+  `<output-root>/<RUN_ID>/done/`; deferred stay in the run root.
+- **No `git add -A`.** Stage only the item's `files:`.
+- **`## Dependency Direction` refresh is the one exception.** Step 4b may
+  rewrite that `context.md` section on consent after an `imports` #3 fix,
+  in its own commit — not scope-creep.
 - **Stop conditions:**
-  - The run directory has no `INDEX.md` or no action-item files.
-  - `<typecheck>` and `<test>` are both `n/a` or missing from
-    `.agents/lodestar/context.md` (nothing to verify). A single `n/a`
-    is not a stop — skip that check.
-  - `check-freshness --facts commands` reports drift (a recorded
-    command no longer resolves). Point at `lodestar-setup`.
+  - No `INDEX.md` or no action-item files in the run directory.
+  - Both `<typecheck>` and `<test>` are `n/a` or missing (one `n/a` just
+    skips that check).
+  - `check-freshness --facts commands` reports drift → point at
+    `lodestar-setup`.
   - The user says stop.

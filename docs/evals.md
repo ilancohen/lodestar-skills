@@ -96,6 +96,9 @@ Expected outcomes (once explicitly invoked):
 - Honor each item's file list; no `git add -A`; stop on scope creep.
 - `n/a` for `<typecheck>` or `<test>` skips that check and is reported; stop only when both are `n/a` or missing.
 - Ask before decision items and before overwriting `in_progress` work.
+- After the user picks a batch, print the distinct files it will touch
+  and confirm once before Step 3; declining returns to triage.
+  `requires_decision: false` items stay prompt-free inside the loop.
 - Offer only runs that have both `INDEX.md` and at least one `NNN-*.md` in the run root; if none qualify, point at `lodestar-audit`'s Plan phase. Stop if `INDEX.md` is missing after selection.
 - Commit policy comes from git keys in `## Audit Configuration` (defaults if absent): skip the auto-commit question when `per-item` or `never`; `never` leaves edits unstaged; a protected branch stops and offers to continue without committing; a rejecting hook defers the item with the hook output and does not `--no-verify`.
 
