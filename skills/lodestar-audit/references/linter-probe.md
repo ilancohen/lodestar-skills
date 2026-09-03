@@ -12,8 +12,9 @@ Otherwise run `linter.probe` from `validate-input` (written by setup).
 ## Probe command
 
 Substitute `<all_pkg_roots>` in `linter.probe` before running. Cache JSON
-in the platform temp directory (Node `os.tmpdir()`), not a fixed path
-like `/tmp`. Delete the cached file at the end of Phase 1.
+in the platform temp directory (Node `os.tmpdir()`), never in the repo.
+Delete the cached file at the end of Phase 1 — whether the probe
+succeeded, failed, or the JSON could not be parsed.
 
 When the probe binary is not on `PATH`, prefix with the package manager
 exec (`<run> eslint …`, `npx eslint …`, …) the same way Fallow install

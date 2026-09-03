@@ -28,8 +28,8 @@ reference:
   `node_modules/.bin/fallow` is missing, the row also names the plain
   install command (`pnpm install`, …).
 - Check whether `.fallowrc.json` exists (changes the write-row verb).
-- Check whether `.gitignore` already covers `.audit-fallow-seed.json`
-  and `.fallow/` (omit that row when both are covered).
+- Check whether `.gitignore` already covers `.audit-*.json` and
+  `.fallow/` (omit that row when both are covered).
 - Detect the repo's linter from existing config and dependencies (omit
   the linter row when none is configured).
 - Pre-0.3 `AGENTS.md` sections come from Step 1 (omit that row when
@@ -61,8 +61,10 @@ Pre-tick per the defaults below. Unticked means skip that write.
       import-boundary section into your existing `.fallowrc.json`**;
       name **replace** as the alternative (user can say "replace"
       instead of merge). Unticked leaves the existing file alone.
-- [x] **Add** `.audit-fallow-seed.json` and `.fallow/` to `.gitignore`.
-      Omit when both entries are already covered.
+- [x] **Add** `.audit-*.json` and `.fallow/` to `.gitignore`. The
+      pattern covers every scratch file the audit and the fallow verify
+      write to the repo root, so an interrupted run leaves nothing
+      committable. Omit when both entries are already covered.
 - [ ] **Add a `## Lodestar` section to `AGENTS.md`** so any agent, on
       every task, checks the principles before it finishes. Unticked
       leaves `AGENTS.md` alone.

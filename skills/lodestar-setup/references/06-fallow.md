@@ -83,17 +83,25 @@ Write to `.fallowrc.json`.
 ### `.gitignore`
 
 If the gitignore row was ticked and `.gitignore` exists and does not
-already cover them, add `.audit-fallow-seed.json` and `.fallow/`. If it
-was unticked, still write `.fallowrc.json` when that row was ticked, and
-say gitignore was skipped.
+already cover them, add `.audit-*.json` and `.fallow/`. One pattern
+covers the audit's fallow seed, the boundaries and entry-point verify
+files below, and any lint probe written to the repo root, so an
+interrupted run leaves nothing committable. If the row was unticked,
+still write `.fallowrc.json` when that row was ticked, and say gitignore
+was skipped.
 
 `.agents/lodestar/fallow-compat.json` is a team-committed audit artifact
-— never gitignore it.
+— never gitignore it. `.audit-*.json` does not match it: the name does
+not start with `.audit-`.
 
 ### Verify zones and entry points
 
 After writing, verify when a compatible fallow resolved; if none
 resolved, skip and say unverified.
+
+Both checks below write a temp JSON file to the repo root. Delete both
+files as soon as the second check has run — pass or fail, before you
+report anything to the user. Cleanup is not conditional on success.
 
 **Boundaries** — every zone needs `file_count > 0`:
 
@@ -118,4 +126,7 @@ node <lodestar-audit-skill>/scripts/fallow-contract.mjs run \
   --out <repo>/.audit-fallow-entry-points.json
 ```
 
-Fix layout globs or `entry` paths on failure. Delete both temp JSON files.
+Delete `.audit-fallow-boundaries.json` and `.audit-fallow-entry-points.json`
+now — whether both checks passed, one failed, or fallow errored — and only
+then report the result. On failure, fix layout globs or `entry` paths and
+re-run; each re-run cleans up after itself the same way.
