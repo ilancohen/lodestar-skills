@@ -137,6 +137,32 @@ function cmdArchiveRun(flags) {
   process.stdout.write(`${JSON.stringify({ ok: true, to: dest }, null, 2)}\n`);
 }
 
+// A commit subject or trailer is a single line. A newline in either would
+// split the subject or forge a trailer in permanent git history, so reject
+// rather than repair — the value comes from context.md and should be fixed
+// there.
+const MAX_COMMIT_LINE = 200;
+const CONTROL_CHARS = /[\u0000-\u001f\u007f]/;
+
+function assertCommitLine(value, field, stage) {
+  if (typeof value !== "string" || value.trim() === "") {
+    throw new Error(
+      `## Audit Configuration \`${field}\` is empty (${stage}). Set a single-line value.`,
+    );
+  }
+  if (CONTROL_CHARS.test(value)) {
+    throw new Error(
+      `## Audit Configuration \`${field}\` contains a newline or control character (${stage}). A commit ${field === "trailer" ? "trailer" : "subject"} must be a single line.`,
+    );
+  }
+  if (value.length > MAX_COMMIT_LINE) {
+    throw new Error(
+      `## Audit Configuration \`${field}\` is ${value.length} characters (${stage}); the limit is ${MAX_COMMIT_LINE}.`,
+    );
+  }
+  return value;
+}
+
 export function formatCommitMessage({
   subjectFormat,
   trailer,
@@ -150,9 +176,23 @@ export function formatCommitMessage({
       /<(category|slug|item)>/g,
       (_, name) => vars[name],
     );
-  const subject = replace(subjectFormat);
+
+  assertCommitLine(subjectFormat, "subject-format", "template");
+  const subject = assertCommitLine(
+    replace(subjectFormat),
+    "subject-format",
+    "after substitution",
+  );
+
   if (!trailer || trailer === "none") return `${subject}\n`;
-  return `${subject}\n\n${replace(trailer)}\n`;
+
+  assertCommitLine(trailer, "trailer", "template");
+  const trailerLine = assertCommitLine(
+    replace(trailer),
+    "trailer",
+    "after substitution",
+  );
+  return `${subject}\n\n${trailerLine}\n`;
 }
 
 function slugFromFilename(basename, category) {

@@ -1332,6 +1332,27 @@ function parseGitCommits(raw) {
   );
 }
 
+// A commit subject and a trailer are each a single line. Rejecting here
+// keeps a bad template from surviving the audit and only failing once
+// lodestar-fix has already edited files. Mirrored in lodestar-fix's
+// action-state.mjs, which enforces the same rule at commit time.
+const MAX_COMMIT_LINE = 200;
+const COMMIT_LINE_CONTROL_CHARS = /[\u0000-\u001f\u007f]/;
+
+function assertCommitLine(raw, field) {
+  if (COMMIT_LINE_CONTROL_CHARS.test(raw)) {
+    throw new Error(
+      `## Audit Configuration has an invalid \`${field}\`: it contains a newline or control character. It must be a single line.`,
+    );
+  }
+  if (raw.length > MAX_COMMIT_LINE) {
+    throw new Error(
+      `## Audit Configuration has an invalid \`${field}\`: it is ${raw.length} characters. The limit is ${MAX_COMMIT_LINE}.`,
+    );
+  }
+  return raw;
+}
+
 function parseGitSubjectFormat(raw) {
   if (!raw) {
     throw new Error("## Audit Configuration has an empty `subject-format`.");
@@ -1341,7 +1362,7 @@ function parseGitSubjectFormat(raw) {
       `## Audit Configuration has an invalid \`subject-format\`: \`${raw}\`. It must contain \`<slug>\`.`,
     );
   }
-  return raw;
+  return assertCommitLine(raw, "subject-format");
 }
 
 function parseGitTrailer(raw) {
@@ -1350,7 +1371,7 @@ function parseGitTrailer(raw) {
       "## Audit Configuration has an empty `trailer`. Use `none` for no trailer.",
     );
   }
-  return raw;
+  return assertCommitLine(raw, "trailer");
 }
 
 function parseGitProtected(raw) {

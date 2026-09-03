@@ -1198,6 +1198,20 @@ test("parseGit rejects a subject-format with no slug placeholder", () => {
   );
 });
 
+test("parseGit rejects an over-long or control-character commit template", () => {
+  assert.throws(
+    () =>
+      parseGit(
+        gitMarkdown([["subject-format", `<slug> ${"x".repeat(200)}`]]),
+      ),
+    /invalid `subject-format`: it is 207 characters\. The limit is 200/,
+  );
+  assert.throws(
+    () => parseGit(gitMarkdown([["trailer", "Closes <item>.\u0007"]])),
+    /invalid `trailer`: it contains a newline or control character/,
+  );
+});
+
 test("parseGit rejects a bad require-clean value", () => {
   assert.throws(
     () => parseGit(gitMarkdown([["require-clean", "maybe"]])),
@@ -1302,6 +1316,84 @@ test("commit-message prints today's default from an action item", () => {
     result.stdout,
     "imports: cross-package\n\nCloses docs/audit/2026-08-18/001-imports-cross-package.md.\n",
   );
+});
+
+test("formatCommitMessage rejects newlines and control characters", () => {
+  const base = {
+    category: "imports",
+    slug: "cross-package",
+    item: "docs/audit/run/001-imports-cross-package.md",
+  };
+  assert.throws(
+    () =>
+      formatCommitMessage({
+        ...base,
+        subjectFormat: "<category>: <slug>\nSigned-off-by: Someone",
+        trailer: "none",
+      }),
+    /`subject-format` contains a newline or control character \(template\)/,
+  );
+  assert.throws(
+    () =>
+      formatCommitMessage({
+        ...base,
+        subjectFormat: "<category>: <slug>",
+        trailer: "Closes <item>.\r\nSigned-off-by: Someone",
+      }),
+    /`trailer` contains a newline or control character \(template\)/,
+  );
+});
+
+test("formatCommitMessage rejects a substituted value carrying a newline", () => {
+  assert.throws(
+    () =>
+      formatCommitMessage({
+        subjectFormat: "<category>: <slug>",
+        trailer: "none",
+        category: "imports",
+        slug: "cross-package\nSigned-off-by: Someone",
+        item: "docs/audit/run/001-imports-cross-package.md",
+      }),
+    /`subject-format` contains a newline or control character \(after substitution\)/,
+  );
+});
+
+test("formatCommitMessage rejects an empty or over-long template", () => {
+  const base = {
+    category: "imports",
+    slug: "cross-package",
+    item: "docs/audit/run/001-imports-cross-package.md",
+    trailer: "none",
+  };
+  assert.throws(
+    () => formatCommitMessage({ ...base, subjectFormat: "   " }),
+    /`subject-format` is empty \(template\)/,
+  );
+  assert.throws(
+    () => formatCommitMessage({ ...base, subjectFormat: "x".repeat(201) }),
+    /`subject-format` is 201 characters \(template\); the limit is 200/,
+  );
+});
+
+test("commit-message fails loudly on a trailer with an embedded newline", () => {
+  const result = spawnSync(
+    process.execPath,
+    [
+      path.join(ROOT, "skills/lodestar-fix/scripts/action-state.mjs"),
+      "commit-message",
+      "--file",
+      path.join(
+        ROOT,
+        "tests/fixtures/audit-runs/fix-ready/001-imports-cross-package.md",
+      ),
+      "--trailer",
+      "Closes <item>.\nSigned-off-by: Someone Else",
+    ],
+    { encoding: "utf8" },
+  );
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /`trailer` contains a newline/);
+  assert.equal(result.stdout, "");
 });
 
 test("validate-input single-package fixture: empty graph, entries, git, pkg-manager", () => {
