@@ -1,6 +1,6 @@
 {
   "name": "lodestar",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "Set up engineering principles, audit repositories, apply scoped fixes, review package architecture, and optionally prune leftover docs.",
   "homepage": "https://github.com/ilancohen/lodestar-skills"
 }
