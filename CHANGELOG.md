@@ -4,8 +4,14 @@ All notable changes to this project will be documented here.
 
 ## [0.14.0] - 2026-09-03
 
+### Added
+
+- **Sub-agent returns are checked before state changes.** `lodestar-fix` Step 3a runs `validate-returns` on the JSON and names the bad entry and field; an unknown `status` or `item_id` never marks an item.
+- **The batch names its files first.** After triage, Step 2b prints the distinct files and asks once to proceed or reselect; `AUTO_COMMIT` only runs on proceed.
+
 ### Changed
 
+- **The suite installs as a unit.** Shared modules live once in `lodestar-setup`; other skills reach them only through `setup-modules.mjs`, which names a missing base skill instead of throwing `ERR_MODULE_NOT_FOUND`. Per-skill installs are unsupported.
 - **Commit-message templates are validated.** `subject-format` and `trailer` must be a single line of at most 200 characters, checked both as written in `context.md` and after placeholder substitution, so a newline cannot split a subject or forge a trailer. The audit parser rejects a bad template before `lodestar-fix` edits anything.
 - **Fallow placeholder values must be positionals.** A `--file` / `--trace` / `--dependency` value that is empty or starts with `-` now fails with exit 2 instead of reaching Fallow as a flag.
 - **`fallow-compat.json` is disclosed and surfaced.** It is listed in the audit's filesystem-write enumeration, and a failed write warns on stderr instead of being discarded silently.
