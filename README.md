@@ -85,8 +85,9 @@ npx skills add ilancohen/lodestar-skills
 ```
 
 That's the normal path — it detects your agent, pre-selects all five skills,
-Enter to confirm. Skip `lodestar-docs` if you only want the architecture
-pipeline. A few more ways to run it:
+Enter to confirm. Install all five: the skills share modules that live in
+`lodestar-setup`, so a partial install is unsupported and any skill missing
+its base will say so and stop. A few more ways to run it:
 
 Adopting this in a large, long-lived repo does not have to open with a
 thousand action items. Setup can scope the audit to code changed since
@@ -99,7 +100,6 @@ finding.
 | Pick one agent   | `npx skills add ilancohen/lodestar-skills --skill '*' -a cursor -a universal`                                                                  |
 | Skip the prompts | `npx skills add ilancohen/lodestar-skills --skill '*' -y`                                                                                      |
 | Install a clone  | `npx skills add /path/to/lodestar-skills --skill '*' -y`                                                                                       |
-| Core four only   | `npx skills add ilancohen/lodestar-skills --skill lodestar-setup --skill lodestar-audit --skill lodestar-fix --skill lodestar-architecture -y` |
 
 Agent ids: `cursor`, `claude-code`, `codex`, `gemini-cli`, `github-copilot`,
 `kiro-cli` — see the [skills CLI's supported agents](https://github.com/vercel-labs/skills#supported-agents)

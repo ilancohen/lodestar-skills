@@ -11,25 +11,21 @@ import { spawnSync } from "node:child_process";
 import { parsePkgManagerRow, resolvePkgManager } from "./pkg-manager.mjs";
 import {
   atomicWrite,
+  checkDocsLayoutDrift,
+  detectLinter,
   fail,
+  inferProbeFromLintScript,
   isMain,
   parseArgs,
   printJson,
   utcDate,
-} from "./runtime.mjs";
+} from "./setup-modules.mjs";
 import {
   DEFAULT_INCLUDE,
   matchesGlob,
   parseScanExtensionsValue,
   walk,
 } from "./source-scan.mjs";
-import {
-  detectLinter,
-  inferProbeFromLintScript,
-} from "../../lodestar-setup/scripts/detect-linter.mjs";
-import {
-  checkDocsLayoutDrift,
-} from "../../lodestar-setup/scripts/discover-docs.mjs";
 
 export { detectPkgManager, resolvePkgManager } from "./pkg-manager.mjs";
 

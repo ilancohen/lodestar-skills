@@ -58,6 +58,78 @@ test("set_version rejects a non-semver value", () => {
   assert.throws(() => setVersion("v1", ROOT), /MAJOR\.MINOR\.PATCH/);
 });
 
+test("package checks reject a cross-skill import outside the gateway", () => {
+  const tmp = copyRepo();
+  try {
+    const target = path.join(
+      tmp,
+      "skills/lodestar-fix/scripts/action-state.mjs",
+    );
+    fs.writeFileSync(
+      target,
+      fs
+        .readFileSync(target, "utf8")
+        .replace(
+          './setup-modules.mjs"',
+          '../../lodestar-setup/scripts/runtime.mjs"',
+        ),
+    );
+    const { errors } = checkPackage(tmp);
+    assert.ok(
+      errors.some((error) => /cross-skill import/.test(error)),
+      errors.join("\n"),
+    );
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("package checks reject a second runtime.mjs outside the base skill", () => {
+  const tmp = copyRepo();
+  try {
+    fs.copyFileSync(
+      path.join(tmp, "skills/lodestar-setup/scripts/runtime.mjs"),
+      path.join(tmp, "skills/lodestar-fix/scripts/runtime.mjs"),
+    );
+    const { errors } = checkPackage(tmp);
+    assert.ok(
+      errors.some((error) => /runtime\.mjs lives only in/.test(error)),
+      errors.join("\n"),
+    );
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("package checks reject a gateway that drops its missing-base-skill guard", () => {
+  const tmp = copyRepo();
+  try {
+    const gateway = path.join(
+      tmp,
+      "skills/lodestar-fix/scripts/setup-modules.mjs",
+    );
+    fs.writeFileSync(
+      gateway,
+      'export { atomicWrite, fail, isMain, parseArgs, printJson } from "../../lodestar-setup/scripts/runtime.mjs";\n',
+    );
+    const { errors } = checkPackage(tmp);
+    assert.ok(
+      errors.some((error) => /must check the lodestar-setup module exists/.test(error)),
+      errors.join("\n"),
+    );
+    assert.ok(
+      errors.some((error) => /must be dynamic/.test(error)),
+      errors.join("\n"),
+    );
+    assert.ok(
+      errors.some((error) => /must name the lodestar-setup skill/.test(error)),
+      errors.join("\n"),
+    );
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test("frontmatter tolerates CRLF line endings (Windows checkout without .gitattributes)", () => {
   const crlf =
     '---\r\nname: example\r\nlicense: MIT\r\nmetadata:\r\n  version: "1.2.3"\r\n---\r\n\r\nBody\r\n';

@@ -60,6 +60,9 @@ function fixtureRepo() {
   git(tmp, ["config", "user.email", "test@example.com"]);
   git(tmp, ["config", "commit.gpgsign", "false"]);
   git(tmp, ["config", "tag.gpgsign", "false"]);
+  // Stop background maintenance from recreating .git/objects/pack during cleanup.
+  git(tmp, ["config", "gc.auto", "0"]);
+  git(tmp, ["config", "maintenance.auto", "false"]);
   const add = git(tmp, ["add", "-A"]);
   assert.equal(add.status, 0, add.stderr);
   const commit = git(tmp, ["commit", "-q", "-m", "init"]);
@@ -121,7 +124,7 @@ test("publish commits the bump and tags vX.Y.Z", () => {
     const status = git(tmp, ["status", "--porcelain"]);
     assert.equal(status.stdout.trim(), "");
   } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
+    fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 5 });
   }
 });
 
@@ -144,7 +147,7 @@ test("publish --dry-run does not write or tag", () => {
     ]);
     assert.notEqual(tag.status, 0);
   } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
+    fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 5 });
   }
 });
 
@@ -159,7 +162,7 @@ test("publish refuses a dirty tree or an existing tag", () => {
     assert.equal(tagged.status, 0, tagged.stderr);
     assert.throws(() => publish("patch", { root: tmp }), /already exists/);
   } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
+    fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 5 });
   }
 });
 
@@ -171,7 +174,7 @@ test("publish refuses a release without a CHANGELOG section", () => {
       /CHANGELOG\.md is missing ## \[0\.10\.1\]/,
     );
   } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
+    fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 5 });
   }
 });
 
@@ -186,7 +189,7 @@ test("changelogHasVersion matches keep-a-changelog headings", () => {
       /CHANGELOG\.md is missing ## \[0\.9\.9\]/,
     );
   } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
+    fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 5 });
   }
 });
 

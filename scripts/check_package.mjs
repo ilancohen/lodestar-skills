@@ -90,6 +90,66 @@ function validateNoDuplicatedSkillBodies(root, errors) {
   }
 }
 
+const BASE_SKILL = "lodestar-setup";
+const GATEWAY = "setup-modules.mjs";
+
+function validateModuleSharingRule(root, errors) {
+  for (const skill of SKILLS) {
+    const scriptsDir = path.join(root, "skills", skill, "scripts");
+    if (!fs.existsSync(scriptsDir)) continue;
+    for (const entry of fs.readdirSync(scriptsDir, { withFileTypes: true })) {
+      if (!entry.isFile() || !entry.name.endsWith(".mjs")) continue;
+      const full = path.join(scriptsDir, entry.name);
+      const relative = path.relative(root, full);
+      const text = fs.readFileSync(full, "utf8");
+      if (entry.name === "runtime.mjs" && skill !== BASE_SKILL) {
+        errors.push(
+          `${relative}: runtime.mjs lives only in ${BASE_SKILL}; import it through ${GATEWAY}`,
+        );
+      }
+      const crossSkill = [
+        ...text.matchAll(/["'`](\.\.\/\.\.\/[^"'`]+)["'`]/g),
+      ].map((match) => match[1]);
+      if (!crossSkill.length) continue;
+      if (entry.name !== GATEWAY) {
+        errors.push(
+          `${relative}: cross-skill import '${crossSkill[0]}'; only ${skill}/scripts/${GATEWAY} may reach outside its skill`,
+        );
+        continue;
+      }
+      for (const specifier of crossSkill) {
+        if (!specifier.startsWith(`../../${BASE_SKILL}/scripts/`)) {
+          errors.push(
+            `${relative}: '${specifier}' leaves the skill for something other than ${BASE_SKILL}/scripts/`,
+          );
+        }
+      }
+    }
+    const gatewayPath = path.join(scriptsDir, GATEWAY);
+    if (skill === BASE_SKILL || !fs.existsSync(gatewayPath)) continue;
+    // Without the existsSync check the dynamic imports below it degrade into a
+    // raw ERR_MODULE_NOT_FOUND, which is the failure mode the gateway exists
+    // to prevent.
+    const gatewayText = fs.readFileSync(gatewayPath, "utf8");
+    const relativeGateway = path.relative(root, gatewayPath);
+    if (!gatewayText.includes("fs.existsSync")) {
+      errors.push(
+        `${relativeGateway}: must check the ${BASE_SKILL} module exists before importing it`,
+      );
+    }
+    if (!gatewayText.includes(`requires the ${BASE_SKILL} skill`)) {
+      errors.push(
+        `${relativeGateway}: missing-base-skill message must name the ${BASE_SKILL} skill`,
+      );
+    }
+    if (/^(?:import|export)\s[^;]*from\s+["'`][^"'`]*\.\.\/\.\./m.test(gatewayText)) {
+      errors.push(
+        `${relativeGateway}: cross-skill imports must be dynamic so the guard can run first`,
+      );
+    }
+  }
+}
+
 function validateContributorGuidance(root, errors) {
   if (fs.existsSync(path.join(root, "CLAUDE.md"))) {
     errors.push(
@@ -171,6 +231,7 @@ export function checkPackage(root = ROOT) {
   }
 
   validateNoDuplicatedSkillBodies(root, errors);
+  validateModuleSharingRule(root, errors);
   validateContributorGuidance(root, errors);
   validateLocalPackageManager(root, errors);
 

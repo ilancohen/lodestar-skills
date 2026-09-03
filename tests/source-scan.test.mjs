@@ -7,7 +7,7 @@ import {
   scan,
   walk,
 } from "../skills/lodestar-audit/scripts/source-scan.mjs";
-import { tempDir } from "../skills/lodestar-audit/scripts/runtime.mjs";
+import { tempDir } from "../skills/lodestar-setup/scripts/runtime.mjs";
 
 test("matchesGlob covers generated trees and bare file globs", () => {
   assert.equal(

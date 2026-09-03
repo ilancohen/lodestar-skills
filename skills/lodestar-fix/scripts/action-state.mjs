@@ -4,7 +4,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { atomicWrite, fail, isMain, parseArgs } from "./runtime.mjs";
+import { atomicWrite, fail, isMain, parseArgs } from "./setup-modules.mjs";
 
 const ITEM_RE = /^\d{3}-[a-z0-9-]+\.md$/;
 const CATEGORY_ORDER = [

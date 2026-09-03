@@ -28,17 +28,32 @@ Add a `CHANGELOG.md` section for the target version, then run
 `pnpm run publish -- patch` (or `minor` / `major` / `x.y.z`). Use
 `--push` or push branch and tag separately. See `AGENTS.md`.
 
+## Module sharing
+
+**The suite installs as a unit, and `lodestar-setup` is the base skill.**
+Partial installs are an unsupported configuration.
+
+That one rule settles where shared code lives:
+
+- Shared modules live once, under `skills/lodestar-setup/scripts/` —
+  `runtime.mjs`, `detect-linter.mjs`, `discover-docs.mjs`. Do not vendor
+  copies into other skills.
+- A dependent skill reaches them only through its own
+  `scripts/setup-modules.mjs`. Nothing else under `skills/` may contain a
+  `../../` import.
+- That gateway imports dynamically and checks the file exists first, so an
+  absent base skill prints an actionable message instead of
+  `ERR_MODULE_NOT_FOUND` for a path the user never chose.
+- Each gateway re-exports only what its own skill uses.
+  `tests/runtime.test.mjs` pins that set and asserts the missing-base-skill
+  message; `scripts/check_package.mjs` enforces the import rule.
+
+Adding a shared module means putting it in `lodestar-setup/scripts/` and
+re-exporting it from each gateway that needs it.
+
 ## Deliberate duplication
 
-`runtime.mjs` ships in three skill copies (`lodestar-audit`,
-`lodestar-fix`, `lodestar-setup`). The copies are intentional: each
-skill must stand alone when installed individually. Do not "DRY" them into
-a shared module under `scripts/` — that would break standalone install.
-Edit each copy deliberately, or update them together in one change. Each
-copy exports only what its own scripts use, and `tests/runtime.test.mjs`
-pins that set.
-
-The same rule covers the commit-template checks, which are duplicated in
+The commit-template checks are duplicated in
 `lodestar-audit/scripts/audit-state.mjs` (parse time) and
 `lodestar-fix/scripts/action-state.mjs` (commit time). Change them
 together.

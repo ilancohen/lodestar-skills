@@ -4,14 +4,15 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 import {
   DEFAULT_ARCHITECTURE_ROOT,
   DEFAULT_OUTPUT_ROOT,
   architectureOutputRoot,
+  isMain,
   observeDocsLayout,
+  parseArgs,
   parseDocsLayout,
-} from "../../lodestar-setup/scripts/discover-docs.mjs";
+} from "./setup-modules.mjs";
 
 export {
   DEFAULT_ARCHITECTURE_ROOT,
@@ -20,30 +21,6 @@ export {
 };
 
 const SKIP_DIR_NAMES = new Set([".git", "node_modules", "dist"]);
-
-export function parseArgs(argv) {
-  const flags = {};
-  const positionals = [];
-  for (let i = 0; i < argv.length; i += 1) {
-    const token = argv[i];
-    if (!token.startsWith("--")) {
-      positionals.push(token);
-      continue;
-    }
-    const key = token.slice(2);
-    const next = argv[i + 1];
-    if (next === undefined || next.startsWith("--")) {
-      flags[key] = true;
-    } else if (Object.prototype.hasOwnProperty.call(flags, key)) {
-      flags[key] = [].concat(flags[key], next);
-      i += 1;
-    } else {
-      flags[key] = next;
-      i += 1;
-    }
-  }
-  return { flags, positionals };
-}
 
 function posixRel(root, filePath) {
   return path.relative(root, filePath).split(path.sep).join("/");
@@ -342,12 +319,6 @@ export function run(argv = process.argv.slice(2)) {
   }
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
   return 0;
-}
-
-function isMain(metaUrl) {
-  const entry = process.argv[1];
-  if (!entry) return false;
-  return pathToFileURL(path.resolve(entry)).href === metaUrl;
 }
 
 if (isMain(import.meta.url)) process.exit(run());

@@ -12,7 +12,7 @@ import {
 import {
   localBin,
   tempDir,
-} from "../skills/lodestar-audit/scripts/runtime.mjs";
+} from "../skills/lodestar-setup/scripts/runtime.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ACTION = path.join(ROOT, "skills/lodestar-fix/scripts/action-state.mjs");

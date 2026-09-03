@@ -22,7 +22,7 @@ import {
   parseArgs,
   printJson,
   utcDate,
-} from "./runtime.mjs";
+} from "./setup-modules.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CONTRACT_PATH = path.join(HERE, "fallow-contract.json");

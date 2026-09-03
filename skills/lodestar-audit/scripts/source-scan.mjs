@@ -5,7 +5,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { fail, isMain, parseArgs, printJson } from "./runtime.mjs";
+import { fail, isMain, parseArgs, printJson } from "./setup-modules.mjs";
 
 const BASE_SCAN_EXTENSIONS = [
   ".ts",
