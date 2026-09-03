@@ -230,7 +230,98 @@ const COMMANDS = {
   "move-done": cmdMoveDone,
   "archive-run": cmdArchiveRun,
   "commit-message": cmdCommitMessage,
+  "validate-returns": cmdValidateReturns,
 };
+
+const RETURN_STATUSES = new Set([
+  "in_progress",
+  "done",
+  "skipped",
+  "deferred",
+]);
+const COMMIT_SHA_RE = /^[0-9a-f]{7,40}$/i;
+
+export function validateReturns(runDir, payload) {
+  if (!Array.isArray(payload)) {
+    throw new Error("validate-returns: expected a JSON array of return entries");
+  }
+  const knownIds = new Set(summarize(runDir).map((item) => item.id));
+  payload.forEach((entry, index) => {
+    const where = `entry[${index}]`;
+    if (entry === null || typeof entry !== "object" || Array.isArray(entry)) {
+      throw new Error(`validate-returns: ${where} must be an object`);
+    }
+    if (!Object.prototype.hasOwnProperty.call(entry, "item_id")) {
+      throw new Error(`validate-returns: ${where}.item_id is required`);
+    }
+    if (typeof entry.item_id !== "string" || entry.item_id.trim() === "") {
+      throw new Error(`validate-returns: ${where}.item_id must be a non-empty string`);
+    }
+    if (!knownIds.has(entry.item_id)) {
+      throw new Error(
+        `validate-returns: ${where}.item_id '${entry.item_id}' is not an open item in ${runDir}`,
+      );
+    }
+    if (!Object.prototype.hasOwnProperty.call(entry, "status")) {
+      throw new Error(`validate-returns: ${where}.status is required`);
+    }
+    if (!RETURN_STATUSES.has(entry.status)) {
+      throw new Error(
+        `validate-returns: ${where}.status '${entry.status}' is not one of ${[...RETURN_STATUSES].join(", ")}`,
+      );
+    }
+    if (!Object.prototype.hasOwnProperty.call(entry, "files_modified")) {
+      throw new Error(`validate-returns: ${where}.files_modified is required`);
+    }
+    if (!Array.isArray(entry.files_modified)) {
+      throw new Error(`validate-returns: ${where}.files_modified must be an array`);
+    }
+    for (let i = 0; i < entry.files_modified.length; i += 1) {
+      if (typeof entry.files_modified[i] !== "string") {
+        throw new Error(
+          `validate-returns: ${where}.files_modified[${i}] must be a string`,
+        );
+      }
+    }
+    if (!Object.prototype.hasOwnProperty.call(entry, "commit_sha")) {
+      throw new Error(`validate-returns: ${where}.commit_sha is required`);
+    }
+    if (
+      entry.commit_sha !== null &&
+      (typeof entry.commit_sha !== "string" ||
+        !COMMIT_SHA_RE.test(entry.commit_sha))
+    ) {
+      throw new Error(
+        `validate-returns: ${where}.commit_sha must be a hex git sha or null`,
+      );
+    }
+  });
+  return { ok: true, count: payload.length };
+}
+
+function cmdValidateReturns(flags) {
+  const runDir = flags["run-dir"];
+  if (!runDir) fail("validate-returns requires --run-dir");
+  const hasJson = flags.json !== undefined && flags.json !== true;
+  const hasFile = flags["json-file"] !== undefined && flags["json-file"] !== true;
+  if (hasJson === hasFile) {
+    fail("validate-returns requires exactly one of --json '<array>' or --json-file <path>");
+  }
+  let raw;
+  if (hasFile) {
+    raw = fs.readFileSync(flags["json-file"], "utf8");
+  } else {
+    raw = flags.json;
+  }
+  let payload;
+  try {
+    payload = JSON.parse(raw);
+  } catch (error) {
+    fail(`validate-returns: JSON is not valid (${error.message})`);
+  }
+  const result = validateReturns(runDir, payload);
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+}
 
 function main(argv = process.argv.slice(2)) {
   const { flags, positionals } = parseArgs(argv);
@@ -238,7 +329,7 @@ function main(argv = process.argv.slice(2)) {
   const handler = COMMANDS[command];
   if (!handler)
     fail(
-      "Usage: action-state list|set-status|move-done|archive-run|commit-message",
+      "Usage: action-state list|set-status|move-done|archive-run|commit-message|validate-returns",
     );
   handler(flags);
 }

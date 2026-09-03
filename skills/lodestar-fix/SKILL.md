@@ -353,9 +353,12 @@ hook output, leave edits, do not mark done; `sessionCommits: never` →
 do not commit, leave unstaged. Return JSON
 `[{item_id, status, files_modified, commit_sha, notes}]`.
 
-Sub-agents run `<typecheck>` per batch but defer `<test>` to the
-orchestrator (cross-category interactions). Orchestrator runs `<test>`
-once after all return, then prints Step 4.
+Before marking any item, write the return to a temp JSON file and run
+`node scripts/action-state.mjs validate-returns --run-dir <output-root>/<RUN_ID> --json-file <temp>`.
+Reject the whole return on failure — no `set-status` / `move-done`; the
+message names the entry and field. Re-run or fix the payload. Sub-agents
+run `<typecheck>` per batch; orchestrator runs `<test>` once after all
+return, then prints Step 4.
 
 ---
 
