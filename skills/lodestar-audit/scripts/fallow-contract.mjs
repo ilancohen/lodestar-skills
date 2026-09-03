@@ -516,23 +516,45 @@ function cmdValidate(flags, contract) {
   }
 }
 
+/**
+ * A substituted placeholder must reach Fallow as a positional. `parseArgs`
+ * yields boolean `true` for a valueless flag, and a `-`-leading value would
+ * be absorbed by Fallow as a flag of its own.
+ */
+function positionalValue(value, flagName) {
+  if (typeof value !== "string" || value === "") {
+    fail(`run --${flagName} requires a single non-empty value`, 2);
+  }
+  if (value.startsWith("-")) {
+    fail(
+      `run --${flagName} value must not start with "-" (got ${value}); Fallow would read it as a flag`,
+      2,
+    );
+  }
+  return value;
+}
+
 function substituteArgv(argv, flags) {
   return argv.map((token) => {
     if (token === "<file:export>") {
       if (!flags.trace) fail("run --id dead-code-trace requires --trace", 2);
-      return flags.trace;
+      return positionalValue(flags.trace, "trace");
     }
     if (token === "<file>") {
       if (!flags.file && !flags["trace-file"]) {
         fail("run requires --file for this command", 2);
       }
-      return flags.file || flags["trace-file"];
+      return flags.file
+        ? positionalValue(flags.file, "file")
+        : positionalValue(flags["trace-file"], "trace-file");
     }
     if (token === "<name>") {
       if (!flags.dependency && !flags["trace-dependency"]) {
         fail("run requires --dependency for this command", 2);
       }
-      return flags.dependency || flags["trace-dependency"];
+      return flags.dependency
+        ? positionalValue(flags.dependency, "dependency")
+        : positionalValue(flags["trace-dependency"], "trace-dependency");
     }
     return token;
   });
@@ -543,13 +565,13 @@ function cmdRun(flags, contract) {
   const id = flags.id || flags.kind || "combined";
   const spec = commandSpec(contract, id);
   if (!spec) fail(`unknown command id/kind ${id}`, 2);
+  const argv = substituteArgv(spec.argv, flags);
   let resolved;
   try {
     resolved = resolveFallow(root, contract);
   } catch (error) {
     fail(error.message, 2);
   }
-  const argv = substituteArgv(spec.argv, flags);
   let stdout;
   try {
     stdout = runFallow(resolved.bin, argv, { cwd: root });

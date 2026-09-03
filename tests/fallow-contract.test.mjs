@@ -511,6 +511,42 @@ test("compat write failure warns on stderr without failing the audit", () => {
   }
 });
 
+test("run rejects a valueless placeholder flag before reaching fallow", () => {
+  const result = run([
+    "run",
+    "--id",
+    "dead-code-trace",
+    "--trace",
+    "--format",
+  ]);
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /--trace requires a single non-empty value/);
+});
+
+test("run rejects a flag-shaped placeholder value", () => {
+  const result = run([
+    "run",
+    "--id",
+    "dead-code-trace-file",
+    "--file",
+    "-rf",
+  ]);
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /--file value must not start with "-"/);
+});
+
+test("run rejects a flag-shaped dependency name", () => {
+  const result = run([
+    "run",
+    "--id",
+    "dead-code-trace-dependency",
+    "--dependency",
+    "-x",
+  ]);
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /--dependency value must not start with "-"/);
+});
+
 test("live fallow matrix validates every consumed command when enabled", async (t) => {
   if (process.env.FALLOW_CONTRACT_LIVE !== "1") {
     t.skip(
