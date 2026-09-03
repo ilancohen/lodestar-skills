@@ -90,8 +90,9 @@ export function readCompatRecord(root) {
 }
 
 /**
- * Write an updated fallow-compat.json. Errors are swallowed — a write
- * failure must never block the audit.
+ * Write an updated fallow-compat.json. A write failure never blocks the
+ * audit, but it is reported — otherwise the next run silently re-verifies
+ * the same schema with no explanation.
  */
 export function writeCompatRecord(root, record) {
   try {
@@ -99,8 +100,13 @@ export function writeCompatRecord(root, record) {
       path.join(root, COMPAT_FILE),
       `${JSON.stringify(record, null, 2)}\n`,
     );
-  } catch {
-    // intentionally swallowed
+    return true;
+  } catch (error) {
+    process.stderr.write(
+      `[lodestar-audit] WARNING: could not write ${COMPAT_FILE}: ${error.message}.` +
+        ` The audit continues; the next run will re-verify this Fallow schema.\n`,
+    );
+    return false;
   }
 }
 
@@ -312,7 +318,7 @@ export function validateEnvelope(envelope, spec, contract, options = {}) {
     const verified = { ...(existing.verified ?? {}) };
     baseline[needsRecord.kind] = needsRecord.baseline;
     verified[needsRecord.kind] = needsRecord.schema;
-    writeCompatRecord(root, {
+    const recorded = writeCompatRecord(root, {
       fallow_version: needsRecord.fallowVersion,
       baseline,
       verified,
@@ -321,8 +327,10 @@ export function validateEnvelope(envelope, spec, contract, options = {}) {
     });
     process.stderr.write(
       `[lodestar-audit] Fallow ${needsRecord.fallowVersion ?? "unknown"} emits ${needsRecord.kind} schema ${needsRecord.schema}` +
-        ` (baseline ${needsRecord.baseline}). Field validation passed — schema accepted and recorded in` +
-        ` ${COMPAT_FILE}. Commit that file.\n`,
+        ` (baseline ${needsRecord.baseline}). Field validation passed — schema accepted` +
+        (recorded
+          ? ` and recorded in ${COMPAT_FILE}. Commit that file.\n`
+          : ` but not recorded.\n`),
     );
   }
 

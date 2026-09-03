@@ -288,9 +288,11 @@ Follow [references/discover.md](references/discover.md). Summary:
 
 Discovery never modifies application source. The only filesystem writes
 are `<output-root>/<RUN_ID>/`, an optional consented edit of
-`.agents/lodestar/context.md` `## Audit Configuration`, and the transient
+`.agents/lodestar/context.md` `## Audit Configuration`, the transient
 `.audit-fallow-seed.json`
-(delete it after Phase 1).
+(delete it after Phase 1), and `.agents/lodestar/fallow-compat.json` —
+written only when a Fallow schema above the contract baseline passes
+field validation, and meant to be committed.
 
 ---
 
@@ -324,8 +326,9 @@ testability → dry → styling`.
 ## Rules
 
 - **Read-only.** Never modify application source. Writes: `<output-root>/`,
-  an optional consented `## Audit Configuration` edit, plus transient
-  `.audit-fallow-seed.json`.
+  an optional consented `## Audit Configuration` edit, the transient
+  `.audit-fallow-seed.json`, plus `.agents/lodestar/fallow-compat.json`
+  when a newer Fallow schema is accepted.
 - **Consent first.** Category subset and Phase 2 start are questions.
   Wait for answers.
 - **Stop conditions:** missing setup files; `validate-input` failure

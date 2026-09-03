@@ -483,7 +483,7 @@ test("second run with recorded schema passes silently (no re-note)", () => {
   }
 });
 
-test("compat write failure does not fail the audit", () => {
+test("compat write failure warns on stderr without failing the audit", () => {
   // Pass a root whose .agents/lodestar is a file (not a dir) so atomicWrite fails.
   const tmp = fs.mkdtempSync(path.join(ROOT, "tests/fixtures/.tmp-compat-"));
   try {
@@ -500,6 +500,12 @@ test("compat write failure does not fail the audit", () => {
       tmp,
     ]);
     assert.equal(result.status, 0, result.stderr);
+    assert.match(
+      result.stderr,
+      /WARNING: could not write \.agents\/lodestar\/fallow-compat\.json/,
+    );
+    assert.match(result.stderr, /next run will re-verify/);
+    assert.doesNotMatch(result.stderr, /recorded in/);
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
