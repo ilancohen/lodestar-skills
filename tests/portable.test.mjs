@@ -12,9 +12,7 @@ import {
 import {
   localBin,
   tempDir,
-  which,
 } from "../skills/lodestar-audit/scripts/runtime.mjs";
-import { resolveBin } from "../skills/lodestar-setup/scripts/resolve-bin.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ACTION = path.join(ROOT, "skills/lodestar-fix/scripts/action-state.mjs");
@@ -107,18 +105,6 @@ test("action-state set-status writes frontmatter", () => {
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
-});
-
-test("resolve-bin finds node and fails closed on missing bins", () => {
-  const nodeBin = resolveBin("node", ROOT);
-  assert.ok(nodeBin);
-  assert.ok(which("node", ROOT));
-  const missing = run(
-    path.join(ROOT, "skills/lodestar-setup/scripts/resolve-bin.mjs"),
-    ["definitely-not-a-bin-lodestar-skills", "--root", ROOT],
-  );
-  assert.equal(missing.status, 2);
-  assert.match(missing.stderr, /definitely-not-a-bin-lodestar-skills/);
 });
 
 test("tempDir uses the platform temporary directory", () => {

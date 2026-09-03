@@ -15,10 +15,10 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 // Each skill only vendors the exports it actually uses: lodestar-audit needs
-// utcDate (fallow-contract's compat-record writer) and atomicWrite;
-// lodestar-fix needs atomicWrite (action-state) but not utcDate;
-// lodestar-setup needs neither. This map documents that shape so an
-// accidental addition/removal is caught here instead of silently drifting.
+// localBin (fallow resolution), utcDate (fallow-contract's compat-record
+// writer) and atomicWrite; lodestar-fix needs atomicWrite (action-state) but
+// not utcDate; lodestar-setup needs neither. This map documents that shape so
+// an accidental addition/removal is caught here instead of silently drifting.
 const MODULES = [
   [
     "lodestar-audit",
@@ -27,7 +27,6 @@ const MODULES = [
       "fail",
       "parseArgs",
       "localBin",
-      "which",
       "atomicWrite",
       "tempDir",
       "utcDate",
@@ -42,8 +41,6 @@ const MODULES = [
       "fail",
       "parseArgs",
       "atomicWrite",
-      "localBin",
-      "which",
       "tempDir",
       "printJson",
       "isMain",
@@ -52,15 +49,7 @@ const MODULES = [
   [
     "lodestar-setup",
     "skills/lodestar-setup/scripts/runtime.mjs",
-    [
-      "fail",
-      "parseArgs",
-      "localBin",
-      "which",
-      "tempDir",
-      "printJson",
-      "isMain",
-    ],
+    ["fail", "parseArgs", "tempDir", "printJson", "isMain"],
   ],
 ];
 
@@ -122,37 +111,27 @@ for (const [skill, relative, expectedExports] of MODULES) {
     });
   }
 
-  test(`${skill}/runtime: localBin finds a pinned node_modules/.bin entry and returns null otherwise`, () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-runtime-"));
-    try {
-      const binDir = path.join(tmp, "node_modules", ".bin");
-      fs.mkdirSync(binDir, { recursive: true });
-      const shim = path.join(binDir, "made-up-tool");
-      fs.writeFileSync(shim, "#!/bin/sh\n");
-      assert.equal(runtime.localBin("made-up-tool", tmp, "darwin"), shim);
-      assert.equal(runtime.localBin("missing-tool", tmp, "darwin"), null);
-    } finally {
-      fs.rmSync(tmp, { recursive: true, force: true });
-    }
-  });
+  if (expectedExports.includes("localBin")) {
+    test(`${skill}/runtime: localBin finds a pinned node_modules/.bin entry and returns null otherwise`, () => {
+      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-runtime-"));
+      try {
+        const binDir = path.join(tmp, "node_modules", ".bin");
+        fs.mkdirSync(binDir, { recursive: true });
+        const shim = path.join(binDir, "made-up-tool");
+        fs.writeFileSync(shim, "#!/bin/sh\n");
+        assert.equal(runtime.localBin("made-up-tool", tmp, "darwin"), shim);
+        assert.equal(runtime.localBin("missing-tool", tmp, "darwin"), null);
+      } finally {
+        fs.rmSync(tmp, { recursive: true, force: true });
+      }
+    });
+  }
 
-  test(`${skill}/runtime: which prefers a pinned local bin over PATH and fails closed`, () => {
-    assert.ok(runtime.which("node", ROOT));
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-runtime-"));
-    try {
-      const binDir = path.join(tmp, "node_modules", ".bin");
-      fs.mkdirSync(binDir, { recursive: true });
-      const pinned = path.join(binDir, "made-up-tool-lodestar");
-      fs.writeFileSync(pinned, "#!/bin/sh\n");
-      fs.chmodSync(pinned, 0o755);
-      assert.equal(runtime.which("made-up-tool-lodestar", tmp), pinned);
-      assert.equal(
-        runtime.which("definitely-not-a-real-binary-xyz", tmp),
-        null,
-      );
-    } finally {
-      fs.rmSync(tmp, { recursive: true, force: true });
-    }
+  test(`${skill}/runtime: resolves binaries from node_modules/.bin only, never PATH`, () => {
+    assert.doesNotMatch(
+      fs.readFileSync(modulePath, "utf8"),
+      /process\.env\.(PATH|PATHEXT)/,
+    );
   });
 
   test(`${skill}/runtime: tempDir returns a fresh directory under the OS temp root`, () => {

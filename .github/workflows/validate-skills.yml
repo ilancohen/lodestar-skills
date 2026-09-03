@@ -43,7 +43,6 @@ jobs:
           node skills/lodestar-audit/scripts/audit-state.mjs validate-input --root tests/fixtures/repos/valid
           node skills/lodestar-audit/scripts/source-scan.mjs --recipe explicit-any --root tests/fixtures/repos/valid
           node skills/lodestar-fix/scripts/action-state.mjs list --run-dir tests/fixtures/audit-runs/fix-ready
-          node skills/lodestar-setup/scripts/resolve-bin.mjs node
           node skills/lodestar-setup/scripts/discover-docs.mjs --root tests/fixtures/repos/docs-hygiene
           node skills/lodestar-docs/scripts/scope.mjs survey --root tests/fixtures/repos/docs-hygiene
 
