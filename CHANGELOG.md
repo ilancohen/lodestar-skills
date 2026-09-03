@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented here.
 
+## [0.14.0] - 2026-09-03
+
+### Changed
+
+- **Commit-message templates are validated.** `subject-format` and `trailer` must be a single line of at most 200 characters, checked both as written in `context.md` and after placeholder substitution, so a newline cannot split a subject or forge a trailer. The audit parser rejects a bad template before `lodestar-fix` edits anything.
+- **Fallow placeholder values must be positionals.** A `--file` / `--trace` / `--dependency` value that is empty or starts with `-` now fails with exit 2 instead of reaching Fallow as a flag.
+- **`fallow-compat.json` is disclosed and surfaced.** It is listed in the audit's filesystem-write enumeration, and a failed write warns on stderr instead of being discarded silently.
+- **One gitignore pattern for audit scratch files.** Setup ignores `.audit-*.json` rather than only the Fallow seed, so an interrupted verify leaves nothing committable; verify cleanup is now unconditional. `.agents/lodestar/fallow-compat.json` stays committed.
+
+### Removed
+
+- **The `PATH` binary-resolution fallback.** The unreachable `resolve-bin.mjs` scripts and the `which()` helper behind them are gone; Fallow resolution reads `node_modules/.bin` only, as the docs already stated.
+
 ## [0.13.0] - 2026-09-01
 
 ### Added

@@ -31,8 +31,14 @@ Add a `CHANGELOG.md` section for the target version, then run
 ## Deliberate duplication
 
 `runtime.mjs` ships in three skill copies (`lodestar-audit`,
-`lodestar-fix`, `lodestar-setup`) and `resolve-bin.mjs` in two
-(`lodestar-audit`, `lodestar-setup`). The copies are intentional: each
+`lodestar-fix`, `lodestar-setup`). The copies are intentional: each
 skill must stand alone when installed individually. Do not "DRY" them into
 a shared module under `scripts/` — that would break standalone install.
-Edit each copy deliberately, or update them together in one change.
+Edit each copy deliberately, or update them together in one change. Each
+copy exports only what its own scripts use, and `tests/runtime.test.mjs`
+pins that set.
+
+The same rule covers the commit-template checks, which are duplicated in
+`lodestar-audit/scripts/audit-state.mjs` (parse time) and
+`lodestar-fix/scripts/action-state.mjs` (commit time). Change them
+together.
