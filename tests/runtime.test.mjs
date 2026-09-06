@@ -6,9 +6,9 @@ import { spawnSync } from "node:child_process";
 import test from "node:test";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-// runtime.mjs lives once, in the base skill. lodestar-audit, lodestar-fix, and
-// lodestar-docs reach it through their own scripts/setup-modules.mjs, so these
-// tests cover the one copy plus the gateway's missing-base-skill message.
+// runtime.mjs lives once, in the base skill. Dependent skills reach it
+// through their own scripts/setup-modules.mjs, so these tests cover the
+// one copy plus the gateway's missing-base-skill message.
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const RUNTIME_PATH = path.join(
@@ -63,6 +63,23 @@ const GATEWAYS = [
       "observeDocsLayout",
       "parseArgs",
       "parseDocsLayout",
+    ],
+  ],
+  [
+    "lodestar-plan",
+    "skills/lodestar-plan/scripts/setup-modules.mjs",
+    [
+      "DEFAULT_PLANS_ROOT",
+      "addAwaitingRow",
+      "atomicWrite",
+      "bootstrapPlansRoot",
+      "fail",
+      "isMain",
+      "parseArgs",
+      "parseLedger",
+      "printJson",
+      "resolvePlansRoot",
+      "run",
     ],
   ],
 ];

@@ -3,7 +3,7 @@
 Update this file when skill behavior or triggering changes. No harness —
 spot-check by prompting an agent with the phrases below.
 
-All five skills set `disable-model-invocation: true`. They must load only
+All six skills set `disable-model-invocation: true`. They must load only
 when the user names the skill (slash command, `$skill`, or the client's
 skills UI). Ambient task language must not load them.
 
@@ -38,7 +38,7 @@ Expected outcomes (once explicitly invoked):
 - Excluded-path candidates are a heading on the review screen, not a second confirmation; setup writes `### Excluded Paths` under `## Audit Configuration` in both enforcement modes. The audit produces no findings from an excluded directory.
 - Commit policy defaults to **ask each time**. Format, trailer, protected branches, and hooks are written to `## Audit Configuration` in both modes and are not shown on the review screen. `subject-format` and `trailer` must each be a single line of at most 200 characters: a newline, control character, or over-long value fails at `validate-input` and again at `commit-message` time, naming the `## Audit Configuration` field rather than trimming the value. `lodestar-fix` and `lodestar-docs` honor `commits: never` without asking; a protected branch stops the session and offers to continue without committing.
 - Step 1 measures churn with four git/filesystem commands (no source reading). The review screen states the audit-scope default, not a question — how many source files there are and how many changed in the last 90 days, then the default and a one-line reason. It must not print the word "churn", a ratio, a threshold, or the keys `changed-since` / `all`. Default "only code you touch from now on" when files ≥ 80 and 90-day churn < 0.30, else "all of it". On the former, record `changed-since` and capture `git rev-parse HEAD` and today's date. Not a git repo → `mode: all` with no heading. Step 5 names the scope and, when scoped, says the next audit will look almost empty by design and that existing code is the `INDEX.md` backlog.
-- All five skills phrase user-facing questions and summaries in plain language: one question at a time, each choice saying what it does, internal config keys and status values kept out of the prompt, counts rather than ratios, no threshold arithmetic left to the user, and a warning never trimmed or deferred. They are also laid out for skimming: point first, bullets over paragraphs, a blank line between blocks, bold lead-ins carrying the gist. Templated output — action items, `INDEX.md`, the architecture report, commit messages, the `lodestar-fix` session report — keeps its own shape. Each `SKILL.md` carries a "How to talk to the user" section; the setup step references point at it.
+- All six skills phrase user-facing questions and summaries in plain language: one question at a time, each choice saying what it does, internal config keys and status values kept out of the prompt, counts rather than ratios, no threshold arithmetic left to the user, and a warning never trimmed or deferred. They are also laid out for skimming: point first, bullets over paragraphs, a blank line between blocks, bold lead-ins carrying the gist. Templated output — action items, `INDEX.md`, the architecture report, commit messages, the `lodestar-fix` session report — keeps its own shape. Each `SKILL.md` carries a "How to talk to the user" section; the setup step references point at it.
 - A 0.8.x `context.md` (old section names) fails `validate-input` and names re-run `lodestar-setup`. A 0.9 file missing `## Audit Configuration` uses today's defaults. A file missing `## Review Rubric` still parses — principles only, no fail-closed path. Missing `Scannable` / `Entry points` columns still default as before.
 - Redirect redesign requests to `lodestar-architecture`.
 
@@ -150,3 +150,27 @@ Expected outcomes (once explicitly invoked):
 - Never edit application source or `.agents/lodestar/context.md`. Do not rewrite `AGENTS.md` unless a Docs map already exists and the user ticks that row.
 - Spec-vs-code clashes are asked, never silently resolved toward the code.
 - Missing `context.md` stops and names `lodestar-setup`, unless the user already named a folder.
+
+## lodestar-plan
+
+Should trigger:
+
+- "Write a lodestar-plan for splitting the billing package."
+- "Run lodestar-plan. Keep it a single file."
+- `/lodestar-plan`
+
+Near-miss: implementing a plan, auditing, architecture review, generic "write a design doc", and ambient planning that does not name the skill:
+
+- "Write a plan under docs/plans/ for the refactor."
+- "Break this work into stages and put it in the plans folder."
+- "Create a plan for implement-plan."
+- "Draft the next architecture change as a plan with rigor: light."
+
+Expected outcomes (once explicitly invoked):
+
+- Resolves the plans root from `## Docs Layout` `inflight` (default `docs/plans/`). Missing `context.md` is not a stop — it falls back to the default.
+- First use bootstraps the root, `done/`, and a ledger with empty Awaiting and Done tables. It does not overwrite an existing ledger.
+- Grounds before writing: every Scope / files path not marked `(new)` must exist; every named command must be a real script or Build & Test cell; assumed imports must match `## Dependency Direction`. A miss stops the write.
+- Writes `rigor: light | standard | full` from size, then risk. Risk (public API / schema, migration, auth / security / money / data-deletion, unresolved decision) forces `full`. `light` is always a single file with one stage; a folder plan is never `light`.
+- Adds one Awaiting ledger row via `setup-modules.mjs add-awaiting`. Does not implement. Does not edit application source. Does not commit unless asked.
+

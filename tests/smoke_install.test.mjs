@@ -70,7 +70,7 @@ test("assertInstalled throws when a skill is missing", () => {
       writeSkill(consumer, ".agents/skills", skill, "0.2.0");
     assert.throws(
       () => assertInstalled(consumer, "0.2.0"),
-      /expected 5 installed skills/,
+      new RegExp(`expected ${SKILLS.length} installed skills`),
     );
   } finally {
     fs.rmSync(consumer, { recursive: true, force: true });

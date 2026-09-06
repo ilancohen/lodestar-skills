@@ -1,0 +1,79 @@
+---
+name: lodestar-plan
+description: >-
+  Writes an implementable plan under the resolved plans root (default
+  docs/plans/) with a rigor: light | standard | full tier, grounds named
+  files and commands before writing, and bootstraps the plans root and
+  ledger on first use. Does not implement the plan and does not edit
+  application source. Do not load unless the user explicitly invokes
+  lodestar-plan by name.
+disable-model-invocation: true
+license: MIT
+compatibility: Requires Node.js. Reads .agents/lodestar/context.md when present; missing context falls back to docs/plans/. Does not require Fallow. npm, pnpm, yarn, and Bun are detected from lockfiles; any other manager works when recorded in context.md.
+metadata:
+  author: Ilan Cohen
+  version: "0.14.0"
+---
+
+You are running `lodestar-plan`. Write a **plan**. Do not implement it
+unless the user asked you to in the same turn.
+
+Plans are _how_. Link audit findings or specs for _what_. Home is the
+resolved plans root (default `docs/plans/`). Completed work goes to that
+root's `done/` via `lodestar-implement`; do not write new plans into
+`done/` or `abandoned/`.
+
+Scripts live beside this `SKILL.md`. Reach the shared plans module only
+through [scripts/setup-modules.mjs](scripts/setup-modules.mjs):
+
+```text
+node <this-skill>/scripts/setup-modules.mjs resolve --root <repo>
+node <this-skill>/scripts/setup-modules.mjs bootstrap --root <repo>
+node <this-skill>/scripts/setup-modules.mjs add-awaiting --root <repo> --plan <href> --summary <text>
+```
+
+Load references one hop from this file. Do not copy their procedures back
+here.
+
+## How to talk to the user
+
+Anything you print or ask is read by a person who is skimming.
+
+What you say:
+
+- Ask one clear question at a time. Say what happens for each answer.
+- Name a file by its path, not by an internal key.
+- Never trim or postpone a warning. A missing file or command the plan
+  names stays in, however short the message.
+- Short sentences. No unexplained abbreviations. No filler openers.
+
+How you lay it out:
+
+- Put the point first. No wind-up, no restating it at the end.
+- Bullets, not paragraphs. One idea per bullet, one or two sentences.
+- Blank line between blocks. Never one dense block of text.
+- Bold the first few words of each bullet, plus any count, file name, or
+  recommendation, so reading only the bold still gives the gist.
+- Say the least that fully answers, then stop.
+
+## Steps
+
+Work in order. Load the named reference before each step.
+
+1. **Locate** — [references/locate.md](references/locate.md). Resolve the
+   plans root. Bootstrap it when absent.
+2. **Ground** — [references/ground.md](references/ground.md). Bounded
+   verification, not research. Stop rather than write a plan that names a
+   missing file or a command that is not real.
+3. **Shape and tier** — [references/shape-and-tier.md](references/shape-and-tier.md).
+   Pick file vs folder. Write `rigor:` from size, then risk.
+4. **Write** — [references/write.md](references/write.md). Create the plan
+   and the ledger row. Do not commit unless asked.
+
+## Never
+
+- Application source (`packages/**`, `src/**`, or the equivalent in
+  Package Layout).
+- `.agents/lodestar/context.md`.
+- Guessing a missing file or command into existence. Stop and ask.
+- Writing a folder plan with `rigor: light`.
