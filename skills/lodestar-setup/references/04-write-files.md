@@ -31,6 +31,11 @@ This is the load-bearing file. Start from `context-md.md`. Fill in:
 - The Conventions table — the five keys from the review screen, with the
   confirmed values. Use the skip-value polarity from the template
   (`barrel-exports: yes` means barrels are allowed).
+- The Review Rubric list — always
+  `.agents/skills/lodestar-setup/principles.md` first, then the
+  confirmed extra paths from the review screen, each as a repo-relative
+  bullet. Write the section even when the extras list is empty
+  (principles alone).
 - The Audit Configuration table — defaults (`categories: all`,
   `output-root: docs/audit`, `fallow: required`, `scan-extensions` from
   Step 1 framework signals) plus review-screen
@@ -51,8 +56,8 @@ Settings`, `## Audit Scope`, `## Git`, `## Excluded Paths`,
 `## Principles`, `## Skills`, `## Audit Output`), rewrite from the
 template — those files fail the parser until regenerated. If it is
 already the 0.9 shape, replace `## Build & Test`,
-`## Dependency Direction`, `## Package Layout`, `## Docs Layout`, and
-`## Conventions`;
+`## Dependency Direction`, `## Package Layout`, `## Docs Layout`,
+`## Conventions`, and `## Review Rubric`;
 leave other user content. Do **not** replace `## Audit Configuration`
 wholesale: refresh git keys (`commits`, `subject-format`, `trailer`,
 `protected`, `require-clean`) and `### Excluded Paths` from this run;
@@ -62,13 +67,16 @@ reset them). Missing `## Docs Layout` → insert between `## Package Layout`
 and `## Conventions` when Step 1 found docs rows; omit the section when
 the list is empty (and delete a leftover empty section). Missing
 `## Conventions` → insert between
-`## Package Layout` (or `## Docs Layout`) and `## Audit Configuration`. Missing
-`## Audit Configuration` → insert after `## Conventions` (or
-`## Package Layout`) with the defaults above.
+`## Package Layout` (or `## Docs Layout`) and `## Review Rubric` (or
+`## Audit Configuration`). Missing `## Review Rubric` → insert between
+`## Conventions` and `## Audit Configuration` (after inserting
+Conventions if that was also missing). Missing
+`## Audit Configuration` → insert after `## Review Rubric` (or
+`## Conventions`, or `## Package Layout`) with the defaults above.
 
 Create the `.agents/lodestar/` directory if needed, and write to
 `.agents/lodestar/context.md`. Write it in both enforcement modes —
-Conventions and Audit Configuration included.
+Conventions, Review Rubric, and Audit Configuration included.
 
 ### AGENTS.md — only in `full` mode
 

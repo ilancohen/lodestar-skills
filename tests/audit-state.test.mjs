@@ -46,6 +46,7 @@ const SCRIPT = path.join(ROOT, "skills/lodestar-audit/scripts/audit-state.mjs");
 const VALID = path.join(ROOT, "tests/fixtures/repos/valid");
 const PRE09 = path.join(ROOT, "tests/fixtures/repos/pre-0.9");
 const OPTED_OUT = path.join(ROOT, "tests/fixtures/repos/opted-out");
+const REVIEW_RUBRIC = path.join(ROOT, "tests/fixtures/repos/review-rubric");
 const CYCLIC = path.join(ROOT, "tests/fixtures/repos/cyclic");
 const PLACEHOLDER = path.join(ROOT, "tests/fixtures/repos/placeholder");
 const SINGLE = path.join(ROOT, "tests/fixtures/repos/single-package");
@@ -1122,6 +1123,15 @@ test("validate-input reports opted-out conventions and custom output-root", () =
   assert.equal(payload.conventions["branded-types"], "yes");
   assert.equal(payload.outputRoot, "docs/qa");
   assert.equal(payload.architectureRoot, "docs/qa/architecture-review");
+});
+
+test("validate-input accepts a context.md with ## Review Rubric", () => {
+  const result = run(["validate-input", "--root", REVIEW_RUBRIC]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.conventions["result-types"], "yes");
+  assert.equal(payload.conventions["coverage-floor"], 80);
+  assert.equal(payload.outputRoot, "docs/audit");
 });
 
 function gitMarkdown(rows) {

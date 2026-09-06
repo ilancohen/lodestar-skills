@@ -97,6 +97,18 @@ Read only what's needed to fill in the template placeholders:
   list and omit `## Docs Layout`. A path already in `## Docs Layout`
   keeps its Role and Responsibility even if this run would guess
   differently; new paths get the script's guess; gone paths are dropped.
+- **Guideline sources** — bounded existence checks, not a tree walk.
+  Record paths that exist. Always include
+  `.agents/skills/lodestar-setup/principles.md` as the baseline, even
+  when nothing else is found. Check these well-known files at the repo
+  root: `CONTRIBUTING.md`, `AGENTS.md`, `CLAUDE.md`. Host-agent rules,
+  one level, only if the directory exists: `.cursor/rules/` (`*.md`,
+  `*.mdc`), `.claude/rules/` (`*.md`), `.cursorrules`,
+  `.github/copilot-instructions.md`. Under each observed docs-layout
+  path, check for `CONTRIBUTING.md`, `STYLE.md`, `CONVENTIONS.md`, or a
+  `*coding*standard*` file — stop at the first hit per docs path. Do
+  not walk the rest of the tree. A path already in `## Review Rubric`
+  stays unless the user drops it on the review screen.
 - **Audit-scope measurements** — no source reading. No `.git` → record
   that and skip to `mode: all` with no question. Else four commands:
   `git rev-list --count HEAD`; `git log --reverse --format=%ad

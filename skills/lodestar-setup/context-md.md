@@ -197,6 +197,23 @@ A repo that throws typed errors and uses Tailwind would set
 `result-types` to `no` and `design-tokens` to `no`; the other rows stay
 at their defaults.
 
+## Review Rubric
+
+Repo-relative paths a later review or implement pass should read, on
+top of the installed principles. **Absent means principles only.** No
+version gate and no fail-closed parse — a file with no such section
+still audits. Setup always writes this section, even when the extras
+list is empty.
+
+The installed `principles.md` is always the first bullet. Other bullets
+are what setup found (`CONTRIBUTING.md`, `AGENTS.md`, `CLAUDE.md`,
+style docs under the observed docs tree, host-agent rules files) plus
+review-screen corrections.
+
+- `.agents/skills/lodestar-setup/principles.md` — always; suite baseline
+- `[e.g. CONTRIBUTING.md]`
+- `[e.g. AGENTS.md]`
+
 ## Audit Configuration
 
 How the audit and `lodestar-fix` behave. **Absent means default:** every

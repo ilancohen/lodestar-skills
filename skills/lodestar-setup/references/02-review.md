@@ -88,6 +88,12 @@ The keys below go in the file; do not put them on screen:
   `yes` when not (re-export files are allowed)
 - coverage floor → the confirmed integer or `none`
 
+**Review rubric** — the extra files a later review should read, on top
+of the suite principles (always included; do not offer to drop it).
+List each discovered path in plain words, one bullet. Empty extras is
+allowed — then say "suite principles only". Corrections at face value
+(add a path, drop a path). Do not invent files.
+
 **Audit scope** — skip this heading when the repo is not git (`mode:
 all`) or `## Audit Configuration` already has `mode` (leave it — the
 baseline does not move on a re-run).
