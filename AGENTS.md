@@ -21,6 +21,8 @@ to use — do not guess.
 | `skills/lodestar-audit/`        | Read-only violation discovery and action-item planning                    |
 | `skills/lodestar-fix/`          | Scoped execution of audit action items                                    |
 | `skills/lodestar-architecture/` | Advisory package-layout review                                            |
+| `skills/lodestar-plan/`         | Writes implementable plans under the recorded plans root                  |
+| `skills/lodestar-implement/`    | Executes those plans one stage at a time                                  |
 | `skills/lodestar-docs/`         | Optional harvest-then-delete of leftover lodestar docs                    |
 | `.agents/attention-kind/` etc.  | Local reply-style skills (not published; AGPL-3.0)                        |
 | `.cursor/skills/`               | Cursor wrappers for local `.agents/` contributor skills                   |
@@ -62,7 +64,8 @@ separately: `git push origin HEAD && git push origin vX.Y.Z`.
 - Reference bundled files relative to the skill directory.
 - Keep target-repository output paths explicit.
 - Describe all source mutation in the skill's discovery description.
-- `lodestar-fix` remains the only skill that modifies application source.
+- `lodestar-fix` and `lodestar-implement` are the only skills that
+  modify application source. Plan bodies stay immutable.
 - Preserve consent gates, scope limits, and restartability.
 - Don't hand-edit versions; use `pnpm run publish`.
 - Update `docs/evals.md` when behavior or triggering changes.

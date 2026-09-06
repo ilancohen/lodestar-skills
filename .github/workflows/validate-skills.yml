@@ -45,12 +45,13 @@ jobs:
           node skills/lodestar-fix/scripts/action-state.mjs list --run-dir tests/fixtures/audit-runs/fix-ready
           node skills/lodestar-setup/scripts/discover-docs.mjs --root tests/fixtures/repos/docs-hygiene
           node skills/lodestar-setup/scripts/discover-plans.mjs resolve --root tests/fixtures/repos/docs-hygiene
+          node skills/lodestar-implement/scripts/plan-state.mjs pick-up --root tests/fixtures/plans/light-repo --plan tiny.md
           node skills/lodestar-docs/scripts/scope.mjs survey --root tests/fixtures/repos/docs-hygiene
 
-      - name: Verify installer discovery (exactly six)
+      - name: Verify installer discovery (exactly seven)
         env:
           # The `skills` CLI emits ANSI color codes even to a non-TTY CI
-          # runner, which split literal substrings like "Found 6 skills"
+          # runner, which split literal substrings like "Found 7 skills"
           # across escape sequences and broke the greps below.
           NO_COLOR: "1"
         run: |
@@ -62,7 +63,8 @@ jobs:
           echo "$out" | grep -q lodestar-architecture
           echo "$out" | grep -q lodestar-docs
           echo "$out" | grep -q lodestar-plan
-          echo "$out" | grep -q 'Found 6 skills'
+          echo "$out" | grep -q lodestar-implement
+          echo "$out" | grep -q 'Found 7 skills'
 
       - name: Native Claude plugin validator when available
         run: |

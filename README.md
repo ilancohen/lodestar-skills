@@ -3,10 +3,10 @@
     <span style="display: inline-block; translate: 0 -0.25em;">Lodestar</span>
 </h1>
 
-Five skills that document your codebase's architecture, find where it breaks
-the rules, fix those spots, and write plans for larger work — with your
-say-so at every step. An optional sixth prunes leftover writeups those
-skills leave behind.
+Six skills that document your codebase's architecture, find where it breaks
+the rules, fix those spots, write plans for larger work, and execute those
+plans — with your say-so at every step. An optional seventh prunes leftover
+writeups those skills leave behind.
 
 - **`lodestar-setup`** — writes down how your repo is built: commands,
   packages, documentation trees, and the rules to follow. It all goes in
@@ -23,6 +23,10 @@ skills leave behind.
 - **`lodestar-plan`** — writes an implementable plan under `docs/plans/`
   (or the plans root recorded at setup), with a `rigor:` tier, after
   checking that named files and commands exist. Does not implement.
+- **`lodestar-implement`** — executes that plan one stage at a time at
+  the declared `rigor:` tier, then moves it to `done/` and updates the
+  ledger. The only other skill besides `lodestar-fix` that edits
+  application source.
 - **`lodestar-docs`** — optional. Harvests leftover knowledge from
   `staging` docs trees into `home` trees recorded at setup, then deletes
   what an agent would not miss. Never creates new docs homes. Never edits
@@ -88,8 +92,8 @@ records layout, entry points, generated-code exclusions, and how
 npx skills add ilancohen/lodestar-skills
 ```
 
-That's the normal path — it detects your agent, pre-selects all six skills,
-Enter to confirm. Install all six: the skills share modules that live in
+That's the normal path — it detects your agent, pre-selects all seven skills,
+Enter to confirm. Install all seven: the skills share modules that live in
 `lodestar-setup`, so a partial install is unsupported and any skill missing
 its base will say so and stop. A few more ways to run it:
 

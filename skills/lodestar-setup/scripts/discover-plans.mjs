@@ -210,6 +210,57 @@ export function addAwaitingRow(ledgerText, href, summary, label = href) {
   };
 }
 
+function removeMatchingRow(sectionBody, href) {
+  const lines = sectionBody.split(/\r?\n/);
+  const next = lines.filter((line) => {
+    if (!line.startsWith("|")) return true;
+    const cells = splitTableCells(line);
+    if (cells.length < 2) return true;
+    const parsed = parseLinkCell(cells[0]);
+    return !parsed.href || !samePlan(parsed, href);
+  });
+  return { body: next.join("\n"), removed: next.length !== lines.length };
+}
+
+export function moveAwaitingToDone(ledgerText, href, evidence, label) {
+  const parsed = parseLedger(ledgerText);
+  const row = parsed.awaiting.find((item) => samePlan(item, href));
+  if (!row) return { text: ledgerText, moved: false };
+  const awaiting = headingSection(ledgerText, "Awaiting Implementation");
+  if (!awaiting) return { text: ledgerText, moved: false };
+  const stripped = removeMatchingRow(awaiting.body, href);
+  let text =
+    ledgerText.slice(0, awaiting.start) +
+    stripped.body +
+    ledgerText.slice(awaiting.end);
+  const doneHref = href.startsWith("done/") ? href : `done/${href.replace(/\/$/, "")}${href.endsWith("/") ? "/" : ""}`;
+  const doneRow = {
+    href: doneHref,
+    label: label || row.label || href,
+    summary: evidence,
+  };
+  const done = headingSection(text, "Done");
+  if (!done) {
+    text = `${text.trimEnd()}\n\n${renderTable("Done", ["Plan", "Evidence"], [doneRow])}`;
+    return { text, moved: true };
+  }
+  const lines = done.body.split(/\r?\n/);
+  let lastTableLine = -1;
+  for (let i = 0; i < lines.length; i += 1) {
+    if (lines[i].startsWith("|")) lastTableLine = i;
+  }
+  const rendered = renderRow(doneRow);
+  if (lastTableLine === -1) {
+    lines.push("", "| Plan | Evidence |", "| ---- | -------- |", rendered);
+  } else {
+    lines.splice(lastTableLine + 1, 0, rendered);
+  }
+  return {
+    text: text.slice(0, done.start) + lines.join("\n") + text.slice(done.end),
+    moved: true,
+  };
+}
+
 export function bootstrapPlansRoot(root, plansRoot = resolvePlansRoot(root)) {
   const relative = normalizePlansRoot(plansRoot);
   const abs = path.join(root, relative);

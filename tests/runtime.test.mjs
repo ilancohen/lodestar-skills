@@ -82,6 +82,22 @@ const GATEWAYS = [
       "run",
     ],
   ],
+  [
+    "lodestar-implement",
+    "skills/lodestar-implement/scripts/setup-modules.mjs",
+    [
+      "DEFAULT_PLANS_ROOT",
+      "atomicWrite",
+      "fail",
+      "isMain",
+      "ledgerPath",
+      "moveAwaitingToDone",
+      "parseArgs",
+      "parseLedger",
+      "printJson",
+      "resolvePlansRoot",
+    ],
+  ],
 ];
 
 const runtime = await import(pathToFileURL(RUNTIME_PATH).href);

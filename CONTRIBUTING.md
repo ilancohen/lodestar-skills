@@ -20,7 +20,7 @@ Before committing suite changes:
 1. `pnpm check`
 2. `pnpm test`
 3. Confirm local discovery with `pnpm dlx skills add . --list`
-4. Confirm adapters still discover exactly six skills, none auto-invoke
+4. Confirm adapters still discover exactly seven skills, none auto-invoke
    (`disable-model-invocation: true`), and adapters never auto-load
    `lodestar-fix`
 
@@ -36,8 +36,8 @@ Partial installs are an unsupported configuration.
 That one rule settles where shared code lives:
 
 - Shared modules live once, under `skills/lodestar-setup/scripts/` —
-  `runtime.mjs`, `detect-linter.mjs`, `discover-docs.mjs`. Do not vendor
-  copies into other skills.
+  `runtime.mjs`, `detect-linter.mjs`, `discover-docs.mjs`,
+  `discover-plans.mjs`. Do not vendor copies into other skills.
 - A dependent skill reaches them only through its own
   `scripts/setup-modules.mjs`. Nothing else under `skills/` may contain a
   `../../` import.
