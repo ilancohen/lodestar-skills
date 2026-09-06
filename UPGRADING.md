@@ -9,7 +9,7 @@ and `docs/audit/` output.
 npx skills add ilancohen/lodestar-skills
 ```
 
-Enter accepts detected agents and all five skills. That is the normal
+Enter accepts detected agents and all seven skills. That is the normal
 install path. Omit `lodestar-docs` if you do not want docs hygiene.
 
 Per-agent example:

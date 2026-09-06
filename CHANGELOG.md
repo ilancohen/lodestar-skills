@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented here.
 
+## [0.15.0] - 2026-09-06
+
+### Added
+
+- **`lodestar-plan`.** Writes implementable plans under the recorded plans root with a `rigor: light | standard | full` tier, after checking that named files and commands exist. Does not implement.
+- **`lodestar-implement`.** Executes those plans one stage at a time at the declared tier, then moves them to `done/` and updates the ledger. The only other skill besides `lodestar-fix` that edits application source.
+- **`## Review Rubric` in `context.md`.** Setup records discovered guideline sources; `lodestar-implement` reads them. Absent section still means principles only.
+
+### Removed
+
+- **The contributor `implement-plan` copy.** Canonical logic lives in `skills/lodestar-implement/`; Cursor wrappers are thin pointers.
+
 ## [0.14.0] - 2026-09-03
 
 ### Added

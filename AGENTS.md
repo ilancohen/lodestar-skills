@@ -25,8 +25,7 @@ to use — do not guess.
 | `skills/lodestar-implement/`    | Executes those plans one stage at a time                                  |
 | `skills/lodestar-docs/`         | Optional harvest-then-delete of leftover lodestar docs                    |
 | `.agents/attention-kind/` etc.  | Local reply-style skills (not published; AGPL-3.0)                        |
-| `.cursor/skills/`               | Cursor wrappers for local `.agents/` contributor skills                   |
-| `.cursor/skills/create-plan/`   | Contributor planning skill; Cursor-only (no `.agents/` SSOT; intentional) |
+| `.cursor/skills/`               | Cursor wrappers for local `.agents/` skills and thin pointers at `lodestar-plan` / `lodestar-implement` |
 | `scripts/`                      | Deterministic package-development validation                              |
 | `package.json`                  | pnpm pin and suite scripts (`pnpm check`, `pnpm test`)                    |
 | `plugin.json`                   | Portable Agent Plugins manifest                                           |
@@ -84,5 +83,5 @@ smoke-testing stays uncommitted. Test suite behavior with the fixtures
 under `tests/fixtures/repos/` instead.
 
 Read `CONTRIBUTING.md` for the pre-commit checklist. In-flight work
-lives under `docs/plans/` (see the `create-plan` / `implement-plan`
-contributor skills).
+lives under `docs/plans/` (`lodestar-plan` / `lodestar-implement`; Cursor
+wrappers `.cursor/skills/create-plan` and `implement-plan`).

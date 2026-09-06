@@ -149,7 +149,10 @@ Skills don't activate on their own — you have to invoke them by name
 4. Run `lodestar-fix` when you want it to actually change code.
 5. Run `lodestar-architecture` separately, only if the package layout itself
    feels wrong.
-6. Run `lodestar-docs` when staging folders under `docs/` have piled up.
+6. Run `lodestar-plan` for larger work that needs a staged, implementable
+   plan (`rigor: light | standard | full`).
+7. Run `lodestar-implement` to execute that plan one stage at a time.
+8. Run `lodestar-docs` when staging folders under `docs/` have piled up.
    It proposes, waits for OK, then harvests and deletes. Default scope is
    lodestar-owned trees, not the whole `docs/` tree.
 

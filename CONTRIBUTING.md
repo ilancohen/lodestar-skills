@@ -4,7 +4,8 @@ Read `AGENTS.md` before changing this skill suite.
 
 The canonical skill implementations live under `skills/`. Product manifests
 and client adapters are thin references only — they must not duplicate
-workflow logic.
+workflow logic. Cursor wrappers `.cursor/skills/create-plan` and
+`implement-plan` point at `lodestar-plan` and `lodestar-implement`.
 
 `lodestar-setup` step procedures live in
 `skills/lodestar-setup/references/`. `SKILL.md` is the dispatcher — do
