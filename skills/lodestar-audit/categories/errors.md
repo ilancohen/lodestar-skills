@@ -71,8 +71,7 @@ grep -rEn "throw new (Error|NotFound|Validation|Unauthorized)" \
 ## Action-item granularity
 
 - **A** — one catch block per item.
-- **B** — one function per item. Bundle all callers into the same item —
-  the fix must update every caller in the same commit.
+- **B** — one function per item. Bundle all callers into the same item.
 
 ## Suggested fix shape
 

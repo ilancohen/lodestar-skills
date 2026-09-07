@@ -57,9 +57,7 @@ loading paths may legitimately differ between runtime targets.
 All commands below use placeholders resolved from the `## Package Layout`
 table in `context.md`. Substitute before running.
 
-These detectors produce candidate clusters. The executor must read the
-code at every cited site and confirm the literal genuinely means the
-same thing before promoting a candidate to a finding.
+These detectors produce candidate clusters (confirm each per the scope rules below before promoting to a finding).
 
 ```bash
 # A — repeated string literals across 3+ files

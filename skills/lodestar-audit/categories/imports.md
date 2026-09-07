@@ -1,13 +1,9 @@
 # Category: `imports`
 
-All detectors here are **mechanical** (fallow / grep). Most
-action items are **low risk**.
-
-Fallow is the required detector — it covers subtypes #3, #5, #6, #7,
-#8, #9 directly. Subtypes #1 (`cross-package-src`) and #4 (`export *`
-barrels) are always grep (they are not fallow concepts). When Fallow runs
-but `.fallowrc.json` is absent, `check.boundary_violations` is empty and
-subtype #6 uses the grep heuristic below.
+All detectors here are **mechanical** (fallow / grep). Most action items
+are **low risk**. Subtypes #1 (`cross-package-src`) and #4 (`export *`
+barrels) are grep-only; #6 falls back to the grep below when
+`.fallowrc.json` is absent.
 
 ## What counts as a violation
 
@@ -54,21 +50,15 @@ entryPoints)` is true (`audit-state.mjs`): canonicalize by stripping
    Other `imports` subtypes stay on. Checkpoint `imports` with the
    real count.
 
-7. **Unused file** — a source file that no entry point reaches transitively.
-   Detected only when the fallow seed runs (`check.unused_files[]`).
-   Risk: low; deletion is usually safe but verify with
-   `fallow dead-code --trace-file`
-   before removing.
+7. **Unused file** — a source file that no entry point reaches transitively
+   (`check.unused_files[]`). Risk: low.
 
-8. **Unused dependency** — a package listed in `package.json` `dependencies`
-   that nothing in the source tree imports and no script invokes. Detected
-   only when the fallow seed runs (`check.unused_dependencies[]`).
-   Risk: low.
+8. **Unused dependency** — a package in `dependencies` that nothing imports
+   and no script invokes (`check.unused_dependencies[]`). Risk: low.
 
-9. **Unresolved import** — an import specifier fallow can't resolve to a
-   file or a listed dependency. Detected only when the fallow seed runs
-   (`check.unresolved_imports[]`). Almost always a typo or a missing
-   entry in `package.json` — usually a bug.
+9. **Unresolved import** — a specifier fallow can't resolve to a file or
+   listed dependency (`check.unresolved_imports[]`). Almost always a typo
+   or missing `package.json` entry.
 
 ## Detection
 
@@ -78,8 +68,7 @@ real path globs and import aliases before running.
 
 ### Preferred: fallow seed
 
-If `.audit-fallow-seed.json` exists from Discover, parse it once and
-emit findings from these slices (no shell grep needed):
+Parse `.audit-fallow-seed.json` (from Discover) for these slices:
 
 | JSON field                                                                | Subtype                                                                |
 | ------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
@@ -90,14 +79,8 @@ emit findings from these slices (no shell grep needed):
 | `check.unused_dependencies[]`                                             | #8 `unused-dependency`                                                 |
 | `check.unresolved_imports[]`                                              | #9 `unresolved-import`                                                 |
 
-Subtype #1 (`cross-package-src`) is not a fallow concept — it's a coding-
-style rule. Always run the grep below for it. Subtype #4 (`export *`
-barrels) is also grep-only, unless `conventions["barrel-exports"]` is
-`yes` — then skip it.
-
-For #5, only flag exports that originate from `<pkg_root>/index.ts`. Other
-unused exports inside a package are valid internal symbols that aren't
-re-exported; they're outside this category's scope.
+For #5: flag only exports from `<pkg_root>/index.ts` — internal unexported
+symbols are out of scope.
 
 ### Fallback: greps
 
@@ -108,12 +91,8 @@ node scripts/source-scan.mjs --recipe cross-package-src --alias-prefix '<alias_p
 # Repeat --root for each package path. Do not split paths on spaces.
 #   <alias_prefix> = the common prefix of every alias (e.g. '@repo/').
 #
-#   Full path: for each scannable package T with an alias, scan every
-#   other scannable root for `from '<T.alias>'` and `from '<T.alias>/`.
-#   Keep the hit only when isDeclaredEntryImport is false — so
-#   `from '@repo/core/server'` is dropped when `server` is declared, and
-#   `from '@repo/core/internal'` is kept. Apply the same drop to /src/
-#   recipe hits (an entry of `src/server` is not a violation).
+#   Full path: grep each scannable root for `from '<T.alias>'` and
+#   `from '<T.alias>/`; apply isDeclaredEntryImport filter (see #1 prose).
 
 # 4 — barrel re-exports (always scan — not a fallow concept)
 # Skip this grep when conventions["barrel-exports"] is yes.
@@ -124,65 +103,37 @@ node scripts/source-scan.mjs --recipe barrel-reexport --root <pkg_root>
 #   Symbols with zero hits outside P are over-exports.
 
 # 6 — direction grep fallback when neither fallow nor check:deps is available
-#   Skip this grep (and skip mapping fallow boundary_violations to #6)
-#   when there is one scannable row and an empty graph. Other imports
-#   subtypes stay on.
-#   Run `node scripts/audit-state.mjs validate-input --root <repo>` and read
-#   `directionGraph.reachability`. For each package P, allowed import targets
-#   are the packages in `reachability[P]` (self plus every package reachable
-#   from P in the documented graph). For each `from '<alias>'` import in P,
-#   check that <alias> resolves to an allowed package.
-#
-#   Wrong-direction: an import opposes a documented edge or path — i.e. the
-#   importer imports a package that can reach the importer in the documented
-#   graph, unless both directions of a documented cycle edge are recorded
-#   (those are #3, not #6). Use `directionGraph` from validate-input rather
-#   than walking a chain left-to-right.
-#
-#   Concretely: for importer P importing alias A (target package T), flag #6
-#   when T can reach P in the documented graph and the T↔P pair is not a
-#   documented cycle edge pair.
+#   Skip when one scannable row and empty graph; other imports subtypes stay on.
+#   Run `node scripts/audit-state.mjs validate-input --root <repo>`, read
+#   `directionGraph.reachability`, and apply the wrong-direction rule from
+#   #6 prose above to each `from '<alias>'` import in each package P.
 ```
 
 ### Cross-tool deduplication
 
-If both `pnpm check:deps` and the fallow seed report the same
-`(file:line, target)` triple, keep the fallow finding and drop the
-dep-cruiser one — fallow's `from_zone`/`to_zone` data makes the
-generated action-item title cleaner.
+When `pnpm check:deps` and the fallow seed both report the same `(file:line, target)` triple, keep the fallow finding — its `from_zone`/`to_zone` data makes action-item titles cleaner.
 
 ## Action-item granularity
 
 - **One file per fix** for cross-package paths (#1), barrel replacements (#4),
-  direction fixes (#6, when isolated to one importer), and unresolved
-  imports (#9).
+  and unresolved imports (#9). For direction fixes (#6): one file when isolated
+  to one importer; one package when the same importer has many violations.
 - **One package per fix** for index.ts tightening (#5).
 - **One cycle per fix** for circular imports (#3) — note both ends.
-- **One package per fix** for direction violations (#6) when the same
-  importer has many lines pointing the wrong way.
-- **One file per fix** for unused-file deletions (#7). When several
-  unused files form a tightly-coupled subgraph (e.g. an entire abandoned
-  feature folder), bundle them into one item with all paths listed in
-  `files:` and mark `requires_decision: true` — the user may want to keep
-  the folder around for reference.
-- **One dependency per fix** for unused dependencies (#8). Move dependency
-  removals into a single `package.json` commit per item.
+- **One file per fix** for unused-file deletions (#7). Bundle tightly-coupled
+  unused subgraphs into one item (`files:`, `requires_decision: true`).
+- **One dependency per fix** for unused dependencies (#8).
 
 ## Suggested fix shape
 
 - #1 — rewrite the import to a declared entry, or add the subpath to
-  Entry points if it is an intentional `exports` surface.
-- #2 — add the symbol to `index.ts` of the source package; do not change the
-  implementation.
-- #3 — invert the dependency, or extract the shared piece to the package
-  nominated for shared code (see `context.md` `## Package Layout`). This may
-  require a logic decision — flag `requires_decision: true`.
+  `exports` if it is an intentional API surface.
+- #2 — add the symbol to `index.ts` of the source package.
+- #3, #6 — invert the dependency or extract to the shared package
+  (nominated in `context.md`). Often `requires_decision: true`.
 - #4 — replace `export * from './x'` with explicit named re-exports.
-- #5 — remove the export from `index.ts`. If the symbol is used in tests
-  outside the package, the test belongs in the same package.
-- #6 — move the imported symbol to a package allowed by the direction
-  (usually the shared/types package), or invert the dependency so the
-  importer becomes the imported. Often `requires_decision: true`.
+- #5 — remove the export from `index.ts` (if only consumed by tests
+  outside the package, move the test into the same package).
 - #7 — delete the file. Before deleting, run
   `node scripts/fallow-contract.mjs run --root <repo> --id dead-code-trace-file --file <path>`
   (stdout is the validated `kind: "trace"` envelope) to confirm fallow
@@ -196,9 +147,8 @@ generated action-item title cleaner.
   (stdout is the validated envelope) to confirm.
   If the dependency is used only by a script in `package.json` or a CI
   config, it's a fallow false positive — leave it.
-- #9 — fix the import: correct the typo, install the missing dependency,
-  or add the missing alias to `tsconfig.json` `paths`. Never silence #9
-  by adding a wildcard — fix the underlying cause.
+- #9 — fix the specifier: correct the typo, install the missing dep,
+  or add the alias to `tsconfig.json` `paths`. Never use a wildcard.
 
 ## Scope rules (must appear verbatim in generated action items)
 

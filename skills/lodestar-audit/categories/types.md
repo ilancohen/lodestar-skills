@@ -80,9 +80,8 @@ all #1 findings `requires_decision: true` and explain in `notes:`.
   entities, `types/api.ts` for HTTP shapes, `types/events.ts` for event
   payloads — whatever exists). Add to that package's `index.ts`. Update
   imports.
-- #2 — replace with the appropriate utility (`extends`, `Pick`, `Omit`,
-  `Partial`, `Required`, `Extract`, `Exclude`, `ReturnType`, `Parameters`, `&`).
-  Delete the duplicated fields.
+- #2 — replace with the appropriate utility type (see #2 definition for the
+  list; also `&` intersection). Delete the duplicated fields.
 - #3 — replace with `unknown` + narrowing, or add that linter's inline
   disable comment with a one-line reason (see linter-probe.md).
 

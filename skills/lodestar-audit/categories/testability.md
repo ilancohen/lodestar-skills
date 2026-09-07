@@ -53,13 +53,8 @@ table in `context.md`. Substitute before running.
 grep -rEn "^[a-zA-Z_].*\(" <all_pkg_roots> --include="*.ts" \
   | grep -v "^[^:]*:[[:space:]]*(export|const|let|var|function|class|interface|type|import|//)"
 
-# Event listeners and connection openers at module scope.
-#   A composition-root file that opens a connection at module scope is
-#   sometimes legitimate. Use the Responsibility column from context.md
-#   `## Package Layout` to judge: a package whose responsibility names
-#   "DB", "queue", "infra", "adapters", or similar may legitimately do
-#   this — emit those findings with requires_decision: true rather than
-#   dropping them silently.
+# Event listeners and connection openers at module scope (apply A's
+# requires_decision defaults from prose above).
 grep -rEn "^.*(addEventListener|\.on\(|subscribe\(|connect\(|createPool|createClient)" \
   <all_pkg_roots> --include="*.ts"
 

@@ -113,14 +113,12 @@ grep -rEn "(id|Id): string|(price|amount): number|slug: string" \
   <all_pkg_roots> --include="*.ts"
 
 # B — linter probe for eslint-plugin-boundaries (read-only)
-#   Skip when linter.tool is not eslint, or when there is one scannable row
-#   and an empty graph. A, C, D, E stay on.
+#   Skip when linter.tool is not eslint, or when gate B applies (single-package).
 #   Follow linter-probe.md "boundaries B". If output exists, use it and
 #   skip the grep below.
 
 # B — misplaced business logic (path-signal heuristic; use only if linter probe found nothing)
-#   Post-filter: drop any hit whose `if` body is a single `return`, `throw`,
-#   `res.status(...)`, or `next(...)` — those are control-flow guards.
+#   Post-filter: drop control-flow guards per B prose above.
 grep -rEn "^\s*if \(" <all_pkg_roots> \
   --include="*.ts" --include="*.tsx" \
   | grep -E "/(routes|handlers|controllers)/|\.tsx:|/(infra|adapters|persistence|integrations)/" \

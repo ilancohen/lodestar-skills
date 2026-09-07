@@ -78,10 +78,7 @@ domain packages.
 ### A — inline static `style={{...}}`
 
 ```bash
-# Flag style={{ ... }} prop usages, then read each hit and decide:
-#   - All properties literal strings/numbers → A finding (static inline).
-#   - Mix of dynamic + static properties → A finding for the static ones only.
-#   - All properties computed from variables → no finding (genuinely dynamic).
+# Flag style={{ ... }} prop usages; apply the static/dynamic criterion from A above.
 node scripts/source-scan.mjs --recipe inline-style --root <pkg_root>
 ```
 
@@ -113,14 +110,9 @@ grep -rEn "['\"\`][0-9]+(\.[0-9]+)?(px|rem|em)['\"\`]" <pkg_root> \
   --include="*.ts" --include="*.tsx" --include="*.jsx"
 ```
 
-For each literal, count distinct occurrences across `<all_pkg_roots>`:
-
-- 1 or 2 occurrences → not a violation (the SSOT rule kicks in on the
-  third copy, matching `ssot` A).
-- 3+ occurrences → emit one finding per literal, listing every site.
-- Already a named token (the literal appears once, inside a `:root` /
-  `tokens.css` / exported constant module) → not a violation; the token
-  IS the canonical home.
+For each literal, apply the 3+ threshold from B prose above. Already-tokenized
+literals (declared once in `:root` / `tokens.css` / exported constant module)
+are not violations.
 
 ### C — duplicated class body
 
@@ -141,10 +133,7 @@ state-modifier level even if today's properties happen to overlap.
 ### D — magic literal where a token exists
 
 ```bash
-# Find raw colour/spacing literals inside stylesheet files in a package
-# whose <pkg_root> also contains a tokens.css / variables.css / a :root
-# block. The token file IS the canonical home; raw literals elsewhere in
-# the same package are violations.
+# Find stylesheet files in <pkg_root> that declare a :root token block.
 grep -rln ":root" <pkg_root> --include="*.css" --include="*.scss"
 # For each match, list the tokens defined (--custom-name: literal). Then
 # grep the rest of the package's stylesheets for raw occurrences of those
