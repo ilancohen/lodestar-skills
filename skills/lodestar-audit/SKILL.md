@@ -1,7 +1,8 @@
 ---
 name: lodestar-audit
 description: >-
-  Audits a codebase against the engineering principles documented by lodestar-setup
+  Audits a codebase against the review rubric in context.md
+  (`## Review Rubric`, or principles only when that section is absent)
   and writes self-contained findings and action items under the
   output-root in context.md (default docs/audit/).
   Discovery only; never modifies application source. Restartable from
@@ -69,7 +70,7 @@ plain-language rules.
 ## Structure model
 
 This audit is **structure-agnostic**. It does not assume roles like
-`core`, `api`, or `ui`. It uses four things from
+`core`, `api`, or `ui`. It uses five things from
 `.agents/lodestar/context.md`:
 
 1. `## Package Layout` — package names, paths, aliases, a one-sentence
@@ -79,7 +80,11 @@ This audit is **structure-agnostic**. It does not assume roles like
 3. `## Conventions` — which style conventions the repo follows. Detectors
    skip at a row's skip value (see the Categories table). A missing
    section means every default.
-4. `## Audit Configuration` — optional category subset, `output-root`
+4. `## Review Rubric` — repo-relative paths to read as the audit
+   baseline. Absent means principles only
+   (`.agents/skills/lodestar-setup/principles.md`). Do not invent extra
+   checklist items beyond that list.
+5. `## Audit Configuration` — optional category subset, `output-root`
    (default `docs/audit`), and `fallow` (default `required`).
 
 Detectors run package-by-package. Kind-of-code rules use the
@@ -167,8 +172,10 @@ use grep heuristics — do not error. Otherwise use `validate-input`
 `linter.probe` (see [references/linter-probe.md](references/linter-probe.md)).
 
 Read `.agents/lodestar/context.md` for commands, direction, conventions,
-and the layout table, then follow its link to
-`.agents/skills/lodestar-setup/principles.md` for the principles content.
+and the layout table. Read every path under `## Review Rubric` when that
+section is present — that list is the audit rubric. Absent means
+principles only: `.agents/skills/lodestar-setup/principles.md`. Do not
+bake in repo-specific checklist items beyond those paths.
 
 ---
 

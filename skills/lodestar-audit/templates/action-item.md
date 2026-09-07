@@ -26,8 +26,9 @@ files:
 ## Problem
 
 <2–4 sentences. What's wrong, where, and the principle it violates. Cite the
-principle by name as it appears in
-`.agents/skills/lodestar-setup/principles.md`
+principle by name as it appears in the paths under `## Review Rubric` in
+`.agents/lodestar/context.md` (or, when that section is absent, in
+`.agents/skills/lodestar-setup/principles.md`)
 (e.g. "Centralize types", "Parse Don't Validate", "CQS"). Include the exact
 file path(s) and, where useful, a short code excerpt.>
 
