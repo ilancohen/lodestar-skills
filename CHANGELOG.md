@@ -8,6 +8,13 @@ All notable changes to this project will be documented here.
 
 - **`lodestar-plan` and `lodestar-implement` no longer require setup.** With no `.agents/lodestar/context.md`, each discovers what it needs from the repo — package manager, commands, layout, today's imports, guideline files — names what it found, and asks only when a fact is genuinely ambiguous. Neither writes `context.md`.
 - **A check with no command is skipped, not a stop.** `lodestar-implement` treats a missing typecheck, test, or lint script the same way a recorded `n/a` is treated, and says which check it skipped.
+- **Package check reports worst-case run cost.** `check_package.mjs` sums `SKILL.md` plus reachable markdown (references, templates, categories, setup loose docs, installed `principles.md`) without gating on the total.
+- **`lodestar-audit` `SKILL.md` is a dispatcher.** Discover and Plan summaries hop to `references/`; known blind spots assemble in `references/plan.md`.
+- **`lodestar-fix` procedure is sharded.** Triage, execute, fan-out, report, and resume live under `references/`; `## Rules` stay resident.
+- **`lodestar-architecture` report template hops.** Step 4 reads `templates/report.md`; describe-only skips the suggestion half.
+- **Voice blocks compressed in place.** Each skill's talk-to-user section is ≤10 lines; setup step references no longer restate it.
+- **Audit category docs drop within-file restatement.** `imports.md` ≤170 lines; detector commands unchanged.
+- **Frontmatter trimmed.** Shared lockfile/compatibility wording shortened; `lodestar-setup` description ≤60 words.
 
 ## [0.15.0] - 2026-09-06
 

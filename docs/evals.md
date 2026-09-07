@@ -102,6 +102,7 @@ Expected outcomes (once explicitly invoked):
   `requires_decision: false` items stay prompt-free inside the loop.
 - Offer only runs that have both `INDEX.md` and at least one `NNN-*.md` in the run root; if none qualify, point at `lodestar-audit`'s Plan phase. Stop if `INDEX.md` is missing after selection.
 - Commit policy comes from git keys in `## Audit Configuration` (defaults if absent): skip the auto-commit question when `per-item` or `never`; `never` leaves edits unstaged; a protected branch stops and offers to continue without committing; a rejecting hook defers the item with the hook output and does not `--no-verify`.
+- Steps 2–4 and Resuming live one hop under [`skills/lodestar-fix/references/`](../skills/lodestar-fix/references/triage.md); `SKILL.md` keeps Inputs, Step 1, and `## Rules`.
 
 ## lodestar-architecture
 
@@ -123,6 +124,7 @@ Near-miss: violation hunt, applying audit items, documenting current layout, sta
 Expected outcomes (once explicitly invoked):
 
 - Ask describe vs suggest once; write under the derived architecture root (`docs/architecture-review` when `output-root` is `docs/audit`, otherwise `<output-root>/architecture-review`); never edit application source.
+- Write the report from [`templates/report.md`](../skills/lodestar-architecture/templates/report.md); describe-only stops after the always-written sections and skips the suggestion half.
 - At most two evidence-mapped alternatives with trade-offs when asked to suggest.
 - Stop and point at `lodestar-setup` when Package Layout / Dependency Direction is missing from `.agents/lodestar/context.md`. Missing `AGENTS.md`, `CLAUDE.md`, or `.agents/skills/README.md` is not a blocker.
 
