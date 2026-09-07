@@ -187,10 +187,11 @@ writing or merging `findings.md`.
 1. Run `node scripts/audit-state.mjs resolve-run --root <repo>`
    (add `--drift '<json>'` when Preconditions chose proceed).
    Capture `outputRoot` and `path` from the JSON.
-2. If `inProgress` is non-empty, ask: "There's an unfinished audit from
-   `<date>`. Pick up where it left off, or start over? (pick up / start
-   over)". Resume with
+2. If `inProgress` is non-empty (any date — not only today), ask: "There's
+   an unfinished audit from `<run-id>`. Pick up where it left off, or
+   start over? (pick up / start over)". Resume with
    `resolve-run --root <repo> --resume <RUN_ID>`.
+   Today’s date is used only when creating a **new** run ID.
    If `inProgress` is empty, look at the latest run directory under
    `outputRoot` (not only today's date). When `INDEX.md` exists and
    `findings.md` has any `in_scope: false` (or `## Backlog` total >

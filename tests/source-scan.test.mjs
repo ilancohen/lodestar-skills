@@ -2,12 +2,19 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import {
   matchesGlob,
+  resolveRecipeInclude,
   scan,
   walk,
 } from "../skills/lodestar-audit/scripts/source-scan.mjs";
 import { tempDir } from "../skills/lodestar-setup/scripts/runtime.mjs";
+
+const FIXTURE = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "fixtures/repos/custom-extensions",
+);
 
 test("matchesGlob covers generated trees and bare file globs", () => {
   assert.equal(
@@ -158,4 +165,65 @@ test("walk still skips node_modules and .git", () => {
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
+});
+
+test("explicit-any and inline-style keep configured .vue and .svelte files", () => {
+  const configured = [
+    ".ts",
+    ".tsx",
+    ".js",
+    ".jsx",
+    ".mjs",
+    ".cjs",
+    ".mts",
+    ".cts",
+    ".vue",
+    ".svelte",
+  ];
+  assert.deepEqual(
+    resolveRecipeInclude([".ts", ".tsx"], configured).sort(),
+    [".ts", ".tsx", ".vue", ".svelte"].sort(),
+  );
+  const anyHits = scan([
+    "--recipe",
+    "explicit-any",
+    "--root",
+    FIXTURE,
+    "--cwd",
+    FIXTURE,
+    "--include",
+    configured.join(","),
+  ]);
+  const anyFiles = anyHits.hits.map((hit) => path.basename(hit.file)).sort();
+  assert.deepEqual(anyFiles, ["Widget.svelte", "Widget.vue"]);
+
+  const styleHits = scan([
+    "--recipe",
+    "inline-style",
+    "--root",
+    FIXTURE,
+    "--cwd",
+    FIXTURE,
+    "--include",
+    configured.join(","),
+  ]);
+  assert.ok(
+    styleHits.hits.some((hit) => hit.file.endsWith("Widget.vue")),
+    styleHits.hits.map((hit) => hit.file).join("\n"),
+  );
+
+  const generic = scan([
+    "--pattern",
+    ": any\\b",
+    "--root",
+    FIXTURE,
+    "--cwd",
+    FIXTURE,
+    "--include",
+    configured.join(","),
+  ]);
+  assert.deepEqual(
+    generic.hits.map((hit) => path.basename(hit.file)).sort(),
+    anyFiles,
+  );
 });

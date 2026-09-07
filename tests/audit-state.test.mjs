@@ -41,6 +41,9 @@ import {
   checkFreshness,
   deriveDirection,
   sortFindings,
+  inProgressRuns,
+  validateActionItem,
+  validateRunActionItems,
 } from "../skills/lodestar-audit/scripts/audit-state.mjs";
 import { formatCommitMessage } from "../skills/lodestar-fix/scripts/action-state.mjs";
 
@@ -2284,4 +2287,51 @@ test("validate-input polyglot fixture: blindSpots includes Go package and single
   const importsIdx = payload.blindSpots.findIndex((s) => s.includes("imports") && s.includes("single-package"));
   assert.ok(workerIdx < importsIdx);
   assert.equal(payload.probePlan, "eslint --format json --max-warnings=999 <all_pkg_roots>");
+});
+
+test("validateActionItem accepts fix-ready items and rejects nested scope", () => {
+  const good = validateRunActionItems(
+    path.join(ROOT, "tests/fixtures/audit-runs/fix-ready"),
+    { repoRoot: ROOT },
+  );
+  assert.equal(good.ok, true, good.errors.join("\n"));
+  const badText = fs.readFileSync(
+    path.join(ROOT, "tests/fixtures/audit-runs/malformed-action-item/001-types-bad.md"),
+    "utf8",
+  );
+  const bad = validateActionItem(badText, { repoRoot: ROOT });
+  assert.equal(bad.ok, false);
+  assert.ok(
+    bad.errors.some((error) => /top-level|scope/i.test(error)),
+    bad.errors.join("\n"),
+  );
+});
+
+test("validate-output rejects a malformed action item file", () => {
+  const result = run([
+    "validate-output",
+    "--path",
+    path.join(ROOT, "tests/fixtures/audit-runs/malformed-action-item/001-types-bad.md"),
+    "--root",
+    ROOT,
+  ]);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /scope|findings|top-level/i);
+});
+
+test("inProgressRuns resolves yesterday unfinished runs today", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-resume-dates-"));
+  try {
+    const yesterday = path.join(tmp, "2026-09-06");
+    fs.mkdirSync(yesterday, { recursive: true });
+    fs.writeFileSync(path.join(yesterday, "findings.md"), "# Audit findings\n");
+    const todayDone = path.join(tmp, "2026-09-07");
+    fs.mkdirSync(todayDone, { recursive: true });
+    fs.copyFileSync(CLEAN, path.join(todayDone, "findings.md"));
+    fs.writeFileSync(path.join(todayDone, "INDEX.md"), "# index\n");
+    const candidates = inProgressRuns(tmp, "2026-09-07");
+    assert.deepEqual(candidates, ["2026-09-06"]);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
 });

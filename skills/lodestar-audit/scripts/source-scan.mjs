@@ -23,6 +23,28 @@ const DTS_RE = /\.d\.ts$/;
 
 export { BASE_SCAN_EXTENSIONS, DEFAULT_INCLUDE };
 
+/**
+ * Combine a recipe's semantic extensions with configured scan-extensions.
+ * Recipe lists are never a hard replacement that drops framework files
+ * (.vue, .svelte, …) from the configured set.
+ */
+export function resolveRecipeInclude(recipeInclude, configuredInclude) {
+  const configured = configuredInclude.length
+    ? configuredInclude
+    : [...BASE_SCAN_EXTENSIONS];
+  if (!recipeInclude.length) return [...configured];
+  const base = new Set(BASE_SCAN_EXTENSIONS);
+  const intersection = recipeInclude.filter((ext) => configured.includes(ext));
+  const extras = configured.filter((ext) => !base.has(ext));
+  const resolved = [...new Set([...intersection, ...extras])];
+  if (!resolved.length) {
+    return recipeInclude.filter(
+      (ext) => configured.includes(ext) || !base.has(ext),
+    );
+  }
+  return resolved;
+}
+
 export function normalizeScanExtension(raw) {
   const trimmed = String(raw).trim();
   if (!trimmed) return null;
@@ -199,7 +221,7 @@ const RECIPES = {
   "inline-style": {
     include: [".tsx", ".jsx"],
     build() {
-      return /style=\{\{/;
+      return /style=\{\{|:style="/;
     },
   },
   placeholders: {
@@ -239,7 +261,7 @@ export function scan(argv = []) {
   if (recipeName && RECIPES[recipeName]) {
     const recipe = RECIPES[recipeName];
     regex = recipe.build(flags);
-    searchInclude = recipe.include.length ? recipe.include : include;
+    searchInclude = resolveRecipeInclude(recipe.include, include);
     if (recipe.fileName) fileFilter = recipe.fileName;
   } else if (pattern) {
     regex = new RegExp(pattern);

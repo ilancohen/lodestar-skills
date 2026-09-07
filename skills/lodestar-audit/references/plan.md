@@ -52,8 +52,25 @@ the highest existing `NNN` so the new files append. Then rewrite
 findings).
 
 After each file, run
-`node scripts/audit-state.mjs validate-output --path <file>`.
-Fix leftover placeholders in place before the next item.
+`node scripts/audit-state.mjs validate-output --path <file> --root <repo>`.
+That checks frontmatter (`scope` / `findings` top-level), non-empty
+`files:`, finding links, problem/evidence, concrete fix, scope rules,
+acceptance, risk, and `requires_decision`. Fix failures in place before
+the next item. Malformed YAML indentation, placeholders, unknown
+values, and paths outside the repository are rejected.
+
+Before writing `INDEX.md`, validate the whole run:
+
+```text
+node scripts/audit-state.mjs validate-output --path <output-root>/<RUN_ID> --root <repo>
+```
+
+Do not write `INDEX.md` until that passes.
+
+**Non-batched acceptance (for executors).** When an item is applied alone,
+a failed acceptance check leaves it `deferred` with the exact failure in
+`note:`, keeps the diff in the working tree, and never moves it to
+`done/`. The item stays resumable.
 
 ## Known blind spots
 

@@ -39,8 +39,12 @@ known-blind-spots (`<name>` — `<language>, not scanned`).
 zero files matching `scanExtensions`. Category sub-docs that say to
 iterate every Package Layout row mean every `scannable: yes` row.
 
-Use `scanExtensions` for `source-scan` and for grep `--include` flags
-(repeat one `--include="*<ext>"` per extension, stripping the leading dot).
+Use `scanExtensions` for `source-scan` (`--include` comma list) and for
+grep `--include` flags (repeat one `--include="*<ext>"` per extension,
+stripping the leading dot). Built-in `source-scan` recipes intersect their
+semantic extension list with that configured set and always keep
+configured framework extras (`.vue`, `.svelte`, …) — they must not fall
+back to a TS/JS-only replacement that drops them.
 The hardcoded includes in category docs are examples — prefer
 `scanExtensions` from `validate-input`.
 

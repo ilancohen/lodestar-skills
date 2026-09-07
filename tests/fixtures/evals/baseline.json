@@ -1,14 +1,14 @@
 {
   "version": 1,
   "capturedAt": "2026-09-07",
-  "notes": "Stage 02 safety prose replaced fan-out/autosquash. markdownWords rose where procedure grew for dirty-file stops, acceptance methods, commit consent, and live-run protection; quality benefit is preventing unverified complete/commit/delete. Agent-run usage stays null until manually captured.",
+  "notes": "Stage 02 safety prose replaced fan-out/autosquash. markdownWords rose where procedure grew for dirty-file stops, acceptance methods, commit consent, and live-run protection; quality benefit is preventing unverified complete/commit/delete. Agent-run usage stays null until manually captured. Stage 03: action-item validator and cross-date resume prose.",
   "markdownWords": {
     "lodestar-setup": {
       "words": 11403,
       "files": 16
     },
     "lodestar-audit": {
-      "words": 17776,
+      "words": 17939,
       "files": 19
     },
     "lodestar-fix": {

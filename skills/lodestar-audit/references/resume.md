@@ -28,7 +28,8 @@ node scripts/audit-state.mjs resolve-run --root <repo> --resume <RUN_ID>
 ```
 
 If `--resume` is passed with no id, it picks the latest in-progress run
-from today (findings exist, INDEX missing, or a category is incomplete).
+across **all** dates (findings exist, INDEX missing, or a category is
+incomplete). Today’s date is used only when allocating a **new** run ID.
 
 ## Recover
 

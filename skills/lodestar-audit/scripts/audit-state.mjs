@@ -70,7 +70,8 @@ Commands:
   derive-decisions --root DIR
   changed-files --root DIR --since REF
   merge-findings --in FILE [--in FILE ...] [--out FILE] [--changed-files JSON]
-  validate-output --path FILE
+  validate-output --path FILE [--root DIR]
+  validate-output --path RUN_DIR [--root DIR]
   checkpoint --run-dir DIR --category NAME --status complete|partial --count N [--package NAME]
   recover --run-dir DIR
 `);
@@ -100,9 +101,10 @@ export function listRunIds(auditRoot) {
     .sort();
 }
 
-export function inProgressRuns(auditRoot, date) {
+export function inProgressRuns(auditRoot, _date = null) {
+  // Date is ignored: resume looks across all run IDs. Today is only for
+  // allocating a new run id via nextRunId.
   return listRunIds(auditRoot)
-    .filter((id) => id === date || id.startsWith(`${date}-`))
     .filter((id) => {
       const dir = path.join(auditRoot, id);
       const findings = path.join(dir, "findings.md");
@@ -111,7 +113,12 @@ export function inProgressRuns(auditRoot, date) {
       if (!fs.existsSync(index)) return true;
       const parsed = parseFindings(fs.readFileSync(findings, "utf8"));
       return parsed.incompleteCategories.length > 0;
-    });
+    })
+    .sort(compareRunIds);
+}
+
+function compareRunIds(a, b) {
+  return String(a).localeCompare(String(b), "en");
 }
 
 export function parsePackageLayout(contextText) {
@@ -1963,6 +1970,171 @@ export function validateFinding(finding) {
   return errors;
 }
 
+const ACTION_RISKS = new Set(["low", "medium", "high"]);
+const ACTION_ITEM_SECTIONS = [
+  "Problem",
+  "Suggested fix",
+  "Scope rules",
+  "Acceptance check",
+];
+
+function parseActionFrontmatter(text) {
+  const match = text.replace(/\r\n/g, "\n").match(/^---\n([\s\S]*?)\n---\n/);
+  if (!match) return null;
+  const yaml = match[1];
+  const fields = {};
+  let listKey = null;
+  for (const line of yaml.split("\n")) {
+    if (/^[ \t]/.test(line) && listKey) {
+      const item = line.match(/^[ \t]*-\s+(.+)$/);
+      if (item) {
+        if (!Array.isArray(fields[listKey])) fields[listKey] = [];
+        fields[listKey].push(item[1].trim());
+      }
+      continue;
+    }
+    listKey = null;
+    const kv = line.match(/^([A-Za-z0-9_]+):\s*(.*)$/);
+    if (!kv) continue;
+    const key = kv[1];
+    const value = kv[2].trim();
+    if (value === "") {
+      listKey = key;
+      fields[key] = [];
+      continue;
+    }
+    fields[key] = value;
+  }
+  return fields;
+}
+
+function sectionBody(text, heading) {
+  const normalized = text.replace(/\r\n/g, "\n");
+  const start = normalized.search(new RegExp(`^## ${heading}\\s*$`, "m"));
+  if (start === -1) return null;
+  const after = normalized.slice(start).split(/\n/).slice(1);
+  const lines = [];
+  for (const line of after) {
+    if (/^## /.test(line)) break;
+    lines.push(line);
+  }
+  return lines.join("\n").trim();
+}
+
+/**
+ * Validate one action-item markdown file. `repoRoot` when set rejects
+ * files: paths that escape the repository.
+ */
+export function validateActionItem(text, options = {}) {
+  const errors = [];
+  const placeholders = findPlaceholders(text);
+  if (placeholders.length) {
+    errors.push(
+      `unresolved placeholders at lines ${placeholders
+        .map((hit) => hit.line)
+        .join(", ")}`,
+    );
+  }
+  const fields = parseActionFrontmatter(text);
+  if (!fields) {
+    errors.push("missing YAML frontmatter");
+    return { ok: false, errors };
+  }
+  if (!/^\d{3}$/.test(String(fields.id || ""))) {
+    errors.push("id must be a three-digit action-item id");
+  }
+  if (!CATEGORIES.includes(fields.category)) {
+    errors.push(`invalid category ${fields.category}`);
+  }
+  if (!fields.subtype || /[<>]/.test(String(fields.subtype))) {
+    errors.push("subtype is required and must not be a placeholder");
+  }
+  if (!ACTION_RISKS.has(fields.risk)) {
+    errors.push("risk must be low | medium | high");
+  }
+  if (fields.requires_decision !== "true" && fields.requires_decision !== "false") {
+    errors.push("requires_decision must be true or false");
+  }
+  if (!Array.isArray(fields.files) || fields.files.length === 0) {
+    errors.push("files must be a non-empty list");
+  } else {
+    for (const file of fields.files) {
+      if (!file || /[<>]/.test(file) || file.startsWith("/")) {
+        errors.push(`files entry is invalid: ${file}`);
+        continue;
+      }
+      if (file.includes("..")) {
+        errors.push(`files entry escapes the repository: ${file}`);
+      }
+      if (options.repoRoot) {
+        const abs = path.resolve(options.repoRoot, file);
+        const root = path.resolve(options.repoRoot);
+        if (abs !== root && !abs.startsWith(root + path.sep)) {
+          errors.push(`files entry outside repository: ${file}`);
+        }
+      }
+    }
+  }
+  if (!fields.scope || /[<>]/.test(String(fields.scope))) {
+    errors.push("scope is required at the top level (not nested under files)");
+  }
+  if (!fields.findings || !/\bF\d{4}\b/.test(String(fields.findings))) {
+    errors.push("findings must list at least one F#### id");
+  }
+  // Nested indentation smell from the old template.
+  if (/^files:\s*$/m.test(text) && /^\s+scope:/m.test(text)) {
+    errors.push("scope must be a top-level frontmatter field, not nested under files");
+  }
+  if (/^\s+findings:/m.test(text) && !/^findings:/m.test(text)) {
+    errors.push("findings must be a top-level frontmatter field, not nested under files");
+  }
+  for (const heading of ACTION_ITEM_SECTIONS) {
+    const body = sectionBody(text, heading);
+    if (body === null) {
+      errors.push(`missing ## ${heading}`);
+      continue;
+    }
+    if (!body || /[<>].*[<>]/.test(body) && /PLACEHOLDER|path\/to|e\.g\./i.test(body)) {
+      errors.push(`## ${heading} is empty or still a placeholder`);
+    }
+    if (heading === "Problem" && body.length < 20) {
+      errors.push("## Problem must include concrete evidence");
+    }
+    if (heading === "Suggested fix" && !/\d+\./.test(body) && body.length < 20) {
+      errors.push("## Suggested fix must be a concrete step list");
+    }
+    if (heading === "Acceptance check" && body.length < 5) {
+      errors.push("## Acceptance check must name a usable method");
+    }
+  }
+  return { ok: errors.length === 0, errors, fields };
+}
+
+export function validateActionItemFile(filePath, options = {}) {
+  const text = fs.readFileSync(filePath, "utf8");
+  const result = validateActionItem(text, options);
+  return {
+    ...result,
+    errors: result.errors.map((msg) => `${path.basename(filePath)}: ${msg}`),
+  };
+}
+
+export function validateRunActionItems(runDir, options = {}) {
+  const errors = [];
+  const files = fs
+    .readdirSync(runDir)
+    .filter((name) => /^\d{3}-.+\.md$/.test(name))
+    .sort();
+  if (!files.length) {
+    return { ok: false, errors: ["run has no action-item files"], count: 0 };
+  }
+  for (const name of files) {
+    const result = validateActionItemFile(path.join(runDir, name), options);
+    errors.push(...result.errors);
+  }
+  return { ok: errors.length === 0, errors, count: files.length };
+}
+
 function loadFindingsInput(filePath) {
   const text = fs.readFileSync(filePath, "utf8");
   if (filePath.endsWith(".json")) {
@@ -2295,9 +2467,28 @@ function parseDriftFlag(raw) {
 
 function cmdValidateOutput(flags) {
   const target = flags.path;
-  if (!target) fail("validate-output requires --path FILE", 2);
+  if (!target) fail("validate-output requires --path FILE or --run-dir DIR", 2);
   if (!fs.existsSync(target)) fail(`${target} does not exist`, 2);
+  const stat = fs.statSync(target);
+  if (stat.isDirectory() || flags["run-dir"]) {
+    const runDir = flags["run-dir"] || target;
+    const result = validateRunActionItems(runDir, {
+      repoRoot: flags.root || undefined,
+    });
+    if (!result.ok) fail(result.errors.join("\n"), 2);
+    printJson({ ok: true, actionItems: result.count });
+    return;
+  }
   const text = fs.readFileSync(target, "utf8");
+  const base = path.basename(target);
+  if (/^\d{3}-.+\.md$/.test(base)) {
+    const result = validateActionItemFile(target, {
+      repoRoot: flags.root || undefined,
+    });
+    if (!result.ok) fail(result.errors.join("\n"), 2);
+    printJson({ ok: true, kind: "action-item", id: result.fields?.id });
+    return;
+  }
   const placeholders = findPlaceholders(text);
   if (placeholders.length) {
     fail(
