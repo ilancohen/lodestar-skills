@@ -17,6 +17,108 @@ import {
   readVersion,
   scalar,
 } from "./lib.mjs";
+const PRINCIPLES_INSTALLED = ".agents/skills/lodestar-setup/principles.md";
+const PRINCIPLES_SOURCE = path.join("skills", "lodestar-setup", "principles.md");
+
+function whitespaceTokens(text) {
+  return text.split(/\s+/).filter(Boolean).length;
+}
+
+function listMarkdownFiles(dir) {
+  if (!fs.existsSync(dir)) return [];
+  return fs
+    .readdirSync(dir, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".md"))
+    .map((entry) => path.join(dir, entry.name));
+}
+
+function isExcludedFromRunCost(resolved, root) {
+  const rel = path.relative(root, resolved).split(path.sep).join("/");
+  if (!rel || rel.startsWith("..")) return true;
+  if (/(^|\/)scripts\//.test(rel)) return true;
+  if (/(^|\/)tests\//.test(rel)) return true;
+  for (const dir of ADAPTER_DIRS) {
+    const prefix = dir.replace(/\/+$/, "");
+    if (rel === prefix || rel.startsWith(`${prefix}/`)) return true;
+  }
+  return false;
+}
+
+function resolveRunCostTarget(fromFile, target, root, skillDir) {
+  const raw = target.split("#", 1)[0].trim();
+  if (!raw || /^(https?:|mailto:)/i.test(raw)) return null;
+  if (/[<>*…]/.test(raw)) return null;
+  const normalized = raw.replace(/\\/g, "/").replace(/^\.\//, "");
+  if (
+    normalized === PRINCIPLES_INSTALLED ||
+    normalized === `/${PRINCIPLES_INSTALLED}`
+  ) {
+    return path.join(root, PRINCIPLES_SOURCE);
+  }
+  const resolved = path.resolve(path.dirname(fromFile), raw);
+  if (!resolved.endsWith(".md") || !fs.existsSync(resolved)) return null;
+  if (isExcludedFromRunCost(resolved, root)) return null;
+  const skillRoot = path.resolve(skillDir);
+  const underSkill =
+    resolved === skillRoot ||
+    resolved.startsWith(skillRoot + path.sep);
+  const isPrinciples =
+    path.resolve(resolved) === path.resolve(root, PRINCIPLES_SOURCE);
+  if (!underSkill && !isPrinciples) return null;
+  return resolved;
+}
+
+/**
+ * Worst-case markdown a skill run may load: SKILL.md plus every reachable
+ * .md file (relative links, transitively), plus known non-link loads.
+ * Reports only — never gates.
+ */
+export function measureSkillRunCost(root, skill) {
+  const skillDir = path.join(root, "skills", skill);
+  const skillPath = path.join(skillDir, "SKILL.md");
+  const queue = [];
+  const enqueue = (file) => {
+    if (file && fs.existsSync(file)) queue.push(path.resolve(file));
+  };
+  const enqueueAll = (files) => {
+    for (const file of files) enqueue(file);
+  };
+
+  enqueue(skillPath);
+  enqueueAll(listMarkdownFiles(path.join(skillDir, "categories")));
+  enqueueAll(listMarkdownFiles(path.join(skillDir, "templates")));
+  enqueueAll(listMarkdownFiles(path.join(skillDir, "references")));
+  if (skill === "lodestar-setup") {
+    enqueueAll(listMarkdownFiles(skillDir));
+  }
+
+  const seen = new Set();
+  const files = [];
+  let tokens = 0;
+
+  while (queue.length) {
+    const file = queue.shift();
+    if (seen.has(file)) continue;
+    if (!fs.existsSync(file) || isExcludedFromRunCost(file, root)) continue;
+    seen.add(file);
+
+    const text = fs.readFileSync(file, "utf8");
+    files.push(path.relative(root, file).split(path.sep).join("/"));
+    tokens += whitespaceTokens(text);
+
+    if (text.includes(PRINCIPLES_INSTALLED)) {
+      enqueue(path.join(root, PRINCIPLES_SOURCE));
+    }
+    for (const match of text.matchAll(/\[[^\]]+\]\(([^)]+)\)/g)) {
+      const resolved = resolveRunCostTarget(file, match[1], root, skillDir);
+      if (resolved) enqueue(resolved);
+    }
+  }
+
+  files.sort();
+  return { skill, tokens, files };
+}
+
 function checkLinks(filePath, errors) {
   const text = fs.readFileSync(filePath, "utf8");
   const relative = path.relative(ROOT, filePath);
@@ -235,6 +337,8 @@ export function checkPackage(root = ROOT) {
   validateContributorGuidance(root, errors);
   validateLocalPackageManager(root, errors);
 
+  const runCosts = [];
+
   for (const skill of SKILLS) {
     const skillDir = path.join(root, "skills", skill);
     const skillPath = path.join(skillDir, "SKILL.md");
@@ -273,6 +377,7 @@ export function checkPackage(root = ROOT) {
         `${relativeSkill}: ~${tokens} tokens; target is about 5000`,
       );
     }
+    runCosts.push(measureSkillRunCost(root, skill));
   }
 
   const setupText = fs.readFileSync(
@@ -299,17 +404,25 @@ export function checkPackage(root = ROOT) {
     checkLinks(markdownPath, errors);
   }
 
-  return { errors, warnings, version, skillCount: SKILLS.length };
+  return { errors, warnings, version, skillCount: SKILLS.length, runCosts };
 }
 
 function main() {
-  const { errors, warnings, version, skillCount } = checkPackage();
+  const { errors, warnings, version, skillCount, runCosts } = checkPackage();
   for (const warning of warnings) process.stdout.write(`WARNING: ${warning}\n`);
   for (const error of errors) process.stderr.write(`ERROR: ${error}\n`);
   if (errors.length) process.exit(1);
   process.stdout.write(
     `Package checks passed for ${skillCount} skills at version ${version}.\n`,
   );
+  for (const cost of runCosts) {
+    process.stdout.write(
+      `Worst-case run ${cost.skill}: ~${cost.tokens} tokens across ${cost.files.length} files\n`,
+    );
+    for (const file of cost.files) {
+      process.stdout.write(`  - ${file}\n`);
+    }
+  }
 }
 
 const invoked = isMain(import.meta.url);

@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { ROOT, frontmatter, metadataVersion, readVersion, scalar } from "../scripts/lib.mjs";
-import { checkPackage } from "../scripts/check_package.mjs";
+import { checkPackage, measureSkillRunCost } from "../scripts/check_package.mjs";
 import { setVersion } from "../scripts/set_version.mjs";
 
 function copyRepo() {
@@ -137,4 +137,44 @@ test("frontmatter tolerates CRLF line endings (Windows checkout without .gitattr
   assert.equal(scalar(yaml, "name"), "example");
   assert.equal(scalar(yaml, "license"), "MIT");
   assert.equal(metadataVersion(yaml), "1.2.3");
+});
+
+test("worst-case run cost counts references and ignores scripts", () => {
+  const cost = measureSkillRunCost(ROOT, "lodestar-plan");
+  assert.ok(
+    cost.files.includes("skills/lodestar-plan/SKILL.md"),
+    cost.files.join("\n"),
+  );
+  assert.ok(
+    cost.files.includes("skills/lodestar-plan/references/locate.md"),
+    cost.files.join("\n"),
+  );
+  assert.ok(
+    cost.files.every((file) => !file.includes("/scripts/")),
+    cost.files.join("\n"),
+  );
+  const locateTokens = fs
+    .readFileSync(path.join(ROOT, "skills/lodestar-plan/references/locate.md"), "utf8")
+    .split(/\s+/)
+    .filter(Boolean).length;
+  assert.ok(
+    cost.tokens >= locateTokens,
+    `run cost ${cost.tokens} should include locate.md (~${locateTokens})`,
+  );
+
+  const audit = measureSkillRunCost(ROOT, "lodestar-audit");
+  const categoryDocs = audit.files.filter((file) =>
+    file.startsWith("skills/lodestar-audit/categories/"),
+  );
+  assert.ok(categoryDocs.length >= 9, categoryDocs.join("\n"));
+  assert.ok(
+    audit.files.includes("skills/lodestar-setup/principles.md"),
+    audit.files.join("\n"),
+  );
+
+  const setup = measureSkillRunCost(ROOT, "lodestar-setup");
+  assert.ok(
+    setup.files.includes("skills/lodestar-setup/principles.md"),
+    setup.files.join("\n"),
+  );
 });
