@@ -20,7 +20,8 @@ import {
 const PRINCIPLES_INSTALLED = ".agents/skills/lodestar-setup/principles.md";
 const PRINCIPLES_SOURCE = path.join("skills", "lodestar-setup", "principles.md");
 
-function whitespaceTokens(text) {
+/** Whitespace-separated word count — not model-token usage. */
+function markdownWords(text) {
   return text.split(/\s+/).filter(Boolean).length;
 }
 
@@ -94,7 +95,7 @@ export function measureSkillRunCost(root, skill) {
 
   const seen = new Set();
   const files = [];
-  let tokens = 0;
+  let words = 0;
 
   while (queue.length) {
     const file = queue.shift();
@@ -104,7 +105,7 @@ export function measureSkillRunCost(root, skill) {
 
     const text = fs.readFileSync(file, "utf8");
     files.push(path.relative(root, file).split(path.sep).join("/"));
-    tokens += whitespaceTokens(text);
+    words += markdownWords(text);
 
     if (text.includes(PRINCIPLES_INSTALLED)) {
       enqueue(path.join(root, PRINCIPLES_SOURCE));
@@ -116,7 +117,7 @@ export function measureSkillRunCost(root, skill) {
   }
 
   files.sort();
-  return { skill, tokens, files };
+  return { skill, markdownWords: words, files };
 }
 
 function checkLinks(filePath, errors) {
@@ -284,6 +285,46 @@ function validateContributorGuidance(root, errors) {
   }
 }
 
+const BASELINE_PATH = path.join("tests", "fixtures", "evals", "baseline.json");
+
+/**
+ * Gate aggregate markdownWords per skill against the reviewed baseline.
+ * A rise requires bumping the baseline with a note of the quality benefit.
+ */
+export function validateMarkdownWordBaseline(root, runCosts, errors) {
+  const baselineFile = path.join(root, BASELINE_PATH);
+  if (!fs.existsSync(baselineFile)) {
+    errors.push(`${BASELINE_PATH}: missing evaluation baseline`);
+    return;
+  }
+  let baseline;
+  try {
+    baseline = JSON.parse(fs.readFileSync(baselineFile, "utf8"));
+  } catch (error) {
+    errors.push(`${BASELINE_PATH}: invalid JSON: ${error.message}`);
+    return;
+  }
+  const expected = baseline?.markdownWords;
+  if (!expected || typeof expected !== "object") {
+    errors.push(`${BASELINE_PATH}: markdownWords map is required`);
+    return;
+  }
+  for (const cost of runCosts) {
+    const row = expected[cost.skill];
+    if (!row || typeof row.words !== "number") {
+      errors.push(
+        `${BASELINE_PATH}: missing markdownWords for ${cost.skill}`,
+      );
+      continue;
+    }
+    if (cost.markdownWords > row.words) {
+      errors.push(
+        `${cost.skill}: markdownWords rose ${row.words} → ${cost.markdownWords}; update ${BASELINE_PATH} with the quality benefit`,
+      );
+    }
+  }
+}
+
 function validateLocalPackageManager(root, errors) {
   const pkgPath = path.join(root, "package.json");
   if (!fs.existsSync(pkgPath)) {
@@ -387,19 +428,23 @@ export function checkPackage(root = ROOT) {
     const lines = text.split(/\r?\n/);
     if (lines.at(-1) === "") lines.pop();
     const lineCount = lines.length;
-    const tokens = text.split(/\s+/).filter(Boolean).length;
+    const skillWords = markdownWords(text);
     if (lineCount > 499) {
       errors.push(`${relativeSkill}: ${lineCount} lines; limit is 499`);
     }
-    if (tokens > 8000) {
-      errors.push(`${relativeSkill}: ~${tokens} tokens; hard limit is 8000`);
-    } else if (tokens > 5000) {
+    if (skillWords > 8000) {
+      errors.push(
+        `${relativeSkill}: ~${skillWords} markdownWords; hard limit is 8000`,
+      );
+    } else if (skillWords > 5000) {
       warnings.push(
-        `${relativeSkill}: ~${tokens} tokens; target is about 5000`,
+        `${relativeSkill}: ~${skillWords} markdownWords; target is about 5000`,
       );
     }
     runCosts.push(measureSkillRunCost(root, skill));
   }
+
+  validateMarkdownWordBaseline(root, runCosts, errors);
 
   const setupText = fs.readFileSync(
     path.join(root, "skills/lodestar-setup/SKILL.md"),
@@ -438,7 +483,7 @@ function main() {
   );
   for (const cost of runCosts) {
     process.stdout.write(
-      `Worst-case run ${cost.skill}: ~${cost.tokens} tokens across ${cost.files.length} files\n`,
+      `Worst-case run ${cost.skill}: ~${cost.markdownWords} markdownWords across ${cost.files.length} files\n`,
     );
     for (const file of cost.files) {
       process.stdout.write(`  - ${file}\n`);

@@ -1,11 +1,31 @@
 # Manual eval checklist
 
-Update this file when skill behavior or triggering changes. No harness —
-spot-check by prompting an agent with the phrases below.
+Update this file when skill behavior or triggering changes.
 
-All seven skills set `disable-model-invocation: true`. They must load only
-when the user names the skill (slash command, `$skill`, or the client's
-skills UI). Ambient task language must not load them.
+## Measured runs
+
+Capture agent runs with `scripts/eval-run.mjs` (no harness, no runtime
+telemetry). Unknown host metrics stay `null`, never guessed as zero.
+
+```bash
+node scripts/eval-run.mjs validate path/to/run.json
+node scripts/eval-run.mjs summarize path/to/run.json
+node scripts/eval-run.mjs compare --baseline tests/fixtures/evals/baseline.json path/to/run.json
+node scripts/eval-run.mjs list-scenarios
+```
+
+Scenarios live under `tests/fixtures/evals/scenarios/`. Write raw captures
+under `tests/fixtures/evals/results/` (gitignored). Commit only the reviewed
+aggregate in `tests/fixtures/evals/baseline.json`.
+
+`pnpm check` gates each skill's aggregate `markdownWords` (whitespace word
+count of reachable skill markdown — not model tokens) against that baseline.
+A rise requires updating the baseline with the quality benefit.
+
+Spot-check triggering with the phrases below. All seven skills set
+`disable-model-invocation: true`. They must load only when the user names the
+skill (slash command, `$skill`, or the client's skills UI). Ambient task
+language must not load them.
 
 ## lodestar-setup
 

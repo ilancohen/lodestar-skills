@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "capturedAt": "2026-09-07",
+  "notes": "Pre-stage-02 aggregate. Agent-run usage fields stay null until manually captured; markdownWords gate the loaded-prompt surface.",
+  "markdownWords": {
+    "lodestar-setup": { "words": 11403, "files": 16 },
+    "lodestar-audit": { "words": 17776, "files": 19 },
+    "lodestar-fix": { "words": 2561, "files": 6 },
+    "lodestar-architecture": { "words": 1862, "files": 2 },
+    "lodestar-docs": { "words": 2023, "files": 5 },
+    "lodestar-plan": { "words": 1794, "files": 6 },
+    "lodestar-implement": { "words": 3595, "files": 10 }
+  },
+  "scenarioIds": [
+    "setup-architecture-no-fallow",
+    "single-package-setup-audit-fix",
+    "mixed-vue-scoped-audit-resume",
+    "plan-implement-dirty-no-commit",
+    "architecture-docs-cleanup-safety"
+  ],
+  "runs": []
+}

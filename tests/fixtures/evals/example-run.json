@@ -1,0 +1,24 @@
+{
+  "scenario": "setup-architecture-no-fallow",
+  "skill": "lodestar-setup",
+  "capturedAt": "2026-09-07T00:00:00Z",
+  "host": "manual-schema-example",
+  "usage": {
+    "modelCalls": null,
+    "inputTokens": null,
+    "outputTokens": null,
+    "elapsedMs": null,
+    "shellCommands": null,
+    "questions": null,
+    "retries": null,
+    "artifactBytes": null,
+    "resume": "n/a"
+  },
+  "quality": {
+    "seededFound": [],
+    "seededMissed": [],
+    "falsePositives": [],
+    "usefulness": null,
+    "evidence": []
+  }
+}

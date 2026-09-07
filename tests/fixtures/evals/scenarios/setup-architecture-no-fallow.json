@@ -1,0 +1,18 @@
+{
+  "id": "setup-architecture-no-fallow",
+  "title": "Base + architecture setup with no Fallow checks or writes",
+  "skills": ["lodestar-setup", "lodestar-architecture"],
+  "fixture": "tests/fixtures/repos/single-package",
+  "install": ["lodestar-setup", "lodestar-architecture"],
+  "steps": [
+    "Install only lodestar-setup and lodestar-architecture.",
+    "Run lodestar-setup; decline or omit Fallow rows if offered.",
+    "Confirm setup performed no Fallow download, version check, or target-repo Fallow write.",
+    "Run lodestar-architecture describe-only."
+  ],
+  "asserts": {
+    "noFallowChecks": true,
+    "noFallowWrites": true,
+    "skillsCovered": ["lodestar-setup", "lodestar-architecture"]
+  }
+}

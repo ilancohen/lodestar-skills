@@ -7,6 +7,9 @@ coverage/
 
 .lodestar-backup/
 
+# Manual eval run captures (reviewed aggregates live in baseline.json).
+/tests/fixtures/evals/results/
+
 # This repo develops the suite; it does not apply the suite to itself. A
 # local install for smoke-testing lands here and must not be committed.
 /.agents/skills/

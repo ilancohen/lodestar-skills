@@ -269,7 +269,7 @@ test("worst-case run cost counts references and ignores scripts", () => {
     cost.files.every((file) => !file.includes("/scripts/")),
     cost.files.join("\n"),
   );
-  const locateTokens = fs
+  const locateWords = fs
     .readFileSync(
       path.join(ROOT, "skills/lodestar-plan/references/locate.md"),
       "utf8",
@@ -277,8 +277,8 @@ test("worst-case run cost counts references and ignores scripts", () => {
     .split(/\s+/)
     .filter(Boolean).length;
   assert.ok(
-    cost.tokens >= locateTokens,
-    `run cost ${cost.tokens} should include locate.md (~${locateTokens})`,
+    cost.markdownWords >= locateWords,
+    `run cost ${cost.markdownWords} should include locate.md (~${locateWords})`,
   );
 
   const audit = measureSkillRunCost(ROOT, "lodestar-audit");
