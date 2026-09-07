@@ -9,7 +9,7 @@ description: >-
   by name.
 disable-model-invocation: true
 license: MIT
-compatibility: Requires git, Node.js, and the target repository's typecheck and test commands — read from .agents/lodestar/context.md when present, otherwise discovered from the repo (a check with no command is skipped). lodestar-setup is not a prerequisite. npm, pnpm, yarn, and Bun are detected from lockfiles; any other manager is asked about, or read from context.md when recorded. Deno and Bazel are not supported.
+compatibility: Requires git, Node.js, and the target repository's typecheck and test commands — read from .agents/lodestar/context.md when present, otherwise discovered from the repo (a check with no command is skipped). lodestar-setup is not a prerequisite. Lockfiles detect npm, pnpm, yarn, and Bun; other managers via context.md. No Deno or Bazel.
 metadata:
   author: Ilan Cohen
   version: "0.15.0"

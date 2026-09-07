@@ -7,7 +7,7 @@ description: >-
   name.
 disable-model-invocation: true
 license: MIT
-compatibility: Requires git and the target repository's declared typecheck and test commands (`n/a` skips that check). npm, pnpm, yarn, and Bun are detected from lockfiles; any other manager works when recorded in context.md. Deno and Bazel are not supported. Shell examples assume a POSIX-compatible environment.
+compatibility: Requires git and the target repository's declared typecheck and test commands (`n/a` skips that check). Lockfiles detect npm, pnpm, yarn, and Bun; other managers via context.md. No Deno or Bazel. Shell examples assume a POSIX-compatible environment.
 metadata:
   author: Ilan Cohen
   version: "0.15.0"

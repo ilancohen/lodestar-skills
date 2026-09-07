@@ -15,9 +15,7 @@ compatibility: >-
   (combined schema 10 or newer) declared in root package.json and
   installed under node_modules/.bin unless Audit Configuration records
   fallow optional.
-  Designed for JavaScript/TypeScript repositories. npm, pnpm, yarn, and
-  Bun are detected from lockfiles; any other manager works when recorded
-  in context.md. Deno and Bazel are not supported.
+  Designed for JavaScript/TypeScript repositories. Lockfiles detect npm, pnpm, yarn, and Bun; other managers via context.md. No Deno or Bazel.
 metadata:
   author: Ilan Cohen
   version: "0.15.0"

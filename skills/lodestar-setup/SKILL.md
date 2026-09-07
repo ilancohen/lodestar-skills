@@ -1,19 +1,14 @@
 ---
 name: lodestar-setup
 description: >-
-  Sets up the lodestar suite in a repository by documenting its package
-  layout and which of a short list of conventions it already follows in
-  .agents/lodestar/context.md, the one file the other lodestar skills
-  read, which links to the bundled principles.md (never copied or
-  inlined). Measures git churn (no source reading) and states a default
-  audit scope. Two consent screens: one review of everything observed,
-  one tick list for every write outside .agents/ (install Fallow,
-  .fallowrc.json, gitignore, AGENTS.md, linters). An undetectable
-  package manager is asked before the review screen. Do not load unless
-  the user explicitly invokes lodestar-setup by name.
+  Sets up the lodestar suite in a repository: writes
+  .agents/lodestar/context.md (package layout, conventions, audit scope)
+  linking to bundled principles.md. Measures git churn and states a
+  default audit scope. Do not load unless the user explicitly invokes
+  lodestar-setup by name.
 disable-model-invocation: true
 license: MIT
-compatibility: Requires filesystem write access and a POSIX-compatible shell for optional Fallow setup, plus network access if you accept the optional Fallow install. npm, pnpm, yarn, and Bun are detected from lockfiles; any other manager works when recorded in context.md. Deno and Bazel are not supported.
+compatibility: Requires filesystem write access and a POSIX-compatible shell for optional Fallow setup, plus network access if you accept the optional Fallow install. Lockfiles detect npm, pnpm, yarn, and Bun; other managers via context.md. No Deno or Bazel.
 metadata:
   author: Ilan Cohen
   version: "0.15.0"
