@@ -48,13 +48,11 @@ This is the load-bearing file. Start from `context-md.md`. Fill in:
 - Excluded Paths — review-screen globs as `### Excluded Paths` under
   Audit Configuration; replace wholesale.
 
-Write `## Resolved Decisions` (after Audit Configuration) with:
-
-```text
-node <lodestar-audit-skill>/scripts/audit-state.mjs derive-decisions --root <repo>
-```
-
-Paste over the section every re-run. Missing → insert before Reference.
+Do **not** write `## Resolved Decisions`. Detector gates and blind spots
+are derived in memory by `lodestar-audit` `validate-input` from
+Conventions, Package Layout, Dependency Direction, and the linter cell.
+If an older `context.md` still has `## Resolved Decisions`, delete that
+section on this re-run.
 
 Leave `## Reference` as the template has it — principles link stays at
 `.agents/skills/lodestar-setup/principles.md`.
@@ -65,7 +63,8 @@ Settings`, `## Audit Scope`, `## Git`, `## Excluded Paths`,
 template — those files fail the parser until regenerated. If it is
 already the 0.9 shape, replace `## Build & Test`,
 `## Dependency Direction`, `## Package Layout`, `## Docs Layout`,
-`## Conventions`, `## Review Rubric`, and `## Resolved Decisions`;
+`## Conventions`, and `## Review Rubric`; remove a leftover
+`## Resolved Decisions` if present;
 leave other user content. Do **not** replace `## Audit Configuration`
 wholesale: refresh git keys (`commits`, `subject-format`, `trailer`,
 `protected`, `require-clean`) and `### Excluded Paths` from this run;

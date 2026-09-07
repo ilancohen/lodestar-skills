@@ -24,11 +24,14 @@ Scripts that must not prompt:
 npx skills add ilancohen/lodestar-skills --skill '*' -y
 ```
 
-## Upgrading to 0.17.0 — re-run setup
+## Upgrading past 0.17.0 — Resolved Decisions retired
 
-0.17.0 adds a `## Resolved Decisions` section to `.agents/lodestar/context.md`.
-There is no migration. A file without the section fails `validate-input` and
-names the remedy: re-run `lodestar-setup` to regenerate it.
+0.17.0 briefly required a persisted `## Resolved Decisions` section.
+That requirement is retired: `validate-input` derives detector gates and
+blind spots in memory from Conventions, Package Layout, Dependency
+Direction, and the linter cell. An existing `## Resolved Decisions`
+section is ignored. The next `lodestar-setup` re-run deletes it. No
+forced repository migration.
 
 ## Upgrading to 0.9.0 — re-run setup
 

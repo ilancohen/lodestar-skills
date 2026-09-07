@@ -3,7 +3,7 @@
  * Deterministic audit-state helper. Installed with lodestar-audit.
  *
  * Subcommands: resolve-run, validate-input, check-freshness, derive-direction,
- * derive-decisions, changed-files, merge-findings, validate-output, checkpoint,
+ * changed-files, merge-findings, validate-output, checkpoint,
  * recover
  */
 import fs from "node:fs";
@@ -67,7 +67,6 @@ Commands:
   validate-input --root DIR
   check-freshness --root DIR [--facts layout,commands,docs]
   derive-direction --root DIR
-  derive-decisions --root DIR
   changed-files --root DIR --since REF
   merge-findings --in FILE [--in FILE ...] [--out FILE] [--changed-files JSON]
   validate-output --path FILE [--root DIR]
@@ -1099,24 +1098,6 @@ export function rejectPre09Context(contextText) {
   );
 }
 
-export function requireResolvedDecisions(contextText) {
-  if (/^## Resolved Decisions\s*$/m.test(contextText)) return;
-  throw new Error(
-    ".agents/lodestar/context.md is missing ## Resolved Decisions. Re-run lodestar-setup to regenerate it.",
-  );
-}
-
-/**
- * Derive resolved decisions from the parsed context data.
- * Returns { probePlan, activeDetectors, blindSpots }.
- *
- * probePlan: linter.probe or "none"
- * activeDetectors: [{ category, subtypes }] for each non-gated category
- * blindSpots: string[] ready for INDEX.md Known blind spots, ordered:
- *   1. convention-gated skips
- *   2. scannable: no packages
- *   3. single-package not-applicable entries
- */
 export function deriveResolvedDecisions({
   conventions,
   packages,
@@ -1216,32 +1197,6 @@ export function deriveResolvedDecisions({
   }
 
   return { probePlan, activeDetectors, blindSpots };
-}
-
-/** Markdown body for `## Resolved Decisions` (no heading). */
-export function formatResolvedDecisionsMarkdown(decisions) {
-  const { probePlan, activeDetectors, blindSpots } = decisions;
-  const lines = [
-    "Derived by `lodestar-setup`. Regenerated on re-run — **do not hand-edit**.",
-    "",
-    "| Key | Value |",
-    "| --- | --- |",
-    `| \`probe-plan\` | \`${probePlan}\` |`,
-    "",
-    "### Active detectors",
-    "",
-  ];
-  for (const row of activeDetectors) {
-    lines.push(`- \`${row.category}\`: ${row.subtypes.join(", ")}`);
-  }
-  lines.push("", "### Blind spots", "");
-  if (!blindSpots.length) {
-    lines.push("- (none)");
-  } else {
-    for (const spot of blindSpots) lines.push(`- ${spot}`);
-  }
-  lines.push("");
-  return lines.join("\n");
 }
 
 function auditConfigurationSection(contextText) {
@@ -2239,11 +2194,8 @@ function cmdValidateInput(flags) {
   } catch (error) {
     fail(error.message, 2);
   }
-  try {
-    requireResolvedDecisions(contextText);
-  } catch (error) {
-    fail(error.message, 2);
-  }
+  // `## Resolved Decisions` is ignored when present (0.17 leftover).
+  // Detectors come only from conventions / layout / graph / linter below.
   let packages;
   try {
     packages = parsePackageLayout(contextText);
@@ -2319,40 +2271,6 @@ function cmdValidateInput(flags) {
     blindSpots: resolved.blindSpots,
     probePlan: resolved.probePlan,
   });
-}
-
-function cmdDeriveDecisions(flags) {
-  const root = flags.root || process.cwd();
-  const contextPath = path.join(root, ".agents", "lodestar", "context.md");
-  if (!fs.existsSync(contextPath)) {
-    fail(
-      ".agents/lodestar/context.md is missing. Write Conventions and Package Layout first, then re-run.",
-      2,
-    );
-  }
-  const contextText = fs.readFileSync(contextPath, "utf8");
-  let packages;
-  let conventions;
-  let linter;
-  try {
-    rejectPre09Context(contextText);
-    packages = parsePackageLayout(contextText);
-    conventions = parseConventions(contextText);
-    const commands = parseCommands(contextText);
-    linter = requireLinter(contextText, commands);
-  } catch (error) {
-    fail(error.message, 2);
-  }
-  const directionGraph = parseDirection(contextText);
-  const resolved = deriveResolvedDecisions({
-    conventions,
-    packages,
-    directionGraph,
-    linter,
-  });
-  process.stdout.write(
-    `## Resolved Decisions\n\n${formatResolvedDecisionsMarkdown(resolved)}`,
-  );
 }
 
 function cmdChangedFiles(flags) {
@@ -2612,7 +2530,6 @@ const COMMANDS = {
   "validate-input": cmdValidateInput,
   "check-freshness": cmdCheckFreshness,
   "derive-direction": cmdDeriveDirection,
-  "derive-decisions": cmdDeriveDecisions,
   "changed-files": cmdChangedFiles,
   "merge-findings": cmdMergeFindings,
   "validate-output": cmdValidateOutput,

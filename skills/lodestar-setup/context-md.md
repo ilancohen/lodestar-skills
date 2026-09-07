@@ -169,8 +169,9 @@ staging rows.
 ## Conventions
 
 Style conventions this repo follows. Skip polarity is in the table;
-`## Resolved Decisions` applies it. **Absent means defaults** below —
-not "every key is `yes`". Written values are the only way to opt out.
+`lodestar-audit` `validate-input` applies it in memory. **Absent means
+defaults** below — not "every key is `yes`". Written values are the only
+way to opt out.
 
 | Convention       | Value | What it gates                                               |
 | ---------------- | ----- | ----------------------------------------------------------- |
@@ -279,10 +280,6 @@ when this list is present.
 
 One glob per bullet, with a one-line reason. Do not restate Fallow's
 built-in ignores (`**/dist/**`, `**/*.d.ts`, `node_modules`).
-
-## Resolved Decisions
-
-`derive-decisions --root` fills this. Derived; absent → fail closed.
 
 ## Reference
 

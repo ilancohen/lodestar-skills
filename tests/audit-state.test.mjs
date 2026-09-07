@@ -30,7 +30,6 @@ import {
   parseGit,
   parseAuditScope,
   rejectPre09Context,
-  requireResolvedDecisions,
   SCOPE_DEFAULTS,
   parsePackageLayout,
   parseLayoutSource,
@@ -2162,37 +2161,50 @@ test("derive-direction honors Excluded Paths", () => {
   fs.rmSync(tmp, { recursive: true, force: true });
 });
 
-test("requireResolvedDecisions passes when section is present", () => {
-  assert.doesNotThrow(() =>
-    requireResolvedDecisions("## Resolved Decisions\n\n| Key | Value |\n"),
-  );
+test("validate-input ignores a stale ## Resolved Decisions section", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-stale-resolved-"));
+  try {
+    const contextDir = path.join(tmp, ".agents", "lodestar");
+    fs.mkdirSync(contextDir, { recursive: true });
+    fs.cpSync(VALID, tmp, { recursive: true });
+    const contextPath = path.join(tmp, ".agents/lodestar/context.md");
+    const base = fs.readFileSync(contextPath, "utf8");
+    const poisoned = base.includes("## Resolved Decisions")
+      ? base.replace(
+          /## Resolved Decisions[\s\S]*?(?=\n## )/,
+          "## Resolved Decisions\n\n| Key | Value |\n| --- | --- |\n| `probe-plan` | `lie-and-skip-everything` |\n\n### Active detectors\n\n- `styling`: A\n\n### Blind spots\n\n- totally fabricated\n\n",
+        )
+      : `${base}\n## Resolved Decisions\n\n| Key | Value |\n| --- | --- |\n| \`probe-plan\` | \`lie-and-skip-everything\` |\n\n### Active detectors\n\n- \`styling\`: A\n\n### Blind spots\n\n- totally fabricated\n\n`;
+    fs.writeFileSync(contextPath, poisoned);
+    const result = run(["validate-input", "--root", tmp]);
+    assert.equal(result.status, 0, result.stderr);
+    const payload = JSON.parse(result.stdout);
+    assert.notEqual(payload.probePlan, "lie-and-skip-everything");
+    assert.ok(payload.activeDetectors.length >= 8);
+    assert.equal(payload.blindSpots.includes("totally fabricated"), false);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
 });
 
-test("requireResolvedDecisions throws when section is absent", () => {
-  assert.throws(
-    () => requireResolvedDecisions("## Audit Configuration\n\n| Key | Value |\n"),
-    /missing ## Resolved Decisions.*Re-run lodestar-setup/,
-  );
-});
-
-test("validate-input rejects a context.md missing ## Resolved Decisions", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-audit-"));
-  const contextDir = path.join(tmp, ".agents", "lodestar");
-  fs.mkdirSync(contextDir, { recursive: true });
-  const base = fs.readFileSync(
-    path.join(VALID, ".agents/lodestar/context.md"),
-    "utf8",
-  );
-  // Strip the Resolved Decisions section
-  fs.writeFileSync(
-    path.join(contextDir, "context.md"),
-    base.replace(/\n## Resolved Decisions[\s\S]*$/, "\n"),
-  );
-  const result = run(["validate-input", "--root", tmp]);
-  assert.equal(result.status, 2, result.stderr);
-  assert.match(result.stderr, /missing ## Resolved Decisions/);
-  assert.match(result.stderr, /Re-run lodestar-setup/);
-  fs.rmSync(tmp, { recursive: true, force: true });
+test("validate-input accepts a context.md without ## Resolved Decisions", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-no-resolved-"));
+  try {
+    fs.cpSync(VALID, tmp, { recursive: true });
+    const contextPath = path.join(tmp, ".agents/lodestar/context.md");
+    const base = fs.readFileSync(contextPath, "utf8");
+    fs.writeFileSync(
+      contextPath,
+      base.replace(/\n## Resolved Decisions[\s\S]*?(?=\n## Reference|\n## [A-Z]|$)/, "\n"),
+    );
+    const result = run(["validate-input", "--root", tmp]);
+    assert.equal(result.status, 0, result.stderr);
+    const payload = JSON.parse(result.stdout);
+    assert.ok(Array.isArray(payload.activeDetectors));
+    assert.ok(Array.isArray(payload.blindSpots));
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
 });
 
 test("deriveResolvedDecisions default conventions: all detectors active, no blind spots", () => {
