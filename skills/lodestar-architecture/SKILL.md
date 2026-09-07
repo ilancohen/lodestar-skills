@@ -13,18 +13,16 @@ metadata:
   version: "0.15.0"
 ---
 
-You are running an architecture review. The job is to **describe** and **suggest** — never to modify application source, and never to produce
-the kind of fix-this-line action items the audit skill writes.
-
-Setup and audit both take the documented layout as given. This skill is
-the only place where the layout is itself the subject.
+You are running an architecture review. **Describe** and **suggest** —
+never modify application source, never write audit-style action items.
+Setup and audit take the layout as given; this skill reviews the layout
+itself.
 
 ---
 
 ## How to talk to the user
 
-Applies to what you say in the conversation. The report file itself has
-its own structure further down, and is meant to be read at length.
+Applies to conversation only. The report file has its own structure.
 
 What you say:
 
@@ -47,40 +45,33 @@ How you lay it out:
 
 ## Inputs
 
-Before you start, confirm these exist. If any is missing, stop and tell
-the user to run `/lodestar-setup` first:
+If any of these is missing, stop and tell the user to run
+`/lodestar-setup` first:
 
-- `.agents/lodestar/context.md` with a `## Package Layout` table (every row
-  must have package name, path, alias, and a one-sentence Responsibility)
-  and a `## Dependency Direction` declaration. This is the only file read
-  for repo context — `AGENTS.md` is never read, even if an older setup left
-  a layout table there.
+- `.agents/lodestar/context.md` with `## Package Layout` (name, path,
+  alias, one-sentence Responsibility per row) and `## Dependency
+  Direction`. Only repo-context file — never read `AGENTS.md`.
 
-Capture from `.agents/lodestar/context.md` (or `validate-input` JSON):
+Capture from `context.md` (or `validate-input` JSON):
 
-- `<packages>` — the ordered list of rows in `## Package Layout`, each
-  with `{name, path, alias, responsibility}`.
-- `<direction>` — the dependency-direction chain.
-- `<typecheck>`, `<lint>`, `<test>` — the build commands.
+- `<packages>` — Package Layout rows `{name, path, alias, responsibility}`.
+- `<direction>` — dependency-direction chain.
+- `<typecheck>`, `<lint>`, `<test>` — build commands.
 - `<architecture-root>` — `architectureRoot` from `validate-input`
-  (default `docs/architecture-review`). Derived from `output-root` so
-  audit runs and architecture reports stay together: `docs/audit` →
-  `docs/architecture-review`; any other root →
-  `<output-root>/architecture-review`. Do not hardcode the path.
+  (default `docs/architecture-review`). From `output-root`: `docs/audit`
+  → `docs/architecture-review`; else `<output-root>/architecture-review`.
+  Do not hardcode.
 
-Also note whether `.fallowrc.json` exists; if so, its zones should match
-`<packages>` (the setup skill writes it that way).
+Note whether `.fallowrc.json` exists; its zones should match `<packages>`.
 
-Run the full freshness check. Do not stop on drift — this skill's
-subject is the layout, and a package on disk with no row is a finding
-to report, not a reason to refuse the review:
+Run full freshness. Do not stop on drift — a package on disk with no row
+is a finding, not a refusal:
 
 ```text
 node <lodestar-audit-skill>/scripts/audit-state.mjs check-freshness --root <repo>
 ```
 
-Exit 2: fold the drifted facts into the report (Risks, and
-"Matches contents?" for a missing package). Exit 0: omit.
+Exit 2: fold drifted facts into Risks / "Matches contents?". Exit 0: omit.
 
 ---
 
@@ -132,13 +123,13 @@ Read-only: never modify application source.
 
 ### Step 2a — (Optional) Sub-agent fan-out for per-package sampling
 
-If a sub-agent tool exists, Step 2 items 1–3 parallelize per package.
-Skip when unavailable — the inline loop is canonical.
+If a sub-agent tool exists, parallelize Step 2 items 1–3 per package.
+Skip when unavailable — inline loop is canonical.
 
-Spawn one sub-agent per package with the package row and dependency
-direction. Return `{matches, reason, notable?}`. Constraints: read-only,
-structured return only, no nested spawns, no application source changes.
-Orchestrator fills "Matches contents?" and folds `notable` into Risks.
+Spawn one sub-agent per package with the package row and direction.
+Return `{matches, reason, notable?}`. Constraints: read-only, structured
+return only, no nested spawns, no source changes. Orchestrator fills
+"Matches contents?" and folds `notable` into Risks.
 
 ---
 
@@ -154,141 +145,18 @@ One file per run — no per-finding fan-out. Never overwrite a previous run.
 
 ## Step 4 — Write the report
 
-Write `<architecture-root>/<RUN_ID>.md` with the sections below. Be
-specific (cite package names and file paths) and be brief — the report
-exists to drive a conversation, not to be a textbook.
+Write `<architecture-root>/<RUN_ID>.md` from
+[templates/report.md](templates/report.md). Be specific (cite package
+names and file paths) and be brief — the report exists to drive a
+conversation, not to be a textbook.
 
-````markdown
-# Architecture review — <RUN_ID>
+Always-written: Current layout; Dependency direction; What this
+architecture looks like; Strengths; Risks and open questions;
+Discussion points.
 
-Generated by `lodestar-architecture` on <UTC_TIMESTAMP>. Advisory only —
-no application source was modified, and this report is not a list of
-action items. To act on its suggestions, discuss with the team and
-re-run `lodestar-setup` if the layout changes.
-
-## Current layout — as documented
-
-(One line per package, copied from `context.md` `## Package Layout`, with
-a "matches contents?" verdict from Step 2.)
-
-| Package  | Path     | Alias     | Responsibility     | Matches contents?                          |
-| -------- | -------- | --------- | ------------------ | ------------------------------------------ |
-| `<name>` | `<path>` | `<alias>` | `<responsibility>` | `yes / partially / no — <one-line reason>` |
-
-## Dependency direction
-
-```
-<direction copied from context.md>
-```
-
-(One sentence: does this chain hold against the observed imports?
-"Holds." / "Holds except for N violations — see audit findings.")
-
-## What this architecture looks like
-
-(2–4 sentences. Name the pattern this most resembles — e.g. "layered
-monorepo with a domain core, a thin HTTP shell, and shared types",
-"hexagonal with explicit adapters", "feature-sliced", "ball of mud
-with one shared package", "BFF + domain", etc. Cite the evidence: which
-package names and responsibilities led you to this label.)
-
-## Strengths
-
-(Bullet list. 2–5 items. Specific. "core has zero framework deps and is
-unit-tested in isolation" beats "good separation of concerns".)
-
-## Risks and open questions
-
-(Bullet list. 2–6 items. Be concrete about which package or boundary the
-risk lives in. If `check-freshness` reported drift, put those facts
-first — a package on disk with no layout row, or a recorded command
-whose script is gone. Then the usual architectural smells:
-
-- `shared/` exports 47 symbols, 12 of which are used by a single
-  package — possible kitchen-sink shared package.
-- `infra/` imports from `core/` — the direction declared in context.md
-  doesn't allow this. (Note: the audit will also flag this as
-  `imports.wrong-direction`; mention it here as an architectural smell,
-  not a fix-this item.)
-- Two packages both claim "domain logic" as their responsibility —
-  unclear which owns what.
-- No package nominated as the shared types home — types are scattered
-  across consumers.
-
-Do not propose fixes here; this section is for naming risks.)
-
-## Discussion points
-
-(Optional. Items that aren't risks but deserve a team conversation —
-e.g. "the `apps/` glob suggests room for a new app; would that be
-sibling-isolated under the current rules?", "consider whether the
-`worker` package should be downstream of `core` or alongside it".)
-````
-
-If the user chose **Describe only** (Step 1), stop here. Skip the
-suggestion sections below.
-
-If the user chose **Describe + suggest**, continue with these sections:
-
-````markdown
-## Alternative layout — Option A
-
-(Name the pattern — e.g. "Hexagonal: domain core + ports + adapters",
-"Feature-sliced", "Layered with explicit shared kernel", "BFF with
-domain library", etc.)
-
-### Proposed package table
-
-| Package  | Path     | Alias     | Responsibility     |
-| -------- | -------- | --------- | ------------------ |
-| `<name>` | `<path>` | `<alias>` | `<responsibility>` |
-
-### Proposed dependency direction
-
-```
-<chain>
-```
-
-### How packages would map
-
-(One sentence per current package: what it becomes under Option A.
-"`core/` stays — its responsibility is the new layout's domain layer."
-"`api/` and `worker/` merge into a thin adapter layer."
-"A new `ports/` package is introduced to host the interfaces `core/`
-currently uses implicitly.")
-
-### Trade-offs
-
-- **Better:** what this layout does well that the current one doesn't.
-- **Worse:** what it gives up.
-- **Migration cost (rough):** small / medium / large, with one
-  sentence of justification — which packages move, which files split,
-  any breaking changes to public APIs.
-
-## Alternative layout — Option B (optional)
-
-(Only include a second option if it materially differs from Option A.
-Use the same four sub-sections. If Option A is clearly the only
-sensible alternative, omit this section.)
-
-## Recommendation
-
-(2–4 sentences. Either:
-
-- "Keep current layout. The smells in §Risks are local fixes the audit
-  can drive; an architectural change isn't warranted." or
-- "Consider Option A. The strongest evidence: <X>. The biggest risk of
-  moving: <Y>." )
-
-Whichever recommendation, name the concrete next step:
-
-- If keep: "Run `lodestar-audit` to enumerate the local
-  fixes named in §Risks."
-- If change: "Convene a discussion with the team. If the team agrees,
-  re-run `lodestar-setup` after the refactor lands — the
-  audit will pick up the new layout from
-  `.agents/lodestar/context.md`."
-````
+**Describe only** → stop after those. **Describe + suggest** → add
+Alternative layout Option A (package table, direction, mapping,
+trade-offs); Option B (optional); Recommendation.
 
 ---
 
