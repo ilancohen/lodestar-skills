@@ -168,13 +168,9 @@ staging rows.
 
 ## Conventions
 
-Which of a short list of style conventions this repo actually follows.
-The audit skips a detector only at that row's skip value: `no` for
-`result-types`, `branded-types`, and `design-tokens`; `yes` for
-`barrel-exports` (barrels allowed); `none` for `coverage-floor`.
-**Absent means default:** a file with no `## Conventions` section, or a
-missing row, uses the default in the table below — not "every key is
-`yes`". Values written here are the only way to opt out.
+Style conventions this repo follows. Skip polarity is in the table;
+`## Resolved Decisions` applies it. **Absent means defaults** below —
+not "every key is `yes`". Written values are the only way to opt out.
 
 | Convention       | Value | What it gates                                               |
 | ---------------- | ----- | ----------------------------------------------------------- |
@@ -283,6 +279,10 @@ when this list is present.
 
 One glob per bullet, with a one-line reason. Do not restate Fallow's
 built-in ignores (`**/dist/**`, `**/*.d.ts`, `node_modules`).
+
+## Resolved Decisions
+
+`derive-decisions --root` fills this. Derived; absent → fail closed.
 
 ## Reference
 

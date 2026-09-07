@@ -62,15 +62,16 @@ total (not the action-item count).
 The audit cannot reliably detect these from source alone. If they matter
 for this run, do a manual pass:
 
+Copy the `blindSpots` array from `validate-input` here first (convention-gated
+skips, `Scannable: no` packages, single-package not-applicable entries),
+then append runtime entries:
+
 - **Coverage floor** — only checked when `<test>` emits a coverage report.
 - **Wide-diff DRY** — surfaces as advisory items only; review recent git
   history for one-logical-change commits touching 6+ unrelated files.
 - **Rule of Three at implementation time** — partially captured by
   single-call-site export checks; the broader process rule is enforced by
   code review, not by this audit.
-- **Unscannable packages** — `<name>` — `<language>, not scanned`. Fill
-  one bullet per `Scannable: no` row from `validate-input`. Omit this
-  bullet when every package is scannable.
 - **Out-of-scope findings** — counted in [Backlog](#backlog), never
   omitted from `findings.md`. Not a silent pass.
 - **Stale context** — this run proceeded on a `context.md` that no

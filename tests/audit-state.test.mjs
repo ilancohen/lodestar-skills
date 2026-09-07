@@ -11,9 +11,11 @@ import {
   assignIds,
   architectureOutputRoot,
   CATEGORIES,
+  CATEGORY_SUBTYPES,
   CONVENTION_DEFAULTS,
   DEFAULT_OUTPUT_ROOT,
   dedupeFindings,
+  deriveResolvedDecisions,
   findPlaceholders,
   GIT_DEFAULTS,
   isDeclaredEntryImport,
@@ -28,6 +30,7 @@ import {
   parseGit,
   parseAuditScope,
   rejectPre09Context,
+  requireResolvedDecisions,
   SCOPE_DEFAULTS,
   parsePackageLayout,
   parseLayoutSource,
@@ -618,6 +621,35 @@ test("validate-input reports context.md provenance from a pkg-manager row", () =
   fs.rmSync(tmp, { recursive: true, force: true });
 });
 
+const MINIMAL_RESOLVED_DECISIONS = `
+## Resolved Decisions
+
+Derived by \`lodestar-setup\`. Regenerated on every re-run — do not hand-edit.
+
+| Key | Value | Notes |
+| --- | --- | --- |
+| \`probe-plan\` | \`none\` | |
+| \`active-detectors\` | see list below | |
+| \`blind-spots\` | see list below | |
+
+### Active detectors
+
+- \`imports\`: #1, #2, #3, #4, #5, #7, #8, #9
+- \`types\`: #1, #2, #3, #4
+- \`boundaries\`: A, C, D, E
+- \`errors\`: A, B
+- \`testability\`: A, B
+- \`soc-yagni\`: A, B, C, D
+- \`dry\`: A, B, C
+- \`ssot\`: A, B, C
+- \`styling\`: A, B, C, D
+
+### Blind spots
+
+- \`imports\` #6 (wrong-direction imports) — not applicable: single-package repo
+- \`boundaries\` B (cross-package misplaced logic) — not applicable: single-package repo
+`;
+
 function writeLayoutRepo(layoutMarkdown, files = {}) {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-audit-"));
   const contextDir = path.join(tmp, ".agents", "lodestar");
@@ -628,7 +660,7 @@ function writeLayoutRepo(layoutMarkdown, files = {}) {
   );
   const replaced = base.replace(
     /## Package Layout[\s\S]*$/,
-    `${layoutMarkdown.trim()}\n`,
+    `${layoutMarkdown.trim()}\n${MINIMAL_RESOLVED_DECISIONS}`,
   );
   fs.writeFileSync(path.join(contextDir, "context.md"), replaced);
   for (const [rel, contents] of Object.entries(files)) {
@@ -1692,12 +1724,14 @@ test("validate-input rejects lint without tool and probe", () => {
 
 Basis: observed import graph, captured 2026-08-18.
 
+core → api
+
 ## Package Layout
 
 | Package | Path | Alias | Responsibility |
 | --- | --- | --- | --- |
 | core | packages/core/src | @repo/core | Domain entities and use cases for billing |
-`,
+${MINIMAL_RESOLVED_DECISIONS}`,
   );
   fs.mkdirSync(path.join(tmp, "packages", "core", "src"), { recursive: true });
   fs.writeFileSync(
@@ -1734,7 +1768,7 @@ core → api
 | Package | Path | Alias | Responsibility |
 | --- | --- | --- | --- |
 | core | packages/core/src | @repo/core | Domain entities and use cases for billing |
-`,
+${MINIMAL_RESOLVED_DECISIONS}`,
   );
   fs.mkdirSync(path.join(tmp, "packages", "core", "src"), { recursive: true });
   fs.writeFileSync(
@@ -2123,4 +2157,131 @@ test("derive-direction honors Excluded Paths", () => {
   const derived = deriveDirection(tmp);
   assert.equal(derived.edges.length, 0);
   fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test("requireResolvedDecisions passes when section is present", () => {
+  assert.doesNotThrow(() =>
+    requireResolvedDecisions("## Resolved Decisions\n\n| Key | Value |\n"),
+  );
+});
+
+test("requireResolvedDecisions throws when section is absent", () => {
+  assert.throws(
+    () => requireResolvedDecisions("## Audit Configuration\n\n| Key | Value |\n"),
+    /missing ## Resolved Decisions.*Re-run lodestar-setup/,
+  );
+});
+
+test("validate-input rejects a context.md missing ## Resolved Decisions", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-audit-"));
+  const contextDir = path.join(tmp, ".agents", "lodestar");
+  fs.mkdirSync(contextDir, { recursive: true });
+  const base = fs.readFileSync(
+    path.join(VALID, ".agents/lodestar/context.md"),
+    "utf8",
+  );
+  // Strip the Resolved Decisions section
+  fs.writeFileSync(
+    path.join(contextDir, "context.md"),
+    base.replace(/\n## Resolved Decisions[\s\S]*$/, "\n"),
+  );
+  const result = run(["validate-input", "--root", tmp]);
+  assert.equal(result.status, 2, result.stderr);
+  assert.match(result.stderr, /missing ## Resolved Decisions/);
+  assert.match(result.stderr, /Re-run lodestar-setup/);
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test("deriveResolvedDecisions default conventions: all detectors active, no blind spots", () => {
+  const { probePlan, activeDetectors, blindSpots } = deriveResolvedDecisions({
+    conventions: { ...CONVENTION_DEFAULTS },
+    packages: [
+      { name: "core", scannable: "yes" },
+      { name: "api", scannable: "yes" },
+    ],
+    directionGraph: { edges: [{ from: "api", to: "core" }], cyclic: false },
+    linter: { probe: "eslint --format json <all_pkg_roots>" },
+  });
+  assert.equal(probePlan, "eslint --format json <all_pkg_roots>");
+  assert.equal(activeDetectors.length, 9);
+  const imports = activeDetectors.find((d) => d.category === "imports");
+  assert.ok(imports);
+  assert.deepEqual(imports.subtypes, CATEGORY_SUBTYPES.imports);
+  const styling = activeDetectors.find((d) => d.category === "styling");
+  assert.ok(styling);
+  assert.deepEqual(blindSpots, []);
+});
+
+test("deriveResolvedDecisions: barrel-exports yes gates imports #4", () => {
+  const { activeDetectors, blindSpots } = deriveResolvedDecisions({
+    conventions: { ...CONVENTION_DEFAULTS, "barrel-exports": "yes" },
+    packages: [
+      { name: "core", scannable: "yes" },
+      { name: "api", scannable: "yes" },
+    ],
+    directionGraph: { edges: [{ from: "api", to: "core" }], cyclic: false },
+    linter: null,
+  });
+  const imports = activeDetectors.find((d) => d.category === "imports");
+  assert.ok(!imports.subtypes.includes("#4"));
+  assert.ok(imports.subtypes.includes("#1"));
+  assert.ok(blindSpots[0].includes("imports"));
+  assert.ok(blindSpots[0].includes("barrel-exports"));
+});
+
+test("deriveResolvedDecisions: design-tokens no removes styling entirely", () => {
+  const { activeDetectors, blindSpots } = deriveResolvedDecisions({
+    conventions: { ...CONVENTION_DEFAULTS, "design-tokens": "no" },
+    packages: [{ name: "core", scannable: "yes" }, { name: "api", scannable: "yes" }],
+    directionGraph: { edges: [{ from: "api", to: "core" }], cyclic: false },
+    linter: null,
+  });
+  assert.equal(activeDetectors.length, 8);
+  assert.ok(!activeDetectors.find((d) => d.category === "styling"));
+  assert.ok(blindSpots.some((s) => s.includes("styling")));
+});
+
+test("validate-input opted-out fixture: activeDetectors excludes errors B and styling", () => {
+  const result = run(["validate-input", "--root", OPTED_OUT]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  const errorsEntry = payload.activeDetectors.find((d) => d.category === "errors");
+  assert.ok(errorsEntry);
+  assert.ok(!errorsEntry.subtypes.includes("B"));
+  assert.ok(errorsEntry.subtypes.includes("A"));
+  assert.ok(!payload.activeDetectors.find((d) => d.category === "styling"));
+  assert.ok(payload.blindSpots.some((s) => s.includes("errors") && s.includes("result-types")));
+  assert.ok(payload.blindSpots.some((s) => s.includes("styling") && s.includes("design-tokens")));
+  assert.equal(payload.probePlan, "eslint --format json --max-warnings=999 <all_pkg_roots>");
+});
+
+test("validate-input single-package fixture: activeDetectors excludes imports #6 and boundaries B", () => {
+  const result = run(["validate-input", "--root", SINGLE]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  const importsEntry = payload.activeDetectors.find((d) => d.category === "imports");
+  assert.ok(importsEntry);
+  assert.ok(!importsEntry.subtypes.includes("#6"));
+  assert.ok(importsEntry.subtypes.includes("#1"));
+  const boundariesEntry = payload.activeDetectors.find((d) => d.category === "boundaries");
+  assert.ok(boundariesEntry);
+  assert.ok(!boundariesEntry.subtypes.includes("B"));
+  assert.ok(boundariesEntry.subtypes.includes("A"));
+  assert.ok(payload.blindSpots.some((s) => s.includes("imports") && s.includes("single-package")));
+  assert.ok(payload.blindSpots.some((s) => s.includes("boundaries") && s.includes("single-package")));
+  assert.equal(payload.probePlan, "none");
+});
+
+test("validate-input polyglot fixture: blindSpots includes Go package and single-package entries", () => {
+  const result = run(["validate-input", "--root", POLYGLOT]);
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.ok(payload.blindSpots.some((s) => s.includes("worker") && s.includes("not scanned")));
+  assert.ok(payload.blindSpots.some((s) => s.includes("imports") && s.includes("single-package")));
+  assert.ok(payload.blindSpots.some((s) => s.includes("boundaries") && s.includes("single-package")));
+  // worker (scannable-no) should come before single-package entries
+  const workerIdx = payload.blindSpots.findIndex((s) => s.includes("worker"));
+  const importsIdx = payload.blindSpots.findIndex((s) => s.includes("imports") && s.includes("single-package"));
+  assert.ok(workerIdx < importsIdx);
+  assert.equal(payload.probePlan, "eslint --format json --max-warnings=999 <all_pkg_roots>");
 });

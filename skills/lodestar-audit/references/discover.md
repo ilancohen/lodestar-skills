@@ -20,9 +20,13 @@ absent from `## Audit Configuration`; `changed-since` includes a resolved `basel
 `commands`,
 `pkgManager`, `run`, `pkgManagerAmbiguous`, `pkgManagerLockfiles`,
 `pkgManagerProvenance` (`lockfile` / `context.md` / `none`),
-`allPkgRoots`, `aliasPrefix`, `excludedPaths`, `testGlobs`, and
+`allPkgRoots`, `aliasPrefix`, `excludedPaths`, `testGlobs`,
 `scanExtensions` (file extensions to scan — from `scan-extensions` in
-`## Audit Configuration`, or the TS/JS base list when absent).
+`## Audit Configuration`, or the TS/JS base list when absent),
+`activeDetectors` (array of `{ category, subtypes }` for every category
+that still runs, derived from Conventions and Package Layout),
+`blindSpots` (string array ready to copy into INDEX.md Known blind spots),
+and `probePlan` (the resolved linter probe command, or `"none"`).
 
 Each `packages` row includes `scannable` (`yes` / `no`; default `yes`
 when the column is absent), `language` (empty unless a `no (Python)`
@@ -48,15 +52,20 @@ A resumed run inherits the `drift` key in `.checkpoint.json`.
 `none`). Defaults: `yes`, `yes`, `no`, `yes`, `80`. Unknown table keys
 are ignored. An unparseable known value fails `validate-input`.
 
-A category gated off by a convention is still checkpointed complete with
-count 0 so resume logic is unaffected. Do not omit it from the scan
-loop's checkpoint — skip its detectors, then checkpoint it complete.
+Use `activeDetectors` from `validate-input` to decide which categories
+and subtypes to run. A category absent from `activeDetectors` is gated
+off — skip its detectors, checkpoint complete with count 0, and do not
+re-evaluate the gate. A subtype absent from a category's list is gated
+off — skip that detector only.
 
-If `pkgManager` is `null` / `pkgManagerAmbiguous` is true, **ask the
-user** for the manager, its exec prefix, and its add-dev command before
-any install or `dlx`/`npx`/`bunx` command. Do not offer only npm /
-yarn / pnpm when none of those lockfiles is present. Do not default to
-npm. Honor `pkgManagerProvenance: context.md` and do not re-ask.
+A category gated off is still checkpointed complete with count 0 so
+resume logic is unaffected. Do not omit it from the scan loop's
+checkpoint — skip its detectors, then checkpoint it complete.
+
+Use `pkgManager` and `run` from `validate-input` for all install and
+exec commands. Setup always resolves the package manager; if
+`pkgManagerProvenance` is `none`, warn once that setup predates this
+requirement and proceed with the lockfile-detected or context.md value.
 
 Substitute placeholders literally before any detector command:
 
@@ -68,7 +77,7 @@ Substitute placeholders literally before any detector command:
 | `<pkg_responsibility>`            | Current row `responsibility`                                                                  |
 | `<all_pkg_roots>`                 | Space-separated paths                                                                         |
 | `<alias_prefix>`                  | Longest common alias prefix                                                                   |
-| `<pkg_manager>`, `<run>`          | `validate-input` `pkgManager` / `run` (recorded row wins; ask only when provenance is `none`) |
+| `<pkg_manager>`, `<run>`          | `validate-input` `pkgManager` / `run` (recorded row wins)                                     |
 
 Never run a command that still contains `<placeholder>` text. The
 Responsibility column is advisory context for judgment detectors, not a
@@ -108,19 +117,16 @@ order differ on purpose — do not "fix" them to match.
 
 For each category:
 
-1. Open the category sub-doc. If the whole category is gated off
-   (`design-tokens: no` → `styling`), skip every detector, emit nothing,
-   still checkpoint complete with count 0, and note the skip for
-   `INDEX.md`.
-2. Run every Detection command that is not gated off by `conventions`.
+1. Open the category sub-doc. Check `activeDetectors` from `validate-input`:
+   if the category is absent, skip every detector, emit nothing,
+   still checkpoint complete with count 0.
+2. Run every Detection command whose subtype is present in that
+   category's `subtypes` list from `activeDetectors`. Subtypes absent
+   from the list are gated off — skip them. Do not re-evaluate gates.
    Prefer `node scripts/source-scan.mjs`
    recipes over POSIX `grep` pipelines. Iterate `<pkg_root>` per
    **scannable** package row with repeated `--root` flags (paths may
    contain spaces). Skip `scannable: no` rows — do not grep them.
-   Single-package (one scannable row, empty graph): skip `imports` #6
-   and `boundaries` B only — still run the other subtypes, checkpoint
-   those categories with the real count, and list #6/B as not
-   applicable in `INDEX.md`.
 3. Drop false positives in tests and excluded paths from
    `validate-input` (`excludedPaths`, `testGlobs`). Every
    `source-scan.mjs` invocation must pass `--exclude` / `--test-glob`

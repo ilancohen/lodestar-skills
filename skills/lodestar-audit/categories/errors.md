@@ -20,9 +20,7 @@ shutdown hook). **Default `requires_decision: true` for every A finding.**
 
 ### B. Expected failure thrown
 
-**Gate:** skip this subtype when `conventions["result-types"]` is `no`.
-Emit nothing. Record `errors` #B as a deliberate skip in `INDEX.md`'s
-known-blind-spots list — do not stay silent.
+**Gate:** skip when absent from `activeDetectors` (`result-types: no`).
 
 Code that `throw`s for an outcome the caller is expected to handle:
 
@@ -46,7 +44,7 @@ null.
 From the cached output, extract violations for:
 
 - **A** → swallowed-async
-- **B** → expected-failure-thrown (skip when `conventions["result-types"]` is `no`)
+- **B** → expected-failure-thrown (skip when absent from `activeDetectors`)
 
 Linter-sourced B findings do not require `requires_decision: true` by
 default (unlike grep-sourced ones). If the probe produces no output,
@@ -59,7 +57,7 @@ grep -rEn -A 4 "} catch" <all_pkg_roots> \
   | grep -B 3 "^\s*}|console\.(log|warn|error)\s*\("
 
 # B — thrown errors that look expected (use if linter probe didn't cover this)
-# Skip this grep when conventions["result-types"] is no.
+# Skip this grep when `errors` B is absent from validate-input activeDetectors.
 grep -rEn "throw new (Error|NotFound|Validation|Unauthorized)" \
   <all_pkg_roots> --include="*.ts"
 

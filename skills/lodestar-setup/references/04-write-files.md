@@ -48,8 +48,16 @@ This is the load-bearing file. Start from `context-md.md`. Fill in:
 - Excluded Paths — review-screen globs as `### Excluded Paths` under
   Audit Configuration; replace wholesale.
 
-Leave the `## Reference` section as the template has it — the principles
-link must stay pointed at `.agents/skills/lodestar-setup/principles.md`.
+Write `## Resolved Decisions` (after Audit Configuration) with:
+
+```text
+node <lodestar-audit-skill>/scripts/audit-state.mjs derive-decisions --root <repo>
+```
+
+Paste over the section every re-run. Missing → insert before Reference.
+
+Leave `## Reference` as the template has it — principles link stays at
+`.agents/skills/lodestar-setup/principles.md`.
 
 If the file already exists and still has pre-0.9 headings (`## Audit
 Settings`, `## Audit Scope`, `## Git`, `## Excluded Paths`,
@@ -57,7 +65,7 @@ Settings`, `## Audit Scope`, `## Git`, `## Excluded Paths`,
 template — those files fail the parser until regenerated. If it is
 already the 0.9 shape, replace `## Build & Test`,
 `## Dependency Direction`, `## Package Layout`, `## Docs Layout`,
-`## Conventions`, and `## Review Rubric`;
+`## Conventions`, `## Review Rubric`, and `## Resolved Decisions`;
 leave other user content. Do **not** replace `## Audit Configuration`
 wholesale: refresh git keys (`commits`, `subject-format`, `trailer`,
 `protected`, `require-clean`) and `### Excluded Paths` from this run;

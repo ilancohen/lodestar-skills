@@ -21,9 +21,7 @@ If neither signal is present, the audit flags the finding with
 
 ### A. Branded primitives missing
 
-**Gate:** skip this subtype when `conventions["branded-types"]` is `no`.
-Emit nothing. Record `boundaries` A as a deliberate skip in `INDEX.md`'s
-known-blind-spots list — do not stay silent.
+**Gate:** skip when absent from `activeDetectors` (`branded-types: no`).
 
 Domain identifiers, monetary amounts, and validated strings typed as raw
 `string` / `number`. Risk: medium.
@@ -38,11 +36,7 @@ explicitly skip hits in obvious boundary-shape files (`*.dto.ts`,
 
 ### B. Misplaced business logic
 
-**Gate:** skip this subtype in a single-package repo (one scannable
-layout row, empty graph) — there is no other package to misplace
-logic into. Emit nothing. Record `boundaries` B as not applicable in
-`INDEX.md`'s known-blind-spots — do not stay silent. A, C, D, E stay
-on. Checkpoint `boundaries` with the real count.
+**Gate:** skip when absent from `activeDetectors` (single-package repo).
 
 Domain decisions in files that, by their path or responsibility, should
 not own them:
@@ -108,12 +102,12 @@ generated-client skips defer to `### Excluded Paths`.
 
 ```bash
 # A — raw primitives for domain IDs
-# Skip this grep when conventions["branded-types"] is no.
+# Skip when A is absent from activeDetectors.
 grep -rEn "(id|Id): string|(price|amount): number|slug: string" \
   <all_pkg_roots> --include="*.ts"
 
 # B — linter probe for eslint-plugin-boundaries (read-only)
-#   Skip when linter.tool is not eslint, or when gate B applies (single-package).
+#   Skip when B is absent from activeDetectors (single-package or gated off).
 #   Follow linter-probe.md "boundaries B". If output exists, use it and
 #   skip the grep below.
 

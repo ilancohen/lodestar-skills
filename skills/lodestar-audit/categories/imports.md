@@ -28,10 +28,7 @@ entryPoints)` is true (`audit-state.mjs`): canonicalize by stripping
 
 4. **`export *` barrel** — `index.ts` re-exports everything from a sub-module
    without naming what's exported.
-   **Gate:** skip this subtype when `conventions["barrel-exports"]` is `yes`
-   (barrels are allowed). Emit nothing. Record `imports` #4 as a
-   deliberate skip in `INDEX.md`'s known-blind-spots list — do not stay
-   silent. #2 (missing re-export) and #5 (over-broad surface) stay on.
+   **Gate:** skip when absent from `activeDetectors` (`barrel-exports: yes`).
 
 5. **Over-broad API surface** — an `index.ts` export that has no external
    consumer (used only inside the package, or not used at all).
@@ -44,11 +41,7 @@ entryPoints)` is true (`audit-state.mjs`): canonicalize by stripping
    are documented in both directions, so they are **not** #6 findings — they
    surface under #3 `circular-import` instead. New downward imports consistent
    with the documented graph are not violations until `context.md` is updated.
-   **Gate:** skip this subtype in a single-package repo (one scannable
-   row, empty graph). Emit nothing. Record `imports` #6 as not
-   applicable in `INDEX.md`'s known-blind-spots — do not stay silent.
-   Other `imports` subtypes stay on. Checkpoint `imports` with the
-   real count.
+   **Gate:** skip when absent from `activeDetectors` (single-package repo).
 
 7. **Unused file** — a source file that no entry point reaches transitively
    (`check.unused_files[]`). Risk: low.
@@ -95,7 +88,7 @@ node scripts/source-scan.mjs --recipe cross-package-src --alias-prefix '<alias_p
 #   `from '<T.alias>/`; apply isDeclaredEntryImport filter (see #1 prose).
 
 # 4 — barrel re-exports (always scan — not a fallow concept)
-# Skip this grep when conventions["barrel-exports"] is yes.
+# Skip this grep when `imports` #4 is absent from validate-input activeDetectors.
 node scripts/source-scan.mjs --recipe barrel-reexport --root <pkg_root>
 
 # 5 — exports with no external consumer (per package P) — grep fallback
@@ -103,7 +96,7 @@ node scripts/source-scan.mjs --recipe barrel-reexport --root <pkg_root>
 #   Symbols with zero hits outside P are over-exports.
 
 # 6 — direction grep fallback when neither fallow nor check:deps is available
-#   Skip when one scannable row and empty graph; other imports subtypes stay on.
+#   Skip when `imports` #6 is absent from activeDetectors; other subtypes stay on.
 #   Run `node scripts/audit-state.mjs validate-input --root <repo>`, read
 #   `directionGraph.reachability`, and apply the wrong-direction rule from
 #   #6 prose above to each `from '<alias>'` import in each package P.

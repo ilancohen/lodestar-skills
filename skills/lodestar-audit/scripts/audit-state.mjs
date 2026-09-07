@@ -3,7 +3,8 @@
  * Deterministic audit-state helper. Installed with lodestar-audit.
  *
  * Subcommands: resolve-run, validate-input, check-freshness, derive-direction,
- * changed-files, merge-findings, validate-output, checkpoint, recover
+ * derive-decisions, changed-files, merge-findings, validate-output, checkpoint,
+ * recover
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -41,6 +42,18 @@ export const CATEGORIES = [
   "styling",
 ];
 
+export const CATEGORY_SUBTYPES = {
+  imports: ["#1", "#2", "#3", "#4", "#5", "#6", "#7", "#8", "#9"],
+  types: ["#1", "#2", "#3", "#4"],
+  boundaries: ["A", "B", "C", "D", "E"],
+  errors: ["A", "B"],
+  testability: ["A", "B"],
+  "soc-yagni": ["A", "B", "C", "D"],
+  dry: ["A", "B", "C"],
+  ssot: ["A", "B", "C"],
+  styling: ["A", "B", "C", "D"],
+};
+
 export const PLACEHOLDER_RE =
   /<(typecheck|lint|test|pkg_root|pkg_alias|pkg_responsibility|all_pkg_roots|alias_prefix|pkg_manager|run|RUN_ID|output-root)>/;
 
@@ -54,6 +67,7 @@ Commands:
   validate-input --root DIR
   check-freshness --root DIR [--facts layout,commands,docs]
   derive-direction --root DIR
+  derive-decisions --root DIR
   changed-files --root DIR --since REF
   merge-findings --in FILE [--in FILE ...] [--out FILE] [--changed-files JSON]
   validate-output --path FILE
@@ -1078,6 +1092,151 @@ export function rejectPre09Context(contextText) {
   );
 }
 
+export function requireResolvedDecisions(contextText) {
+  if (/^## Resolved Decisions\s*$/m.test(contextText)) return;
+  throw new Error(
+    ".agents/lodestar/context.md is missing ## Resolved Decisions. Re-run lodestar-setup to regenerate it.",
+  );
+}
+
+/**
+ * Derive resolved decisions from the parsed context data.
+ * Returns { probePlan, activeDetectors, blindSpots }.
+ *
+ * probePlan: linter.probe or "none"
+ * activeDetectors: [{ category, subtypes }] for each non-gated category
+ * blindSpots: string[] ready for INDEX.md Known blind spots, ordered:
+ *   1. convention-gated skips
+ *   2. scannable: no packages
+ *   3. single-package not-applicable entries
+ */
+export function deriveResolvedDecisions({
+  conventions,
+  packages,
+  directionGraph,
+  linter,
+}) {
+  const gatedOut = new Set(); // "category:subtype" or "category:*"
+  const conventionBlindSpots = [];
+  const singlePackageBlindSpots = [];
+
+  // barrel-exports: yes → skip imports #4
+  if (conventions["barrel-exports"] === "yes") {
+    gatedOut.add("imports:#4");
+    conventionBlindSpots.push(
+      "`imports` #4 (`export *` re-exports) — skipped; `barrel-exports` is `yes`",
+    );
+  }
+
+  // branded-types: no → skip types #4 and boundaries A
+  if (conventions["branded-types"] === "no") {
+    gatedOut.add("types:#4");
+    gatedOut.add("boundaries:A");
+    conventionBlindSpots.push(
+      "`types` #4 (branded ID types) — skipped; `branded-types` is `no`",
+    );
+    conventionBlindSpots.push(
+      "`boundaries` A (branded-primitive check) — skipped; `branded-types` is `no`",
+    );
+  }
+
+  // result-types: no → skip errors B
+  if (conventions["result-types"] === "no") {
+    gatedOut.add("errors:B");
+    conventionBlindSpots.push(
+      "`errors` B (expected-failure Result returns) — skipped; `result-types` is `no`",
+    );
+  }
+
+  // design-tokens: no → skip whole styling category
+  if (conventions["design-tokens"] === "no") {
+    gatedOut.add("styling:*");
+    conventionBlindSpots.push(
+      "`styling` (entire category) — skipped; `design-tokens` is `no`",
+    );
+  }
+
+  // coverage-floor: none → omit coverage check; do NOT add a blind-spot line
+
+  // Structural: single scannable package + empty direction graph
+  const scannablePackages = (packages || []).filter(
+    (row) => row.scannable !== "no",
+  );
+  const isSingleScannable = scannablePackages.length === 1;
+  const hasNoEdges =
+    !directionGraph ||
+    !directionGraph.edges ||
+    directionGraph.edges.length === 0;
+
+  if (isSingleScannable && hasNoEdges) {
+    gatedOut.add("imports:#6");
+    gatedOut.add("boundaries:B");
+    singlePackageBlindSpots.push(
+      "`imports` #6 (wrong-direction imports) — not applicable: single-package repo",
+    );
+    singlePackageBlindSpots.push(
+      "`boundaries` B (cross-package misplaced logic) — not applicable: single-package repo",
+    );
+  }
+
+  // Scannable: no packages → blind spot
+  const scannableNoBlindSpots = [];
+  for (const pkg of packages || []) {
+    if (pkg.scannable === "no") {
+      const langSuffix = pkg.language ? `${pkg.language}, ` : "";
+      scannableNoBlindSpots.push(`\`${pkg.name}\` — ${langSuffix}not scanned`);
+    }
+  }
+
+  // Build ordered blindSpots: convention-gated → scannable:no → single-package n/a
+  const blindSpots = [
+    ...conventionBlindSpots,
+    ...scannableNoBlindSpots,
+    ...singlePackageBlindSpots,
+  ];
+
+  // probePlan
+  const probePlan = linter?.probe ?? "none";
+
+  // activeDetectors: all non-gated categories with remaining subtypes
+  const activeDetectors = [];
+  for (const [category, subtypes] of Object.entries(CATEGORY_SUBTYPES)) {
+    if (gatedOut.has(`${category}:*`)) continue; // whole category gated off
+    const activeSubtypes = subtypes.filter(
+      (s) => !gatedOut.has(`${category}:${s}`),
+    );
+    activeDetectors.push({ category, subtypes: activeSubtypes });
+  }
+
+  return { probePlan, activeDetectors, blindSpots };
+}
+
+/** Markdown body for `## Resolved Decisions` (no heading). */
+export function formatResolvedDecisionsMarkdown(decisions) {
+  const { probePlan, activeDetectors, blindSpots } = decisions;
+  const lines = [
+    "Derived by `lodestar-setup`. Regenerated on re-run — **do not hand-edit**.",
+    "",
+    "| Key | Value |",
+    "| --- | --- |",
+    `| \`probe-plan\` | \`${probePlan}\` |`,
+    "",
+    "### Active detectors",
+    "",
+  ];
+  for (const row of activeDetectors) {
+    lines.push(`- \`${row.category}\`: ${row.subtypes.join(", ")}`);
+  }
+  lines.push("", "### Blind spots", "");
+  if (!blindSpots.length) {
+    lines.push("- (none)");
+  } else {
+    for (const spot of blindSpots) lines.push(`- ${spot}`);
+  }
+  lines.push("");
+  return lines.join("\n");
+}
+
 function auditConfigurationSection(contextText) {
   rejectPre09Context(contextText);
   const heading = contextText.search(/^## Audit Configuration\s*$/m);
@@ -1908,6 +2067,11 @@ function cmdValidateInput(flags) {
   } catch (error) {
     fail(error.message, 2);
   }
+  try {
+    requireResolvedDecisions(contextText);
+  } catch (error) {
+    fail(error.message, 2);
+  }
   let packages;
   try {
     packages = parsePackageLayout(contextText);
@@ -1950,6 +2114,12 @@ function cmdValidateInput(flags) {
   }
   const detected = resolvePkgManager(root, parsePkgManagerRow(contextText));
   const scannablePackages = packages.filter((row) => row.scannable !== "no");
+  const resolved = deriveResolvedDecisions({
+    conventions,
+    packages,
+    directionGraph,
+    linter,
+  });
   printJson({
     packages,
     direction: directionGraph.chain ?? [],
@@ -1973,7 +2143,44 @@ function cmdValidateInput(flags) {
     pkgManagerProvenance: detected.provenance,
     allPkgRoots: scannablePackages.map((row) => row.path).join(" "),
     aliasPrefix: aliasPrefix(scannablePackages),
+    activeDetectors: resolved.activeDetectors,
+    blindSpots: resolved.blindSpots,
+    probePlan: resolved.probePlan,
   });
+}
+
+function cmdDeriveDecisions(flags) {
+  const root = flags.root || process.cwd();
+  const contextPath = path.join(root, ".agents", "lodestar", "context.md");
+  if (!fs.existsSync(contextPath)) {
+    fail(
+      ".agents/lodestar/context.md is missing. Write Conventions and Package Layout first, then re-run.",
+      2,
+    );
+  }
+  const contextText = fs.readFileSync(contextPath, "utf8");
+  let packages;
+  let conventions;
+  let linter;
+  try {
+    rejectPre09Context(contextText);
+    packages = parsePackageLayout(contextText);
+    conventions = parseConventions(contextText);
+    const commands = parseCommands(contextText);
+    linter = requireLinter(contextText, commands);
+  } catch (error) {
+    fail(error.message, 2);
+  }
+  const directionGraph = parseDirection(contextText);
+  const resolved = deriveResolvedDecisions({
+    conventions,
+    packages,
+    directionGraph,
+    linter,
+  });
+  process.stdout.write(
+    `## Resolved Decisions\n\n${formatResolvedDecisionsMarkdown(resolved)}`,
+  );
 }
 
 function cmdChangedFiles(flags) {
@@ -2214,6 +2421,7 @@ const COMMANDS = {
   "validate-input": cmdValidateInput,
   "check-freshness": cmdCheckFreshness,
   "derive-direction": cmdDeriveDirection,
+  "derive-decisions": cmdDeriveDecisions,
   "changed-files": cmdChangedFiles,
   "merge-findings": cmdMergeFindings,
   "validate-output": cmdValidateOutput,

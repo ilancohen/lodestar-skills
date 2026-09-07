@@ -31,3 +31,29 @@ core → api
 | `mode`          | `changed-since`                            |       |
 | `baseline-ref`  | `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` |       |
 | `baseline-date` | `2026-08-18`                               |       |
+
+## Resolved Decisions
+
+Derived by `lodestar-setup`. Regenerated on every re-run — do not hand-edit.
+
+| Key | Value | Notes |
+| --- | --- | --- |
+| `probe-plan` | `eslint --format json --max-warnings=999 <all_pkg_roots>` | |
+| `active-detectors` | see list below | |
+| `blind-spots` | none | |
+
+### Active detectors
+
+- `imports`: #1, #2, #3, #4, #5, #6, #7, #8, #9
+- `types`: #1, #2, #3, #4
+- `boundaries`: A, B, C, D, E
+- `errors`: A, B
+- `testability`: A, B
+- `soc-yagni`: A, B, C, D
+- `dry`: A, B, C
+- `ssot`: A, B, C
+- `styling`: A, B, C, D
+
+### Blind spots
+
+(none)

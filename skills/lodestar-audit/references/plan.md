@@ -57,25 +57,24 @@ Fix leftover placeholders in place before the next item.
 
 ## Known blind spots
 
-Copy into `INDEX.md` Known blind spots. Assemble in this order:
+Copy into `INDEX.md` Known blind spots. Start with the `blindSpots`
+array from `validate-input` — it already contains convention-gated
+skips, `Scannable: no` packages, and single-package not-applicable
+entries in the correct order. Then append runtime entries:
 
 1. If this run skipped the Fallow seed (`fallow: optional` and Fallow
-   missing or invalid), put this first and prominently: **not checked
-   at all** — `imports` #7–#9, `dry` A, `soc-yagni` A ranking.
+   missing or invalid), append this prominently: **not checked at all**
+   — `imports` #7–#9, `dry` A, `soc-yagni` A ranking.
 2. Coverage floor when it is a number and `<test>` does not emit
    coverage.
 3. Wide-diff DRY as `dry.C` advisory only.
 4. Rule of Three beyond `soc-yagni.D`.
 5. Whether the documented layout is the right one
    (`lodestar-architecture`).
-6. Every convention-gated detector this run skipped (name the category,
-   subtype, and key), from Categories "Gated by" and Discover skip
-   notes. Do not list `coverage-floor: none` as a skip — omit that line
-   entirely.
-7. Every `Scannable: no` package by name and reason (`worker` — Python,
-   not scanned).
-8. In a single-package repo (one scannable row, empty graph), append
-   `imports` #6 and `boundaries` B as not applicable.
+
+Do not re-assemble convention gates, `Scannable: no` packages, or
+single-package entries — those are already in `validate-input`
+`blindSpots`.
 
 ## INDEX.md
 

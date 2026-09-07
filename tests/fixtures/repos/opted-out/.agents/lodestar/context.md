@@ -44,3 +44,29 @@ core → api
 ## Reference
 
 See `.agents/skills/lodestar-setup/principles.md`.
+
+## Resolved Decisions
+
+Derived by `lodestar-setup`. Regenerated on every re-run — do not hand-edit.
+
+| Key | Value | Notes |
+| --- | --- | --- |
+| `probe-plan` | `eslint --format json --max-warnings=999 <all_pkg_roots>` | |
+| `active-detectors` | see list below | |
+| `blind-spots` | see list below | |
+
+### Active detectors
+
+- `imports`: #1, #2, #3, #4, #5, #6, #7, #8, #9
+- `types`: #1, #2, #3, #4
+- `boundaries`: A, B, C, D, E
+- `errors`: A
+- `testability`: A, B
+- `soc-yagni`: A, B, C, D
+- `dry`: A, B, C
+- `ssot`: A, B, C
+
+### Blind spots
+
+- `errors` B (expected-failure Result returns) — skipped; `result-types` is `no`
+- `styling` (entire category) — skipped; `design-tokens` is `no`

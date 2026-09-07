@@ -134,13 +134,13 @@ A package marked `Scannable: no` is excluded from `allPkgRoots` and from
 every detector. How that appears in `INDEX.md` is owned by
 [references/plan.md](references/plan.md).
 
-If `pkgManager` is null, ask for the manager, its exec prefix, and its
-add-dev command before any install or `dlx`/`npx`/`bunx` command. Do
-not offer only npm / yarn / pnpm when none of those lockfiles is
-present. Do not guess. `pkgManagerProvenance` is `lockfile`,
-`context.md`, or `none`. If `<lint>` is `n/a`, skip linter probes and
-use grep heuristics — do not error. Otherwise use `validate-input`
-`linter.probe` (see [references/linter-probe.md](references/linter-probe.md)).
+`pkgManagerProvenance` is `lockfile`, `context.md`, or `none`. Setup
+always resolves and records the package manager; `pkgManagerProvenance:
+none` is a warning that setup predates this requirement — re-run setup
+rather than asking mid-audit. If `<lint>` is `n/a` or `probePlan` is
+`none`, skip linter probes and use grep heuristics — do not error.
+Otherwise use `validate-input` `probePlan` as the linter probe command
+(see [references/linter-probe.md](references/linter-probe.md)).
 
 Read `.agents/lodestar/context.md` for commands, direction, conventions,
 and the layout table. Read every path under `## Review Rubric` when that
@@ -157,19 +157,20 @@ Read the category sub-doc before scanning that category. Read
 sibling categories in prose; it does not load them, and it does not
 load `references/`.
 
-| Category      | Sub-doc                     | Risk        | Detection style               | Gated by                                                 |
+| Category      | Sub-doc                     | Risk        | Detection style               | Gated by (see `activeDetectors` from `validate-input`)   |
 | ------------- | --------------------------- | ----------- | ----------------------------- | -------------------------------------------------------- |
-| `imports`     | `categories/imports.md`     | low         | mechanical (Fallow preferred) | `#4` when `barrel-exports` is `yes`                      |
+| `imports`     | `categories/imports.md`     | low         | mechanical (Fallow preferred) | `#4` when `barrel-exports` is `yes`; `#6` single-package |
 | `types`       | `categories/types.md`       | low         | mechanical                    | `#4` when `branded-types` is `no`                        |
-| `boundaries`  | `categories/boundaries.md`  | medium–high | mechanical                    | `A` when `branded-types` is `no`                         |
-| `errors`      | `categories/errors.md`      | high        | mechanical                    | `#B` when `result-types` is `no`                         |
+| `boundaries`  | `categories/boundaries.md`  | medium–high | mechanical                    | `A` when `branded-types` is `no`; `B` single-package     |
+| `errors`      | `categories/errors.md`      | high        | mechanical                    | `B` when `result-types` is `no`                          |
 | `testability` | `categories/testability.md` | high        | mechanical                    | omit coverage-floor INDEX line when `coverage-floor` is `none` |
 | `soc-yagni`   | `categories/soc-yagni.md`   | low–high    | mixed                         | —                                                        |
 | `dry`         | `categories/dry.md`         | low–medium  | mixed                         | —                                                        |
 | `ssot`        | `categories/ssot.md`        | low–medium  | mechanical                    | —                                                        |
 | `styling`     | `categories/styling.md`     | low–medium  | mechanical                    | whole category when `design-tokens` is `no`              |
 
-Known blind spots for `INDEX.md` are assembled in
+Known blind spots for `INDEX.md`: copy `blindSpots` from `validate-input`
+output, then append runtime entries as described in
 [references/plan.md](references/plan.md).
 
 ---

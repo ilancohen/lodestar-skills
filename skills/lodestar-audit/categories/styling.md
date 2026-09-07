@@ -1,9 +1,7 @@
 # Category: `styling`
 
-**Gate:** skip this whole category when `conventions["design-tokens"]` is
-`no`. Emit nothing. Checkpoint `styling` complete with count 0. Record
-the category as a deliberate skip in `INDEX.md`'s known-blind-spots
-list — do not stay silent.
+**Gate:** skip this whole category when absent from `activeDetectors`
+(`design-tokens: no`). Emit nothing. Checkpoint `styling` complete with count 0.
 
 CSS lives in stylesheets, not inline; design tokens (colours, spacings,
 fonts, radii, z-indexes) have one canonical home and are referenced by

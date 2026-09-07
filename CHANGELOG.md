@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented here.
 
+## [0.17.0]
+
+### Changed
+
+- **`context.md` carries `## Resolved Decisions`.** Setup writes `probe-plan`, `active-detectors`, and `blind-spots` via `derive-decisions`; audit reads them from `validate-input` instead of re-deriving gates. Missing section fails closed — re-run `lodestar-setup`.
+
 ## [0.16.0]
 
 ### Changed
