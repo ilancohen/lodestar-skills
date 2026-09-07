@@ -1,12 +1,5 @@
 # Step 2 — Review what was observed
 
-Everything you show the user here is read by a person, not a machine.
-Follow `SKILL.md`'s "How to talk to the user": point first, bullets not
-paragraphs, blank line between blocks, bold lead-ins, no jargon they did
-not use first, and no thresholds or ratios they would have to do
-arithmetic on. Where a term is unavoidable, say what it means in the same
-breath.
-
 Present **one message**. Do not split this across turns. Bold headings,
 in this order. Skip a heading only when it cannot apply (no cycles, not
 a git repo, or `mode` already recorded). Always show **Layout**.

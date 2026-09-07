@@ -37,33 +37,14 @@ path to that file.
 
 ## How to talk to the user
 
-Anything you print or ask is read by a person who is skimming.
-
-What you say:
+Anything you print or ask is read by a person who is skimming. Findings and action-item files are exempt from the layout rules; their prose still follows plain-language rules.
 
 - Ask one clear question at a time. Say what happens for each answer.
-- Name a thing by what it does, not by its internal key — "how files
-  import each other", not `imports` #7.
-- Keep run ids, config keys, and file paths to where they are genuinely
-  needed.
-- Give counts, not ratios. Never ask the user to compare a number to a
-  threshold; give your recommendation and a one-line reason.
-- Never trim or postpone a warning. An unchecked gap, a stale basis, or
-  a skipped category stays in, however short the message.
-- Short sentences. No unexplained abbreviations. No filler openers.
-
-How you lay it out:
-
-- Put the point first. No wind-up, no restating it at the end.
-- Bullets, not paragraphs. One idea per bullet, one or two sentences.
-- Blank line between blocks. Never one dense block of text.
-- Bold the first few words of each bullet, plus any count, file name, or
-  recommendation, so reading only the bold still gives the gist.
-- Say the least that fully answers, then stop.
-
-Findings and action-item files are written to a template and are not
-covered by the layout rules above. Their prose still follows the
-plain-language rules.
+- Name a file by its path, not by an internal key.
+- Give counts, not ratios; never ask the user to compare a number to a threshold.
+- Never trim or postpone a warning.
+- Point first. Bullets, not paragraphs. Blank line between blocks.
+- Bold the first few words of each bullet.
 
 ---
 

@@ -1,10 +1,5 @@
 # Step 3 — Permissions for writes outside `.agents/`
 
-Everything you show the user here is read by a person, not a machine.
-Follow `SKILL.md`'s "How to talk to the user": point first, bullets not
-paragraphs, blank line between blocks, bold lead-ins, no jargon they did
-not use first. Keep config keys (`ENFORCEMENT_MODE`, …) off this screen.
-
 Present **one tick list**. Do not split this across turns. One round of
 feedback. Later steps honor these ticks and ask nothing.
 

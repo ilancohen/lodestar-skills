@@ -37,22 +37,11 @@ here.
 
 Anything you print or ask is read by a person who is skimming.
 
-What you say:
-
 - Ask one clear question at a time. Say what happens for each answer.
 - Name a file by its path, not by an internal key.
-- Never trim or postpone a warning. A live audit run, a spec-vs-code
-  clash, or a harvest with no home stays in, however short the message.
-- Short sentences. No unexplained abbreviations. No filler openers.
-
-How you lay it out:
-
-- Put the point first. No wind-up, no restating it at the end.
-- Bullets, not paragraphs. One idea per bullet, one or two sentences.
-- Blank line between blocks. Never one dense block of text.
-- Bold the first few words of each bullet, plus any count, file name, or
-  recommendation, so reading only the bold still gives the gist.
-- Say the least that fully answers, then stop.
+- Never trim or postpone a warning. A live audit run, a harvest with no home, or a spec-vs-code clash stays in.
+- Point first. Bullets, not paragraphs. Blank line between blocks.
+- Bold the first few words of each bullet.
 
 ---
 
