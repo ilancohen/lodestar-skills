@@ -63,10 +63,10 @@ Capture from the same `validate-input` payload:
 Capture from `.agents/lodestar/context.md` (the file `lodestar-setup`
 writes; `AGENTS.md` is not read):
 
-- `<typecheck>`, `<lint>`, `<test>` — the build commands used to verify
-  each fix. `n/a` means that check does not exist: skip it and say so
-  in the report. Stop and ask to re-run `lodestar-setup` only when a
-  command is missing from the table entirely.
+- `<typecheck>`, `<lint>`, `<test>` — context build commands. `n/a`
+  skips that command when an item's acceptance names it. The item's
+  **Acceptance check** is the contract; stop only when that section
+  names no usable method.
 - `## Package Layout` — the Package and Path glob(s) columns, read only
   when Step 2's "By area" option is chosen. A missing table does not
   stop the skill.
@@ -120,8 +120,7 @@ If the run root has `in_progress` or `deferred`, load
 2. **Triage** — [references/triage.md](references/triage.md). Choose the
    batch and set `AUTO_COMMIT`.
 3. **Execute** — [references/execute.md](references/execute.md). One item
-   at a time. Optional fan-out:
-   [references/fan-out.md](references/fan-out.md).
+   at a time, serially. No mutating sub-agent fan-out.
 4. **Report** — [references/report.md](references/report.md). Session
    summary, archive run (Step 4a), dependency direction (Step 4b).
 
@@ -141,14 +140,17 @@ If the run root has `in_progress` or `deferred`, load
   scope / acceptance stay immutable.
 - **Never delete an action-item file.** `done`/`skipped` move to
   `<output-root>/<RUN_ID>/done/`; deferred stay in the run root.
-- **No `git add -A`.** Stage only the item's `files:`.
+- **No `git add -A`.** Stage only the item's `files:`. Never stage a
+  whole dirty file that already had unrelated edits.
 - **`## Dependency Direction` refresh is the one exception.** Step 4b may
   rewrite that `context.md` section on consent after an `imports` #3 fix,
   in its own commit — not scope-creep.
 - **Stop conditions:**
   - No `INDEX.md` or no action-item files in the run directory.
-  - Both `<typecheck>` and `<test>` are `n/a` or missing (one `n/a` just
-    skips that check).
+  - The item's acceptance method is empty or unusable (no command and no
+    deterministic inspection named in the item).
   - `check-freshness --facts commands` reports drift → point at
     `lodestar-setup`.
   - The user says stop.
+  - A `files:` path already has unrelated uncommitted changes the user
+    has not resolved.

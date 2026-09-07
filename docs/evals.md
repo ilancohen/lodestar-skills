@@ -117,7 +117,13 @@ Near-miss: discovery-only audit, setup, advisory review, unrelated refactors, ad
 Expected outcomes (once explicitly invoked):
 
 - Honor each item's file list; no `git add -A`; stop on scope creep.
-- `n/a` for `<typecheck>` or `<test>` skips that check and is reported; stop only when both are `n/a` or missing.
+- Stop before editing a `files:` path that already has unrelated uncommitted
+  changes; name the paths and let the user resolve them.
+- Execute items serially. No mutating sub-agent fan-out.
+- Run the item's declared acceptance method (typecheck, test, lint, targeted
+  test, or deterministic inspection). No usable method is a stop. A failed
+  normal or resumed check leaves the item deferred with the exact failure and
+  never moves it to `done/`.
 - Ask before decision items and before overwriting `in_progress` work.
 - After the user picks a batch, print the distinct files it will touch
   and confirm once before Step 3; declining returns to triage.
@@ -168,9 +174,9 @@ Near-miss: generic tidy-docs / clean-up-the-folder talk, planning housekeeping, 
 Expected outcomes (once explicitly invoked):
 
 - Default scope is `staging` rows from `## Docs Layout` (audit `done/`/`abandoned` when the output-root is staging). `--full` or a named `--tree` only when the user asks. Absent Docs Layout: observe the same way setup would.
-- Survey from `skills/lodestar-docs/scripts/scope.mjs`. Live audit runs (`INDEX.md` + `NNN-*.md` in the run root) and in-flight plans are protected.
+- Survey from `skills/lodestar-docs/scripts/scope.mjs`. Live audit runs (`findings.md`, `.checkpoint.json`, and/or `NNN-*.md` in the run root — even without `INDEX.md`) and in-flight plans are protected.
 - Canonical homes are `home` rows in `## Docs Layout` (or the same observation if that section is absent). Never create a new home. Harvest with nowhere to go is a needs-a-home list, not a new file.
-- One proposal, then wait for OK. Honor `commits` from Audit Configuration (`never` leaves edits unstaged; otherwise harvest commit then delete commit).
+- One proposal, then wait for OK. Every deletion — including build output and `.DS_Store` — is a row in that proposal. Honor `commits` from Audit Configuration (`never` leaves edits unstaged; otherwise harvest commit then delete commit).
 - Never edit application source or `.agents/lodestar/context.md`. Do not rewrite `AGENTS.md` unless a Docs map already exists and the user ticks that row.
 - Spec-vs-code clashes are asked, never silently resolved toward the code.
 - Missing `context.md` stops and names `lodestar-setup`, unless the user already named a folder.
@@ -217,8 +223,9 @@ Near-miss: writing a plan, auditing, applying audit items, generic "implement th
 Expected outcomes (once explicitly invoked):
 
 - pick-up resolves the plan; a slug in both the plans root and `done/` stops as a prior incomplete move.
-- `rigor:` from frontmatter, or inferred and written back. `light` is one unscoped acceptance run and one commit that includes move-done plus the ledger row. `standard` reviews once at plan end with guarded fixups (or a plain follow-up when can-autosquash is not ok). `full` reviews per stage. Escalation is stage-local, announced, not prompted.
+- One opening commit choice: commit each stage or leave all changes unstaged. Read a recorded policy when present. Never commit or rewrite history without that consent.
+- `rigor:` from frontmatter, or inferred and written back. `light` is one unscoped acceptance run and one commit (when consent allows) that includes move-done plus the ledger row. `standard` reviews once at plan end; review fixes fold into the current stage commit or a plain follow-up — never `--fixup` / `rebase --autosquash`. `full` reviews per stage. Escalation is stage-local, announced, not prompted.
 - Rubric is `## Review Rubric` or principles only. No branded-types / `any` / `manualEpoch` checklist.
 - Missing `context.md` is not a stop and never a hand-off to `lodestar-setup` ([`references/discover-context.md`](../skills/lodestar-implement/references/discover-context.md)): a plan `Accept` line wins, then `package.json` scripts (`typecheck` / `tsc` / `types`, `test`, `lint`) and task-file targets; no script means that check is skipped exactly as a recorded `n/a` would be, and several plausible scripts are asked about once before the first stage. Rubric falls back to `principles.md` plus whichever of `CONTRIBUTING.md`, `AGENTS.md`, `CLAUDE.md`, and host-agent rules files exist — read as rubric paths, not turned into a repo-specific checklist. The resolved commands are printed before the first edit. It does not write `context.md`.
 - `move-done` is a script with a verified post-condition: source gone, destination present. Never a copy that leaves the original behind.
-- One stage one commit (`light` excepted as above). No `git add -A`. Plan bodies stay immutable.
+- One stage one commit when consent allows (`light` excepted as above). No `git add -A`. Plan bodies stay immutable. Completion `commit:` SHA is written after the commit exists, or omitted when commits are disabled.

@@ -57,10 +57,11 @@ function existsDir(root, relative) {
 
 export function isLiveAuditRun(dir) {
   if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) return false;
-  if (!fs.existsSync(path.join(dir, "INDEX.md"))) return false;
-  return fs
-    .readdirSync(dir)
-    .some((name) => /^\d{3}-.+\.md$/.test(name));
+  const names = fs.readdirSync(dir);
+  if (names.includes("findings.md")) return true;
+  if (names.includes(".checkpoint.json")) return true;
+  if (names.some((name) => /^\d{3}-.+\.md$/.test(name))) return true;
+  return false;
 }
 
 function underPrefix(relative, prefix) {

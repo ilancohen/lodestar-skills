@@ -11,4 +11,9 @@ matches that claim.
 
 Filter to medium-or-higher. One auto-fix pass, then re-review. A second
 medium-or-higher round: stop and ask (fix / defer / override with
-`review-override` in the commit body).
+`review-override` in the commit body when commits are enabled).
+
+**Fixes never rewrite history.** No `--fixup`, no `rebase --autosquash`.
+Fold into the current stage commit when it is not yet made; otherwise a
+plain follow-up commit when consent allows, or unstaged edits when it
+does not.

@@ -56,9 +56,9 @@ touch in-flight rows.
 anything else. Do not delete an ADR folder on a blanket rule. Do not
 write new ADRs.
 
-**Non-markdown.** Delete checked-in build output and `.DS_Store` on
-sight, without asking. Keep an image only when a surviving markdown file
-links to it.
+**Non-markdown.** Checked-in build output and `.DS_Store` may be
+deleted, but only as rows in the single proposal with explicit approval.
+Never delete them on sight outside that proposal.
 
 **Orphans.** A doc that nothing links to and nobody has touched in
 months is a strong delete signal. Check with

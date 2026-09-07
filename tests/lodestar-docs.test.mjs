@@ -35,11 +35,35 @@ test("architectureOutputRoot matches audit derivation", () => {
   );
 });
 
-test("isLiveAuditRun requires INDEX.md and an NNN item in the run root", () => {
+test("isLiveAuditRun protects findings, checkpoints, or action items without INDEX", () => {
   const live = path.join(FIXTURE, "docs/audit/2026-08-10");
   const done = path.join(FIXTURE, "docs/audit/done");
   assert.equal(isLiveAuditRun(live), true);
   assert.equal(isLiveAuditRun(done), false);
+
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-live-audit-"));
+  try {
+    const findingsOnly = path.join(tmp, "findings-only");
+    fs.mkdirSync(findingsOnly);
+    fs.writeFileSync(path.join(findingsOnly, "findings.md"), "# findings\n");
+    assert.equal(isLiveAuditRun(findingsOnly), true);
+
+    const checkpointOnly = path.join(tmp, "checkpoint-only");
+    fs.mkdirSync(checkpointOnly);
+    fs.writeFileSync(path.join(checkpointOnly, ".checkpoint.json"), "{}\n");
+    assert.equal(isLiveAuditRun(checkpointOnly), true);
+
+    const itemsOnly = path.join(tmp, "items-only");
+    fs.mkdirSync(itemsOnly);
+    fs.writeFileSync(path.join(itemsOnly, "001-imports-x.md"), "item\n");
+    assert.equal(isLiveAuditRun(itemsOnly), true);
+
+    const empty = path.join(tmp, "empty");
+    fs.mkdirSync(empty);
+    assert.equal(isLiveAuditRun(empty), false);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
 });
 
 test("default survey covers staging trees and skips live runs and inflight plans", () => {

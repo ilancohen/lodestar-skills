@@ -7,7 +7,6 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import {
   assertExclusiveLocation,
-  canAutosquash,
   completeLedger,
   effectiveRigor,
   escalateStage,
@@ -102,15 +101,12 @@ test("a folder plan declared light is coerced to standard", () => {
   }
 });
 
-test("canAutosquash refuses a non-git directory", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-not-git-"));
-  try {
-    const result = canAutosquash(tmp);
-    assert.equal(result.ok, false);
-    assert.equal(result.reason, "not-a-git-repo");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
+test("can-autosquash command is removed", () => {
+  const result = spawnSync(process.execPath, [SCRIPT, "can-autosquash", "--root", ROOT], {
+    encoding: "utf8",
+  });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /unknown command: can-autosquash/);
 });
 
 test("escalateStage records a stage-local trigger", () => {

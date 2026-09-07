@@ -9,16 +9,14 @@ host has no sub-agents, review inline against the same rubric.
 
 Filter to medium-or-higher confidence.
 
-**Fixes land as guarded fixups.** Per issue: `git commit --fixup <stage-sha>`.
-Then one `git rebase --autosquash`. First run:
+**Fixes stay ordinary commits — never autosquash.** No
+`git commit --fixup`, no `git rebase --autosquash`, no history rewrite.
 
-```text
-node <this-skill>/scripts/plan-state.mjs can-autosquash --root <repo>
-```
-
-If it is not `ok` (dirty tree, commits already on the remote, or
-`unpushed` smaller than this plan's stage count), **do not rebase**.
-Make a plain follow-up commit and say so.
+- If the stage commit is not made yet, fold review fixes into that
+  commit.
+- If the stage was already committed and `sessionCommits` allows it,
+  make one plain follow-up commit and say so.
+- If commits are disabled, leave the fixes unstaged.
 
 One auto-fix pass, then re-review. A second medium-or-higher round:
 stop and ask (fix / defer / override).

@@ -30,7 +30,6 @@ node <this-skill>/scripts/plan-state.mjs pick-up --root <repo> --plan <slug>
 node <this-skill>/scripts/plan-state.mjs write-rigor --root <repo> --plan <slug> --rigor <tier> --reason <text>
 node <this-skill>/scripts/plan-state.mjs move-done --root <repo> --plan <slug>
 node <this-skill>/scripts/plan-state.mjs complete-ledger --root <repo> --plan <href> --evidence <text>
-node <this-skill>/scripts/plan-state.mjs can-autosquash --root <repo>
 ```
 
 Load references one hop from this file. A `light` run loads

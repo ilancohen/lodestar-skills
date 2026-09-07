@@ -19,7 +19,8 @@ One written proposal, before anything destructive. Match length to
 information density:
 
 - Delete and keep: one table row each — filename, one-line reason,
-  verdict. No paragraphs.
+  verdict. No paragraphs. Include every deletion, including build
+  output and `.DS_Store` — nothing is deleted outside this list.
 - Rescues: what gets harvested, and into which **existing** home.
 - Merges and strips: prose, since the reasoning is what the reader is
   checking.

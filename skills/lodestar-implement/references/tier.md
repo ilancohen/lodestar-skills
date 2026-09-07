@@ -2,11 +2,15 @@
 
 `rigor: light | standard | full` is the verification dial.
 
-| Tier       | Review                                      | Acceptance                                      | Commits                                      |
+| Tier       | Review                                      | Acceptance                                      | Commits (when consent is on)                 |
 | ---------- | ------------------------------------------- | ----------------------------------------------- | -------------------------------------------- |
 | `light`    | inline; load `review-light.md` only         | one unscoped run at the end of the single stage | one commit: code, done-mark, move, ledger    |
 | `standard` | once at plan end; load `review-standard.md` | scoped per stage; full sweep at plan end        | per stage, plus housekeeping                 |
 | `full`     | per stage; load `review-full.md`            | scoped per stage; full sweep at plan end        | per stage, plus housekeeping                 |
+
+When commit consent is off, every tier leaves changes unstaged and still
+runs the same acceptance and review. Never commit or rewrite history
+without that consent.
 
 `<typecheck>` and scoped `<test>` run in every tier.
 

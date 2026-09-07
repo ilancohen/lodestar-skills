@@ -18,8 +18,10 @@ Widen only when the user asks:
 
 - `.agents/lodestar/context.md`
 - Skill definition files
-- Live audit runs — a directory under `<output-root>` with both `INDEX.md`
-  and at least one `NNN-*.md` in that directory (not inside its `done/`)
+- Live audit runs — a directory under `<output-root>` that still has
+  resumable state: `findings.md`, `.checkpoint.json`, and/or
+  `NNN-*.md` action items in that directory (not inside its `done/`),
+  even when `INDEX.md` is absent or the user widened scope
 - In-flight rows from `## Docs Layout` (and nested files except nested
   `staging` paths such as `docs/plans/done/`)
 

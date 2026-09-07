@@ -323,37 +323,6 @@ export function parseReviewRubric(contextText) {
   return paths.length ? paths : fallback;
 }
 
-export function canAutosquash(root) {
-  const dirty = spawnSync("git", ["status", "--porcelain"], {
-    cwd: root,
-    encoding: "utf8",
-  });
-  if (dirty.status !== 0) {
-    return { ok: false, reason: "not-a-git-repo" };
-  }
-  if (dirty.stdout.trim()) {
-    return { ok: false, reason: "dirty-tree" };
-  }
-  const remote = spawnSync(
-    "git",
-    ["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"],
-    { cwd: root, encoding: "utf8" },
-  );
-  if (remote.status !== 0) {
-    return { ok: true, reason: "no-upstream" };
-  }
-  const range = spawnSync(
-    "git",
-    ["rev-list", "--count", "@{u}..HEAD"],
-    { cwd: root, encoding: "utf8" },
-  );
-  const unpushed = Number(range.stdout.trim() || 0);
-  if (unpushed === 0) {
-    return { ok: false, reason: "commits-on-remote" };
-  }
-  return { ok: true, reason: "clean", unpushed };
-}
-
 function resolvePlanAbs(root, plansRoot, plan) {
   if (path.isAbsolute(plan)) return plan;
   const direct = path.join(root, plan);
@@ -426,10 +395,6 @@ export function run(argv = process.argv.slice(2)) {
     const plansRoot = resolvePlansRoot(root);
     const abs = resolvePlanAbs(root, plansRoot, flags.plan);
     printJson(writeRigor(abs, flags.rigor, flags.reason || ""));
-    return 0;
-  }
-  if (command === "can-autosquash") {
-    printJson(canAutosquash(root));
     return 0;
   }
   fail(`unknown command: ${command || "(none)"}`);

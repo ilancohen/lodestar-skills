@@ -28,8 +28,13 @@ Add `status: in_progress` to the item's frontmatter.
 
 ### Step 3.4 — Apply the fix
 
-Warn before applying if any `files:` path has uncommitted changes
-(`git status --porcelain -- <files>`). Do not stop.
+Before editing, run `git status --porcelain -- <files>`. If any listed
+path already has uncommitted changes, **stop this item**. Name those
+paths, ask the user to resolve them (commit, stash, or discard), and
+leave the item `in_progress` or set `status: deferred` with
+`note: dirty-files — <paths>` if they want to continue later. Never
+edit into a dirty file, and never stage a whole dirty file that mixes
+pre-existing edits with this fix.
 
 Follow **Suggested fix** exactly. Honor **Scope rules** verbatim.
 
@@ -39,14 +44,26 @@ and move on.
 
 ### Step 3.5 — Acceptance check
 
-Run **Acceptance check** commands. Default: `<typecheck>` and
-`<test>` when required. Skip `n/a` and note it on the item.
+Run the item's **Acceptance check** exactly as written. That may be
+`<typecheck>`, `<test>`, `<lint>`, a targeted test command, a
+deterministic inspection (file contents, script output), or a
+combination. Skip a named context command only when that cell is `n/a`,
+and say so on the item.
+
+If the acceptance section names no usable method — no command and no
+deterministic inspection — **stop**. Set `status: deferred` with
+`note: no usable acceptance method` and move on. Do not refuse merely
+because both `<typecheck>` and `<test>` are `n/a` when the item
+declares another valid method.
 
 **Batched mode (opt-in).** When every item in the category is
 `<typecheck>`-only (typically `imports`, `types`, `ssot`), apply all
 edits, run `<typecheck>` once, then finish item-by-item. On failure,
 bisect per-item; mark the offender `deferred` with the failure;
 revert only its diff. Never batch when acceptance includes `<test>`.
+
+A failed acceptance check → `status: deferred` with the exact failure
+in `note:`. Do **not** mark done or move to `done/`.
 
 ### Step 3.6 — Commit
 
@@ -85,14 +102,16 @@ diff staged or unstaged and continue.
 
 ### Step 3.7 — Mark done and move
 
-Update the item's frontmatter:
+Only after Step 3.5 passed. Update the item's frontmatter:
 
 ```
 status: done
 completed_at: <YYYY-MM-DD>
 ```
 
-If a commit was created, also write `commit: <short-sha>`.
+If a commit was created, write `commit: <short-sha>` **after** the
+commit exists (working-tree edit of frontmatter). When commits are
+disabled, omit `commit:`.
 
 Then **move** the file into `done/`:
 
