@@ -1,8 +1,10 @@
 # Locate the plans root
 
 Confirm `.agents/lodestar/context.md` if it exists. Missing context is not
-a stop — fall back to `docs/plans/`. Do not read `AGENTS.md` for the
-plans path.
+a stop and not a reason to send the user to `lodestar-setup` — fall back
+to `docs/plans/` and pick up the rest of the facts in
+[discover-context.md](discover-context.md). Do not read `AGENTS.md` for
+the plans path.
 
 Run:
 

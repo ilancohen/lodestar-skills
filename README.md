@@ -22,17 +22,22 @@ writeups those skills leave behind.
   itself. Advisory only, never edits code.
 - **`lodestar-plan`** — writes an implementable plan under `docs/plans/`
   (or the plans root recorded at setup), with a `rigor:` tier, after
-  checking that named files and commands exist. Does not implement.
+  checking that named files and commands exist. Does not implement. Runs
+  without setup — it discovers what it needs.
 - **`lodestar-implement`** — executes that plan one stage at a time at
   the declared `rigor:` tier, then moves it to `done/` and updates the
-  ledger. The only other skill besides `lodestar-fix` that edits
-  application source.
+  ledger. Also runs without setup. The only other skill besides
+  `lodestar-fix` that edits application source.
 - **`lodestar-docs`** — optional. Harvests leftover knowledge from
   `staging` docs trees into `home` trees recorded at setup, then deletes
   what an agent would not miss. Never creates new docs homes. Never edits
   application source.
 
-Run them in that order. `lodestar-setup` first, always.
+Run them in that order. `lodestar-setup` first for the audit, fix,
+architecture, and docs skills — they stop without `context.md`.
+`lodestar-plan` and `lodestar-implement` don't need it: with no
+`context.md` they find the commands, packages, and rules in the repo
+themselves, name what they found, and let you correct it.
 
 ## The rules it checks for
 
@@ -103,11 +108,11 @@ today's commit and keep the rest as a counted backlog in `INDEX.md`. A
 `context.md` with no `mode` row in `## Audit Configuration` still expands every
 finding.
 
-| Want to...       | Run                                                                                                                                            |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Pick one agent   | `npx skills add ilancohen/lodestar-skills --skill '*' -a cursor -a universal`                                                                  |
-| Skip the prompts | `npx skills add ilancohen/lodestar-skills --skill '*' -y`                                                                                      |
-| Install a clone  | `npx skills add /path/to/lodestar-skills --skill '*' -y`                                                                                       |
+| Want to...       | Run                                                                           |
+| ---------------- | ----------------------------------------------------------------------------- |
+| Pick one agent   | `npx skills add ilancohen/lodestar-skills --skill '*' -a cursor -a universal` |
+| Skip the prompts | `npx skills add ilancohen/lodestar-skills --skill '*' -y`                     |
+| Install a clone  | `npx skills add /path/to/lodestar-skills --skill '*' -y`                      |
 
 Agent ids: `cursor`, `claude-code`, `codex`, `gemini-cli`, `github-copilot`,
 `kiro-cli` — see the [skills CLI's supported agents](https://github.com/vercel-labs/skills#supported-agents)
@@ -150,8 +155,10 @@ Skills don't activate on their own — you have to invoke them by name
 5. Run `lodestar-architecture` separately, only if the package layout itself
    feels wrong.
 6. Run `lodestar-plan` for larger work that needs a staged, implementable
-   plan (`rigor: light | standard | full`).
+   plan (`rigor: light | standard | full`). Step 1 is optional for this
+   one.
 7. Run `lodestar-implement` to execute that plan one stage at a time.
+   Also fine without step 1.
 8. Run `lodestar-docs` when staging folders under `docs/` have piled up.
    It proposes, waits for OK, then harvests and deletes. Default scope is
    lodestar-owned trees, not the whole `docs/` tree.

@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented here.
 
+## [0.16.0]
+
+### Changed
+
+- **`lodestar-plan` and `lodestar-implement` no longer require setup.** With no `.agents/lodestar/context.md`, each discovers what it needs from the repo — package manager, commands, layout, today's imports, guideline files — names what it found, and asks only when a fact is genuinely ambiguous. Neither writes `context.md`.
+- **A check with no command is skipped, not a stop.** `lodestar-implement` treats a missing typecheck, test, or lint script the same way a recorded `n/a` is treated, and says which check it skipped.
+
 ## [0.15.0] - 2026-09-06
 
 ### Added

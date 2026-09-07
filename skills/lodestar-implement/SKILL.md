@@ -9,7 +9,7 @@ description: >-
   by name.
 disable-model-invocation: true
 license: MIT
-compatibility: Requires git, Node.js, and the target repository's declared typecheck and test commands (n/a skips that check). npm, pnpm, yarn, and Bun are detected from lockfiles; any other manager works when recorded in context.md. Deno and Bazel are not supported.
+compatibility: Requires git, Node.js, and the target repository's typecheck and test commands — read from .agents/lodestar/context.md when present, otherwise discovered from the repo (a check with no command is skipped). lodestar-setup is not a prerequisite. npm, pnpm, yarn, and Bun are detected from lockfiles; any other manager is asked about, or read from context.md when recorded. Deno and Bazel are not supported.
 metadata:
   author: Ilan Cohen
   version: "0.15.0"
@@ -51,11 +51,15 @@ Anything you print or ask is read by a person who is skimming.
 
 1. **Locate** — [references/locate.md](references/locate.md). Pick the
    plan. Stop on a leftover copy in both the root and `done/`.
-2. **Tier** — [references/tier.md](references/tier.md). Read or infer
+2. **Discover** — [references/discover-context.md](references/discover-context.md).
+   Only when `.agents/lodestar/context.md` is missing: find the commands
+   and rubric in the repo. Never a stop, and never a hand-off to
+   `lodestar-setup`.
+3. **Tier** — [references/tier.md](references/tier.md). Read or infer
    `rigor:`. Escalate automatically when size or complexity demands it.
-3. **Execute** — [references/execute.md](references/execute.md). One
+4. **Execute** — [references/execute.md](references/execute.md). One
    stage, then the matching review file, until the plan is complete.
-4. **Complete** — [references/complete.md](references/complete.md).
+5. **Complete** — [references/complete.md](references/complete.md).
    `move-done` plus the ledger row. `light` folds this into the one
    commit; `standard` and `full` use a housekeeping commit.
 

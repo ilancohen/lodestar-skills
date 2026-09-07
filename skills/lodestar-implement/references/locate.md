@@ -1,8 +1,12 @@
 # Locate the plan
 
-Confirm `.agents/lodestar/context.md` exists. If it is missing, stop and
-tell the user to run `/lodestar-setup` first. Capture `<typecheck>`,
-`<test>`, and `<lint>` from `## Build & Test`. `n/a` skips that check.
+Read `.agents/lodestar/context.md` when it exists and capture
+`<typecheck>`, `<test>`, and `<lint>` from `## Build & Test`. `n/a` skips
+that check.
+
+A missing `context.md` is not a stop. Do not send the user to
+`/lodestar-setup`. Find the same commands in the repo —
+[discover-context.md](discover-context.md).
 
 Read `## Review Rubric` when present. Absent means principles only —
 `.agents/skills/lodestar-setup/principles.md`. That list is the review

@@ -10,11 +10,15 @@ Check, in this order:
    exist on disk. A path marked `(new)` may be absent. Do not invent a
    file to make the list look complete.
 2. **Commands.** Every command the plan names must appear in the
-   `package.json` `scripts` of the relevant package, or in `context.md`
-   `## Build & Test`. A command that is neither is not real.
+   `package.json` `scripts` of the relevant package, in `context.md`
+   `## Build & Test`, or in a task file
+   ([discover-context.md](discover-context.md) lists where to look). A
+   command that is in none of those is not real.
 3. **Direction.** If the plan assumes package A may import package B,
    that edge must match `context.md` `## Dependency Direction`. An empty
-   graph is valid for a single-package repo.
+   graph is valid for a single-package repo. With no `context.md`, there
+   is no recorded graph — check the assumed edge against the imports that
+   exist today instead, and treat only a new cycle as a contradiction.
 
 On a hit: **stop**. Name the missing file or command, or the direction
 contradiction. Do not write the plan. Trace callers only when this pass

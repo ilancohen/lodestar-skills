@@ -9,7 +9,7 @@ description: >-
   lodestar-plan by name.
 disable-model-invocation: true
 license: MIT
-compatibility: Requires Node.js. Reads .agents/lodestar/context.md when present; missing context falls back to docs/plans/. Does not require Fallow. npm, pnpm, yarn, and Bun are detected from lockfiles; any other manager works when recorded in context.md.
+compatibility: Requires Node.js. Reads .agents/lodestar/context.md when present; when it is absent, discovers the same facts from the repo and falls back to docs/plans/ — lodestar-setup is not a prerequisite. Does not require Fallow. npm, pnpm, yarn, and Bun are detected from lockfiles; any other manager is asked about, or read from context.md when recorded.
 metadata:
   author: Ilan Cohen
   version: "0.15.0"
@@ -62,12 +62,15 @@ Work in order. Load the named reference before each step.
 
 1. **Locate** — [references/locate.md](references/locate.md). Resolve the
    plans root. Bootstrap it when absent.
-2. **Ground** — [references/ground.md](references/ground.md). Bounded
+2. **Discover** — [references/discover-context.md](references/discover-context.md).
+   Only when `.agents/lodestar/context.md` is missing: find the same facts
+   in the repo. Never a stop, and never a hand-off to `lodestar-setup`.
+3. **Ground** — [references/ground.md](references/ground.md). Bounded
    verification, not research. Stop rather than write a plan that names a
    missing file or a command that is not real.
-3. **Shape and tier** — [references/shape-and-tier.md](references/shape-and-tier.md).
+4. **Shape and tier** — [references/shape-and-tier.md](references/shape-and-tier.md).
    Pick file vs folder. Write `rigor:` from size, then risk.
-4. **Write** — [references/write.md](references/write.md). Create the plan
+5. **Write** — [references/write.md](references/write.md). Create the plan
    and the ledger row. Do not commit unless asked.
 
 ## Never
