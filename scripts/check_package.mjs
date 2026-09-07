@@ -137,11 +137,32 @@ function checkLinks(filePath, errors) {
 const SKIP_DIRS = new Set([".git", "node_modules"]);
 
 function walkMarkdown(dir, files = []) {
+  if (!fs.existsSync(dir)) return files;
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     if (SKIP_DIRS.has(entry.name)) continue;
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) walkMarkdown(full, files);
     else if (entry.name.endsWith(".md")) files.push(full);
+  }
+  return files;
+}
+
+/**
+ * Package-owned markdown only. Never inspect ignored plans, local installs
+ * (`.agents/skills`, canvases), backups, fixtures, or other working-copy noise.
+ */
+export function packageMarkdownFiles(root = ROOT) {
+  const files = [];
+  for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
+    if (entry.isFile() && entry.name.endsWith(".md")) {
+      files.push(path.join(root, entry.name));
+    }
+  }
+  const evals = path.join(root, "docs", "evals.md");
+  if (fs.existsSync(evals)) files.push(evals);
+  walkMarkdown(path.join(root, "skills"), files);
+  for (const dir of ADAPTER_DIRS) {
+    walkMarkdown(path.join(root, dir), files);
   }
   return files;
 }
@@ -400,7 +421,7 @@ export function checkPackage(root = ROOT) {
     );
   }
 
-  for (const markdownPath of walkMarkdown(root)) {
+  for (const markdownPath of packageMarkdownFiles(root)) {
     checkLinks(markdownPath, errors);
   }
 

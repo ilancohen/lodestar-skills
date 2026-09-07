@@ -1,9 +1,27 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { MANIFESTS, ROOT, SKILLS } from "../scripts/lib.mjs";
-import { runSkillsCli } from "../scripts/skills-cli.mjs";
+import {
+  assertExactSkillDiscovery,
+  parseSkillsList,
+} from "../scripts/smoke_install.mjs";
+
+function cleanPackageTree() {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-discover-"));
+  const dest = path.join(tmp, "checkout");
+  const clone = spawnSync("git", ["clone", "--local", ROOT, dest], {
+    encoding: "utf8",
+  });
+  if (clone.status !== 0) {
+    fs.rmSync(tmp, { recursive: true, force: true });
+    throw new Error(clone.stderr || "git clone failed");
+  }
+  return { tmp, dest };
+}
 
 test("root skills/ holds exactly the canonical SKILL.md files", () => {
   const skillsRoot = path.join(ROOT, "skills");
@@ -40,13 +58,26 @@ test("contributor guidance is not a root CLAUDE.md runtime file", () => {
   assert.ok(fs.existsSync(path.join(ROOT, "CONTRIBUTING.md")));
 });
 
-test("skills CLI lists every canonical skill from this package", () => {
-  const result = runSkillsCli(["add", ".", "--list"], ROOT);
-  assert.equal(result.status, 0, result.stderr || result.stdout);
-  const out = `${result.stdout}\n${result.stderr}`;
-  for (const skill of SKILLS) {
-    assert.match(out, new RegExp(skill));
+test("skills CLI lists exactly seven skills from a clean package tree", () => {
+  const { tmp, dest } = cleanPackageTree();
+  try {
+    const found = assertExactSkillDiscovery(dest);
+    assert.deepEqual(found, [...SKILLS].sort());
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
   }
+});
+
+test("parseSkillsList extracts equality-ready names", () => {
+  const sample = `
+◇  Found 8 skills
+◇  Available Skills
+│    lodestar-setup
+│      Sets up the suite.
+│    grill-me
+│      Local only.
+`;
+  assert.deepEqual(parseSkillsList(sample), ["grill-me", "lodestar-setup"]);
 });
 
 test("no adapter auto-loads lodestar-fix", () => {

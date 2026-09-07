@@ -4,13 +4,17 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { SKILLS } from "../scripts/lib.mjs";
-import { assertInstalled, installedSkills } from "../scripts/smoke_install.mjs";
+import {
+  assertInstalled,
+  installedSkills,
+  parseSkillsList,
+} from "../scripts/smoke_install.mjs";
 
 // The full smokeInstall() flow (git clone + `pnpm dlx skills add` x3) is
 // already exercised end-to-end by .github/workflows/release.yml's
 // "Clean-checkout smoke" step. These tests cover the validation logic it
-// relies on — installedSkills/assertInstalled — without the network access
-// and multi-second git/pnpm round trips that flow requires.
+// relies on — installedSkills/assertInstalled/parseSkillsList — without the
+// network access and multi-second git/pnpm round trips that flow requires.
 
 function makeConsumer() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-smoke-unit-"));
@@ -103,4 +107,17 @@ test("assertInstalled dedupes a skill installed under two agent parents", () => 
   } finally {
     fs.rmSync(consumer, { recursive: true, force: true });
   }
+});
+
+test("parseSkillsList rejects extras via equality comparison", () => {
+  const polluted = parseSkillsList(`
+◇  Found 8 skills
+◇  Available Skills
+${[...SKILLS, "grill-me"]
+  .sort()
+  .map((name) => `│    ${name}\n│      desc`)
+  .join("\n")}
+`);
+  assert.equal(polluted.includes("grill-me"), true);
+  assert.notDeepEqual(polluted, [...SKILLS].sort());
 });

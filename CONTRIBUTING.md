@@ -18,12 +18,12 @@ npm / yarn / pnpm / Bun setup; ask if the lockfile does not make it obvious.
 
 Before committing suite changes:
 
-1. `pnpm check`
-2. `pnpm test`
-3. Confirm local discovery with `pnpm dlx skills add . --list`
-4. Confirm adapters still discover exactly seven skills, none auto-invoke
-   (`disable-model-invocation: true`), and adapters never auto-load
-   `lodestar-fix`
+1. `pnpm check` — hermetic package validation (package-owned markdown and
+   exact seven-skill inventory). Do not trust `pnpm dlx skills add . --list`
+   against a working copy that also has local `.agents/skills/*` or ignored
+   plans; those inflate discovery and can break link checks.
+2. `pnpm test` — includes clean-tree discovery equality and adapter thinness
+   (`disable-model-invocation: true`; adapters never auto-load `lodestar-fix`)
 
 Add a `CHANGELOG.md` section for the target version, then run
 `pnpm run publish -- patch` (or `minor` / `major` / `x.y.z`). Use

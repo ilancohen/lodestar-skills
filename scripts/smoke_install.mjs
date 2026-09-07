@@ -13,6 +13,45 @@ function run(command, args, cwd, env = process.env) {
   return spawnSync(command, args, { cwd, encoding: "utf8", env });
 }
 
+/** Parse `skills add … --list` stdout/stderr into sorted skill names. */
+export function parseSkillsList(output) {
+  const text = String(output ?? "");
+  const section = text.split(/Available Skills/i)[1] ?? "";
+  const names = new Set();
+  for (const line of section.split(/\r?\n/)) {
+    // Box line with a skill name: "│    lodestar-setup" (not the longer description indent).
+    const match = line.match(/^[│|]\s{4}([a-z][a-z0-9-]*)\s*$/i);
+    if (match) names.add(match[1]);
+  }
+  return [...names].sort();
+}
+
+/**
+ * Discover skills from a source tree via the skills CLI.
+ * Callers must pass a clean package tree — a polluted working copy that
+ * also has `.agents/skills/*` will list extras.
+ */
+export function listDiscoveredSkills(source) {
+  const result = runSkillsCli(["add", source, "--list"], source);
+  if (result.status !== 0) {
+    throw new Error(
+      result.stderr || result.stdout || "skills add --list failed",
+    );
+  }
+  return parseSkillsList(`${result.stdout}\n${result.stderr}`);
+}
+
+export function assertExactSkillDiscovery(source, expected = SKILLS) {
+  const found = listDiscoveredSkills(source);
+  const want = [...expected].sort();
+  if (found.join(",") !== want.join(",")) {
+    throw new Error(
+      `expected exactly ${want.length} skills ${JSON.stringify(want)}, found ${JSON.stringify(found)}`,
+    );
+  }
+  return found;
+}
+
 export function installedSkills(consumer) {
   const found = [];
   for (const parent of [".agents/skills", ".cursor/skills", ".claude/skills"]) {
@@ -91,6 +130,9 @@ export function smokeInstall(root = ROOT, options = {}) {
           "package checks failed",
       };
     }
+    // Discovery must run on this clean clone — never the contributor's
+    // polluted working copy (local `.agents/skills/*` would inflate the list).
+    assertExactSkillDiscovery(dest);
     fs.mkdirSync(consumer, { recursive: true });
     fs.writeFileSync(path.join(consumer, "README.md"), "consumer\n");
     addSkills(dest, consumer);
