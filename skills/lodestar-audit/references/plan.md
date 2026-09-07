@@ -3,6 +3,14 @@
 Load this file before writing action items. Discover must already have a
 valid `findings.md`.
 
+## Recover
+
+```text
+node scripts/audit-state.mjs recover --run-dir <output-root>/<RUN_ID>
+```
+
+Honor its phase recommendation before writing action items.
+
 ## Read findings
 
 Parse every `### F<NNNN>` block. Write action items only for
@@ -47,6 +55,28 @@ After each file, run
 `node scripts/audit-state.mjs validate-output --path <file>`.
 Fix leftover placeholders in place before the next item.
 
+## Known blind spots
+
+Copy into `INDEX.md` Known blind spots. Assemble in this order:
+
+1. If this run skipped the Fallow seed (`fallow: optional` and Fallow
+   missing or invalid), put this first and prominently: **not checked
+   at all** — `imports` #7–#9, `dry` A, `soc-yagni` A ranking.
+2. Coverage floor when it is a number and `<test>` does not emit
+   coverage.
+3. Wide-diff DRY as `dry.C` advisory only.
+4. Rule of Three beyond `soc-yagni.D`.
+5. Whether the documented layout is the right one
+   (`lodestar-architecture`).
+6. Every convention-gated detector this run skipped (name the category,
+   subtype, and key), from Categories "Gated by" and Discover skip
+   notes. Do not list `coverage-floor: none` as a skip — omit that line
+   entirely.
+7. Every `Scannable: no` package by name and reason (`worker` — Python,
+   not scanned).
+8. In a single-package repo (one scannable row, empty graph), append
+   `imports` #6 and `boundaries` B as not applicable.
+
 ## INDEX.md
 
 Write `<output-root>/<RUN_ID>/INDEX.md` from `templates/index.md`:
@@ -56,7 +86,7 @@ Write `<output-root>/<RUN_ID>/INDEX.md` from `templates/index.md`:
 - Totals by category, risk, and `requires_decision: true` (in-scope
   action items only)
 - One row per action item
-- Known blind spots from `SKILL.md`
+- Known blind spots from the list above
 - **Backlog** — always write `## Backlog`. When every finding is in
   scope (`mode: all`, or a `changed-since` run with nothing left out):
   "Every finding is in scope — there is no backlog for this run." Do

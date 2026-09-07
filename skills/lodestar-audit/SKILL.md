@@ -48,8 +48,8 @@ What you say:
   needed.
 - Give counts, not ratios. Never ask the user to compare a number to a
   threshold; give your recommendation and a one-line reason.
-- Never trim or postpone a warning. A blind spot, a stale basis, or a
-  skipped category stays in, however short the message.
+- Never trim or postpone a warning. An unchecked gap, a stale basis, or
+  a skipped category stays in, however short the message.
 - Short sentences. No unexplained abbreviations. No filler openers.
 
 How you lay it out:
@@ -151,17 +151,9 @@ On proceed, pass the stdout JSON to `resolve-run` as `--drift`. A
 resumed run does not re-run `check-freshness`; it inherits the `drift`
 key recorded at creation.
 
-A package marked `Scannable: no` is listed in `INDEX.md`'s
-known-blind-spots by name and reason (`worker` — Python, not scanned).
-It is excluded from `allPkgRoots` and from every detector. In a
-single-package repo (one scannable row, empty graph), list `imports`
-#6 and `boundaries` B as not applicable there too.
-
-A category or subtype gated off by `conventions` is reported as skipped
-in `INDEX.md`'s known-blind-spots, not silently absent. Discover still
-checkpoints it complete with count 0. Exception: `coverage-floor: none`
-drops the coverage-floor line from known-blind-spots and does not add a
-skip row — there is nothing to check.
+A package marked `Scannable: no` is excluded from `allPkgRoots` and from
+every detector. How that appears in `INDEX.md` is owned by
+[references/plan.md](references/plan.md).
 
 If `pkgManager` is null, ask for the manager, its exec prefix, and its
 add-dev command before any install or `dlx`/`npx`/`bunx` command. Do
@@ -192,24 +184,14 @@ load `references/`.
 | `types`       | `categories/types.md`       | low         | mechanical                    | `#4` when `branded-types` is `no`                        |
 | `boundaries`  | `categories/boundaries.md`  | medium–high | mechanical                    | `A` when `branded-types` is `no`                         |
 | `errors`      | `categories/errors.md`      | high        | mechanical                    | `#B` when `result-types` is `no`                         |
-| `testability` | `categories/testability.md` | high        | mechanical                    | drop coverage blind-spot when `coverage-floor` is `none` |
+| `testability` | `categories/testability.md` | high        | mechanical                    | omit coverage-floor INDEX line when `coverage-floor` is `none` |
 | `soc-yagni`   | `categories/soc-yagni.md`   | low–high    | mixed                         | —                                                        |
 | `dry`         | `categories/dry.md`         | low–medium  | mixed                         | —                                                        |
 | `ssot`        | `categories/ssot.md`        | low–medium  | mechanical                    | —                                                        |
 | `styling`     | `categories/styling.md`     | low–medium  | mechanical                    | whole category when `design-tokens` is `no`              |
 
-Known blind spots (copy into `INDEX.md`): if this run skipped the Fallow
-seed (`fallow: optional` and Fallow missing or invalid), put this first
-and prominently: **not checked at all** — `imports` #7–#9, `dry` A,
-`soc-yagni` A ranking. Then: coverage floor when it is a
-number and `<test>` does not emit coverage; wide-diff DRY as `dry.C`
-advisory only; Rule of Three beyond `soc-yagni.D`; whether the documented
-layout is the right one (`lodestar-architecture`). Append any
-convention-gated detector this run skipped (name the category, subtype,
-and key). Do not list `coverage-floor: none` as a skip — omit that
-line entirely. Append every `Scannable: no` package by name and
-reason (`worker` — Python, not scanned). In a single-package repo,
-append `imports` #6 and `boundaries` B as not applicable.
+Known blind spots for `INDEX.md` are assembled in
+[references/plan.md](references/plan.md).
 
 ---
 
@@ -274,59 +256,16 @@ Do not scan before those confirmations.
 
 ## Discover (Phase 1)
 
-Follow [references/discover.md](references/discover.md). Summary:
-
-1. Resolve the package set from `validate-input` JSON.
-2. Run the Fallow seed from `categories/fallow-seed.md`. If Fallow is
-   missing or invalid: stop when `fallow` is `required` (the default);
-   when `optional`, continue with grep-only detectors and list the
-   unchecked subtypes in `INDEX.md` (`imports` #7–#9, `dry` A,
-   `soc-yagni` A ranking).
-3. Mechanical pass in category order, then semantic pass.
-4. Merge with `node scripts/audit-state.mjs merge-findings`. When
-   `scope.mode` is `changed-since`, pass `--changed-files` from
-   `changed-files --root <repo> --since <baselineRef>`. Detectors still
-   ran repo-wide; this only sets `in_scope`.
-5. Validate with `node scripts/audit-state.mjs validate-output --path
-<output-root>/<RUN_ID>/findings.md`.
-6. Checkpoint a category as complete only after it is finished for every
-   package, including the semantic pass for `soc-yagni` and `dry`. During
-   a package loop use `checkpoint --status partial --package <name>`.
-
-Discovery never modifies application source. The only filesystem writes
-are `<output-root>/<RUN_ID>/`, an optional consented edit of
-`.agents/lodestar/context.md` `## Audit Configuration`, the transient
-`.audit-fallow-seed.json`
-(delete it after Phase 1), and `.agents/lodestar/fallow-compat.json` —
-written only when a Fallow schema above the contract baseline passes
-field validation, and meant to be committed.
+Follow [references/discover.md](references/discover.md) for package set,
+Fallow seed, passes, merge, validate, and checkpoints. Discovery never
+modifies application source — allowed writes are under Rules.
 
 ---
 
 ## Plan (Phase 2)
 
-Follow [references/plan.md](references/plan.md) — grouping, numbering,
-and INDEX wording; not a hop to category docs. Summary:
-
-1. Recover with `node scripts/audit-state.mjs recover --run-dir
-<output-root>/<RUN_ID>`.
-2. Group **in-scope** findings (`in_scope: true`) by `scope_unit`. Write
-   `<output-root>/<RUN_ID>/<NNN>-<category>-<slug>.md` from
-   `templates/action-item.md`. First Plan: number `001…0NN` with no
-   gaps. Promotion: skip any finding that already has a
-   `*-<category>-<slug>.md`; new files take IDs from `max(NNN)+1`.
-   Out-of-scope findings are counted in `INDEX.md` Backlog, never
-   dropped.
-3. Validate each file for placeholder leaks.
-4. Write `INDEX.md` from `templates/index.md`. Fill Known blind spots
-   from the list in Categories above, plus this run's gated skips,
-   plus every `Scannable: no` package (`<name>` — `<language>, not
-scanned`). Drop the coverage-floor line when
-   `conventions["coverage-floor"]` is `none`. Fill `## Backlog` even
-   when empty.
-5. Align category order with `lodestar-fix`:
-   `imports → types → ssot → soc-yagni → boundaries → errors →
-testability → dry → styling`.
+Follow [references/plan.md](references/plan.md) for recover, grouping,
+numbering, action items, INDEX (incl. blind spots), and category order.
 
 ---
 
