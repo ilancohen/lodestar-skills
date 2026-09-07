@@ -18,7 +18,7 @@ compatibility: >-
   Designed for JavaScript/TypeScript repositories. Lockfiles detect npm, pnpm, yarn, and Bun; other managers via context.md. No Deno or Bazel.
 metadata:
   author: Ilan Cohen
-  version: "0.15.0"
+  version: "0.16.0"
 ---
 
 You are running a lodestar audit. **Discover** and

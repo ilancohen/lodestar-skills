@@ -13,7 +13,7 @@ license: MIT
 compatibility: Requires git, Node.js, and .agents/lodestar/context.md from lodestar-setup. Does not require Fallow. npm, pnpm, yarn, and Bun are detected from lockfiles; any other manager works when recorded in context.md.
 metadata:
   author: Ilan Cohen
-  version: "0.15.0"
+  version: "0.16.0"
 ---
 
 You are running `lodestar-docs`. The job is to **harvest**, then **delete**
