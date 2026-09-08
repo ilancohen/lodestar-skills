@@ -57,8 +57,8 @@ separately: `git push origin HEAD && git push origin vX.Y.Z`.
 - `skills/` is canonical. Never duplicate skill logic into adapters.
 - Partial installs are supported when they include `lodestar-setup` as
   the base skill. Recommended pairs: `audit`+`fix`, `plan`+`implement`;
-  `architecture` and `docs` may stand alone with setup. Shared modules
-  live only in `skills/lodestar-setup/scripts/`, and other skills reach
+  `architecture` and `docs` may stand alone with setup.   Shared modules live only in `skills/lodestar-setup/scripts/` (including
+  `pkg-manager.mjs` and `workspace-layout.mjs`), and other skills reach
   them only through their own `scripts/setup-modules.mjs`.
 - Keep each skill focused on its documented responsibility.
 - Use Agent Skills standard frontmatter in canonical skills.

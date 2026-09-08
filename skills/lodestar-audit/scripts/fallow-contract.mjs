@@ -7,20 +7,18 @@ import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import {
+  atomicWrite,
+  fail,
   findFallowDeclaration,
   installDepsCommand,
   installFallowCommand,
-  parsePkgManagerRow,
-  readRootPackageJson,
-  resolvePkgManager,
-} from "./pkg-manager.mjs";
-import {
-  atomicWrite,
-  fail,
   isMain,
   localBin,
   parseArgs,
+  parsePkgManagerRow,
   printJson,
+  readRootPackageJson,
+  resolvePkgManager,
   utcDate,
 } from "./setup-modules.mjs";
 

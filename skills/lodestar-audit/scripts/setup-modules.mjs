@@ -20,6 +20,8 @@ function baseModule(name) {
 const runtime = await baseModule("runtime.mjs");
 const detectLinterModule = await baseModule("detect-linter.mjs");
 const discoverDocs = await baseModule("discover-docs.mjs");
+const pkgManager = await baseModule("pkg-manager.mjs");
+const workspaceLayout = await baseModule("workspace-layout.mjs");
 
 export const atomicWrite = runtime.atomicWrite;
 export const fail = runtime.fail;
@@ -35,3 +37,13 @@ export const inferProbeFromLintScript =
   detectLinterModule.inferProbeFromLintScript;
 
 export const checkDocsLayoutDrift = discoverDocs.checkDocsLayoutDrift;
+
+export const detectPkgManager = pkgManager.detectPkgManager;
+export const findFallowDeclaration = pkgManager.findFallowDeclaration;
+export const installDepsCommand = pkgManager.installDepsCommand;
+export const installFallowCommand = pkgManager.installFallowCommand;
+export const parsePkgManagerRow = pkgManager.parsePkgManagerRow;
+export const readRootPackageJson = pkgManager.readRootPackageJson;
+export const resolvePkgManager = pkgManager.resolvePkgManager;
+
+export const listDeclaredMembers = workspaceLayout.listDeclaredMembers;

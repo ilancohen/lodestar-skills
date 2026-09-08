@@ -44,7 +44,8 @@ That rule settles where shared code lives:
 
 - Shared modules live once, under `skills/lodestar-setup/scripts/` —
   `runtime.mjs`, `detect-linter.mjs`, `discover-docs.mjs`,
-  `discover-plans.mjs`. Do not vendor copies into other skills.
+  `discover-plans.mjs`, `pkg-manager.mjs`, `workspace-layout.mjs`. Do not
+  vendor copies into other skills.
 - A dependent skill reaches them only through its own
   `scripts/setup-modules.mjs`. Nothing else under `skills/` may contain a
   `../../` import.

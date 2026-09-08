@@ -2,6 +2,9 @@
  * Detect npm / yarn / pnpm / bun from lockfiles. Never guess.
  * Multiple managers or zero lockfiles → ask the user.
  * A recorded `pkg-manager` row in context.md wins over detection.
+ *
+ * Shared across the suite. Other skills reach this only through their own
+ * scripts/setup-modules.mjs.
  */
 import fs from "node:fs";
 import path from "node:path";
