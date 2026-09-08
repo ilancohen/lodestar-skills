@@ -24,6 +24,10 @@ Before committing suite changes:
    plans; those inflate discovery and can break link checks.
 2. `pnpm test` — includes clean-tree discovery equality and adapter thinness
    (`disable-model-invocation: true`; adapters never auto-load `lodestar-fix`)
+3. After workflow behavior changes, re-run stage-01 eval scenarios
+   (`docs/evals.md`) and update `tests/fixtures/evals/baseline.json` when
+   `markdownWords` or accepted quality trade-offs move. Host journeys stay
+   `untested` until a real agent run is recorded.
 
 Add a `CHANGELOG.md` section for the target version, then run
 `pnpm run publish -- patch` (or `minor` / `major` / `x.y.z`). Use

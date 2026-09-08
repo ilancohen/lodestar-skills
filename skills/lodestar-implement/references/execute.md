@@ -1,5 +1,13 @@
 # Execute a stage
 
+Print a milestone before each stage (id + summary). After acceptance,
+print completed stage count and the next stage (or complete).
+
+Long checks (`<typecheck>`, `<test>`, `<lint>`) must stay visibly alive
+— stream enough output to prove progress, use bounded timeouts where the
+host allows, and report duration on completion. Do not write persistent
+diagnostic run logs. Delete temp commit-message files after use.
+
 **Opening commit choice** (once per session, before the first stage).
 Read a recorded commit policy from `context.md` `## Audit Configuration`
 when present (`commits: per-item` → commit each stage; `never` → leave

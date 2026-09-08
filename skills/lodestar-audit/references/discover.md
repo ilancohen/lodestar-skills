@@ -8,6 +8,23 @@ the target repository — the file `lodestar-setup` writes. It is the only
 source of package layout, dependency direction, commands, and conventions.
 `AGENTS.md` is never read.
 
+## Milestones and liveness
+
+Before each category, print the category name. After each category
+checkpoint, print completed count and the next category. Long child
+processes (Fallow via `fallow-contract run`, linter probes) must stay
+visibly alive: stream stderr, sparse heartbeats, bounded timeouts, and
+duration on completion — never silent hangs. Do not write persistent
+diagnostic run logs.
+
+## Restart state only
+
+Persist only what resume needs: completed categories, current partial
+unit, selected scan scope (`scannedFiles` / categories), and failure
+notes required to continue. Delete transient probe caches (temp-dir
+`.audit-lint-*.json`) after each probe command and at Phase 1 end.
+Do not leave diagnostic dumps under the run directory.
+
 ## Package set
 
 Use `node scripts/audit-state.mjs validate-input --root <repo>`. It
@@ -159,10 +176,11 @@ mechanical per-package sub-agents.
 
 For each category:
 
-1. Open the category sub-doc. Check `activeDetectors` from `validate-input`:
+1. Print a milestone: starting `<category>`.
+2. Open the category sub-doc. Check `activeDetectors` from `validate-input`:
    if the category is absent, skip every detector, emit nothing,
    still checkpoint complete with count 0.
-2. Run every Detection command whose subtype is present in that
+3. Run every Detection command whose subtype is present in that
    category's `subtypes` list from `activeDetectors`. Subtypes absent
    from the list are gated off — skip them. Do not re-evaluate gates.
    Prefer `node scripts/source-scan.mjs`
@@ -170,7 +188,9 @@ For each category:
    pass `--file` for each path; otherwise iterate `<pkg_root>` per
    **scannable** package row with repeated `--root` flags (paths may
    contain spaces). Skip `scannable: no` rows — do not grep them.
-3. Drop false positives in tests and excluded paths from
+   Fallow commands go through
+   `node scripts/fallow-contract.mjs run …` (streamed liveness).
+4. Drop false positives in tests and excluded paths from
    `validate-input` (`excludedPaths`, `testGlobs`). Every
    `source-scan.mjs` invocation must pass `--exclude` / `--test-glob`
    from those lists (repeatable) and `--cwd <repo>` (the same root as
@@ -178,11 +198,12 @@ For each category:
    the test globs for that scan. For POSIX `grep` fallbacks, apply the
    same globs via `--exclude-dir` / `--exclude` or filter hits
    afterward. `*.d.ts` and `eslint-disable`-guarded `any` stay dropped.
-4. Append finding objects. Do not write action-item files here.
-5. Checkpoint:
+5. Append finding objects. Do not write action-item files here.
+6. Checkpoint:
    `node scripts/audit-state.mjs checkpoint --run-dir <output-root>/<RUN_ID> --category <name> --status complete --count N --scan-files '<json>'`
    A category whose gated subtypes were skipped still checkpoints here
    (count is findings actually emitted, which may be 0).
+   Print: `<category> complete (N findings). Next: <next or Plan>.`
 
 When resuming, skip categories that already have
 `## category: <name> — complete` in `findings.md`.

@@ -32,6 +32,15 @@ Applies to conversation only; the report file has its own structure.
 - Point first. Bullets, not paragraphs. Blank line between blocks.
 - Bold the first few words of each bullet.
 
+### Milestones
+
+Concise chat progress — not diagnostic logs or run files:
+
+- **Opening** — describe vs suggest, report path, checks, mutation policy (read-only)
+- **Before long work** — package or sampling pass underway
+- **At boundaries** — packages sampled and next step
+- **Closing** — report path, skipped coverage, actionable failures
+
 ---
 
 ## Inputs
@@ -97,10 +106,13 @@ The architecture review is grounded in evidence. For each package in
 
 1. Read the package's `index.ts` (or equivalent entry) to confirm its
    exported surface roughly matches its declared Responsibility.
-2. Sample 1–3 representative source files (largest non-test files, or
-   the files named after the package's responsibility) to verify the
-   responsibility is real.
-3. Note any obvious mismatch between Responsibility and contents.
+2. Sample **one** representative source file (largest non-test file, or
+   the file named after the package's responsibility).
+3. **Deepen only when something disagrees** — exports vs Responsibility,
+   imports vs optional `<policy>` / observed graph, or entry vs sample
+   evidence. Then read at most one or two more files to resolve the
+   mismatch. Do not deepen when the first sample agrees.
+4. Note any obvious mismatch between Responsibility and contents.
 
 Also check, once per repo:
 
@@ -119,13 +131,14 @@ Read-only: never modify application source.
 
 ### Step 2a — (Optional) Sub-agent fan-out for per-package sampling
 
-If a sub-agent tool exists, parallelize Step 2 items 1–3 per package.
-Skip when unavailable — inline loop is canonical.
+If a sub-agent tool exists, parallelize Step 2 items 1–3 per package
+(adaptive deepen stays inside each agent). Skip when unavailable —
+inline loop is canonical.
 
 Spawn one sub-agent per package with the package row and policy/evidence.
-Return `{matches, reason, notable?}`. Constraints: read-only, structured
-return only, no nested spawns, no source changes. Orchestrator fills
-"Matches contents?" and folds `notable` into Risks.
+Return `{matches, reason, notable?, deepened?}`. Constraints: read-only,
+structured return only, no nested spawns, no source changes.
+Orchestrator fills "Matches contents?" and folds `notable` into Risks.
 
 ---
 

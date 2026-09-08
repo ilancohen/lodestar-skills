@@ -46,6 +46,15 @@ Anything you print or ask is read by a person who is skimming. Findings and acti
 - Point first. Bullets, not paragraphs. Blank line between blocks.
 - Bold the first few words of each bullet.
 
+### Milestones
+
+Concise chat progress — not diagnostic logs or run files:
+
+- **Opening** — scope, output path, checks, mutation/commit policy (audit is read-only)
+- **Before long work** — current category or phase
+- **At boundaries** — completed categories/count and next step
+- **Closing** — artifacts, skipped coverage, actionable failures
+
 ---
 
 ## Structure model

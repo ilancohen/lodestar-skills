@@ -1,34 +1,34 @@
 {
   "version": 1,
   "capturedAt": "2026-09-08",
-  "notes": "Stage 06 cheap adaptive audit: file-scoped discovery, required Fallow hard-stop, lean action-item contracts, expansion-slice Plan, no mechanical sub-agent fan-out. Category Scope exceptions + setup/Fallow wording and output-contracts expand defaults aligned after review.",
+  "notes": "Stage 08 milestones/integration: shared chat milestones, Fallow/probe liveness (stream + heartbeat + timeout), adaptive architecture sampling, slim evals checklist, migration notes. markdownWords rose slightly for milestone/liveness prose (observability quality). Host journeys stay untested until a full agent run is recorded — never mark unavailable hosts passed. Scenarios unchanged from stage 01; re-compare when agent captures land under results/.",
   "markdownWords": {
     "lodestar-setup": {
-      "words": 12310,
+      "words": 12358,
       "files": 16
     },
     "lodestar-audit": {
-      "words": 17018,
+      "words": 17359,
       "files": 18
     },
     "lodestar-fix": {
-      "words": 2743,
+      "words": 2828,
       "files": 5
     },
     "lodestar-architecture": {
-      "words": 2304,
+      "words": 2400,
       "files": 3
     },
     "lodestar-docs": {
-      "words": 2287,
+      "words": 2338,
       "files": 6
     },
     "lodestar-plan": {
-      "words": 1772,
+      "words": 1828,
       "files": 6
     },
     "lodestar-implement": {
-      "words": 2156,
+      "words": 2264,
       "files": 9
     }
   },
@@ -39,5 +39,12 @@
     "plan-implement-dirty-no-commit",
     "architecture-docs-cleanup-safety"
   ],
+  "hostJourneys": {
+    "cursor": "untested",
+    "claude-code": "untested",
+    "codex": "untested",
+    "gemini-cli": "untested",
+    "github-copilot": "untested"
+  },
   "runs": []
 }

@@ -189,6 +189,42 @@ test("runFallow treats exit 0 and exit 1 as successful runs", () => {
   }
 });
 
+test("runFallowAsync streams liveness and reports duration", async () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-fallow-"));
+  try {
+    const { runFallowAsync, runWithLiveness, LIVENESS_TIMEOUT_MS } =
+      await import("../skills/lodestar-audit/scripts/fallow-contract.mjs");
+    assert.equal(LIVENESS_TIMEOUT_MS, 10 * 60 * 1000);
+    const clean = writeFakeFallow(tmp, 'echo \'{"kind":"combined"}\'; exit 0');
+    const stdout = await runFallowAsync(clean, [], { stream: false });
+    assert.equal(stdout.trim(), '{"kind":"combined"}');
+
+    const slow = writeFakeFallow(tmp, "sleep 0.4; echo ok >&2; exit 0");
+    const live = await runWithLiveness(slow, [], {
+      stream: false,
+      heartbeatMs: 100,
+      timeoutMs: 5_000,
+      label: "probe",
+    });
+    assert.equal(live.status, 0);
+    assert.ok(live.durationMs >= 300);
+
+    const hung = writeFakeFallow(tmp, "sleep 5; exit 0");
+    await assert.rejects(
+      () =>
+        runWithLiveness(hung, [], {
+          stream: false,
+          heartbeatMs: 50,
+          timeoutMs: 200,
+          label: "probe",
+        }),
+      /timed out/,
+    );
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test("runFallow throws on a real failure, preferring an error envelope's message", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-fallow-"));
   try {
@@ -631,4 +667,36 @@ test("run without --out prints the envelope; with --out writes the file", async 
   } finally {
     fs.rmSync(out, { force: true });
   }
+});
+
+test("run-liveness streams a short command to --out", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-liveness-"));
+  const out = path.join(tmp, "probe.json");
+  try {
+    const result = run([
+      "run-liveness",
+      "--out",
+      out,
+      "--label",
+      "probe-test",
+      "--",
+      process.execPath,
+      "-e",
+      "process.stdout.write('[1]'); process.stderr.write('tick\\n');",
+    ]);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(fs.readFileSync(out, "utf8"), "[1]");
+    assert.match(result.stderr, /probe-test|finished/i);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("run-liveness requires --out and a command after --", () => {
+  const missingOut = run(["run-liveness", "--", process.execPath, "-e", "0"]);
+  assert.notEqual(missingOut.status, 0);
+  assert.match(missingOut.stderr, /requires --out/);
+  const missingCmd = run(["run-liveness", "--out", "/tmp/x"]);
+  assert.notEqual(missingCmd.status, 0);
+  assert.match(missingCmd.stderr, /requires a command/);
 });

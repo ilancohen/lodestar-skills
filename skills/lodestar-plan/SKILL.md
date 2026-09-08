@@ -50,6 +50,15 @@ Anything you print or ask is read by a person who is skimming.
 - Point first. Bullets, not paragraphs. Blank line between blocks.
 - Bold the first few words of each bullet.
 
+### Milestones
+
+Concise chat progress — not diagnostic logs or run files:
+
+- **Opening** — plans root, rigor intent, checks, mutation/commit policy (plan does not edit app source)
+- **Before long work** — locate / ground / write
+- **At boundaries** — grounded paths and next step
+- **Closing** — plan path, skipped coverage, actionable failures
+
 ## Steps
 
 Work in order. Load the named reference before each step.

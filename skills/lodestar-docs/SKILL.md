@@ -44,6 +44,15 @@ Anything you print or ask is read by a person who is skimming.
 - Point first. Bullets, not paragraphs. Blank line between blocks.
 - Bold the first few words of each bullet.
 
+### Milestones
+
+Concise chat progress — not diagnostic logs or run files:
+
+- **Opening** — docs scope, homes, checks, mutation/commit policy
+- **Before long work** — survey / propose / harvest / delete
+- **At boundaries** — proposed counts and next step
+- **Closing** — harvested/deleted paths, protected skips, actionable failures
+
 ---
 
 ## Inputs

@@ -7,8 +7,12 @@ import { SKILLS } from "../scripts/lib.mjs";
 import {
   assertInstalled,
   assertInstalledSubset,
+  assertFallowGatingMatrices,
+  assertPrinciplesBesideSetup,
   installedSkills,
   parseSkillsList,
+  ADAPTER_SHAPES,
+  NON_AUDIT_MATRICES,
   PARTIAL_INSTALL_MATRICES,
   smokePartialInstalls,
 } from "../scripts/smoke_install.mjs";
@@ -125,6 +129,44 @@ test("assertInstalledSubset rejects extras beyond the expected matrix", () => {
     } finally {
       fs.rmSync(consumer, { recursive: true, force: true });
     }
+  }
+});
+
+test("assertFallowGatingMatrices keeps audit out of non-audit installs", () => {
+  const matrices = assertFallowGatingMatrices();
+  assert.deepEqual(matrices, NON_AUDIT_MATRICES);
+  assert.ok(matrices.every((subset) => subset.includes("lodestar-setup")));
+  assert.ok(matrices.every((subset) => !subset.includes("lodestar-audit")));
+});
+
+test("assertPrinciplesBesideSetup requires principles.md next to setup", () => {
+  const consumer = makeConsumer();
+  try {
+    writeSkill(consumer, ".cursor/skills", "lodestar-setup", "0.5.0");
+    assert.throws(
+      () => assertPrinciplesBesideSetup(consumer, [".cursor/skills"]),
+      /bundled principles missing/,
+    );
+    fs.writeFileSync(
+      path.join(consumer, ".cursor/skills/lodestar-setup/principles.md"),
+      "# Principles\n\n## Separation of Concerns\n\nOne reason to change.\n",
+    );
+    const checked = assertPrinciplesBesideSetup(consumer, [".cursor/skills"]);
+    assert.deepEqual(checked, [
+      ".cursor/skills/lodestar-setup/principles.md",
+    ]);
+  } finally {
+    fs.rmSync(consumer, { recursive: true, force: true });
+  }
+});
+
+test("ADAPTER_SHAPES cover cursor, claude-code, and codex parents", () => {
+  assert.deepEqual(
+    ADAPTER_SHAPES.map((shape) => shape.agent).sort(),
+    ["claude-code", "codex", "cursor"],
+  );
+  for (const shape of ADAPTER_SHAPES) {
+    assert.match(shape.parent, /^\.(agents|cursor|claude)\/skills$/);
   }
 });
 

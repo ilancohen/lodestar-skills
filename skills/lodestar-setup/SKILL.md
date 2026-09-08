@@ -57,6 +57,15 @@ Anything you print or ask is read by a person who is skimming.
 - Point first. Bullets, not paragraphs. Blank line between blocks.
 - Bold the first few words of each bullet.
 
+### Milestones
+
+Concise chat progress — not diagnostic logs or run files:
+
+- **Opening** — scope, output path, checks, mutation/commit policy
+- **Before long work** — current step name
+- **At boundaries** — completed count and next step
+- **Closing** — artifacts written, what was skipped, actionable failures
+
 Work through the steps in order. Before each step, load the
 `references/` file or files that step names. Those files are one hop
 from this one — a step reference must not load another step reference.

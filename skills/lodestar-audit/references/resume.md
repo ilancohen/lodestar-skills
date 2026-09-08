@@ -62,6 +62,11 @@ Writes are atomic. A failed write must not corrupt the previous
 `findings.md`. Retry the checkpoint; do not duplicate the category
 marker.
 
+`.checkpoint.json` holds **restart-required state only**: completed
+categories, current partial unit, scanned file/category scope, and any
+failure needed to resume. Do not park diagnostic logs or probe dumps
+there. Remove temp probe artifacts after each command.
+
 Retry limit: three attempts per category command. Then stop and name
 the failed category.
 

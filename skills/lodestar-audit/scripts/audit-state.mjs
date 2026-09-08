@@ -42,6 +42,18 @@ export const CATEGORIES = [
   "styling",
 ];
 
+/** Fields allowed on `.checkpoint.json` — restart-required state only. */
+export const CHECKPOINT_RESTART_KEYS = [
+  "status",
+  "category",
+  "package",
+  "count",
+  "completedCategories",
+  "scannedFiles",
+  "drift",
+  "updated_at",
+];
+
 export const CATEGORY_SUBTYPES = {
   imports: ["#1", "#2", "#3", "#4", "#5", "#6", "#7", "#8", "#9"],
   types: ["#1", "#2", "#3", "#4"],

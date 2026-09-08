@@ -125,6 +125,102 @@ export const PARTIAL_INSTALL_MATRICES = [
 ];
 
 /**
+ * Adapter shapes exercised for bundled-principles access.
+ * `parent` is where `skills add --agent <agent>` lands skills.
+ * Unavailable hosts stay `untested` in eval baseline — never recorded as passed.
+ */
+export const ADAPTER_SHAPES = [
+  { agent: "cursor", parent: ".cursor/skills" },
+  { agent: "claude-code", parent: ".claude/skills" },
+  { agent: "codex", parent: ".agents/skills" },
+];
+
+/** Matrices that must not imply audit/Fallow preparation. */
+export const NON_AUDIT_MATRICES = PARTIAL_INSTALL_MATRICES.filter(
+  (subset) => !subset.includes("lodestar-audit"),
+);
+
+export function assertPrinciplesBesideSetup(consumer, parents) {
+  const checked = [];
+  for (const parent of parents) {
+    const principles = path.join(
+      consumer,
+      parent,
+      "lodestar-setup",
+      "principles.md",
+    );
+    if (!fs.existsSync(principles)) {
+      throw new Error(
+        `bundled principles missing at ${parent}/lodestar-setup/principles.md`,
+      );
+    }
+    const text = fs.readFileSync(principles, "utf8");
+    if (!/Separation of Concerns/i.test(text)) {
+      throw new Error(
+        `principles.md at ${parent}/lodestar-setup looks empty or truncated`,
+      );
+    }
+    checked.push(path.join(parent, "lodestar-setup", "principles.md"));
+  }
+  return checked;
+}
+
+/**
+ * Install each adapter shape and assert setup principles resolve beside SKILL.md.
+ */
+export function smokeAdapterPrinciples(source, version = readVersion(source)) {
+  const results = [];
+  for (const shape of ADAPTER_SHAPES) {
+    const consumer = fs.mkdtempSync(
+      path.join(os.tmpdir(), "lodestar-smoke-adapter-"),
+    );
+    try {
+      fs.writeFileSync(path.join(consumer, "README.md"), "consumer\n");
+      const result = runSkillsCli(
+        [
+          "add",
+          source,
+          "--skill",
+          "lodestar-setup",
+          "--agent",
+          shape.agent,
+          "-y",
+          "-p",
+          "--copy",
+        ],
+        consumer,
+      );
+      if (result.status !== 0) {
+        throw new Error(
+          result.stderr ||
+            result.stdout ||
+            `skills add --agent ${shape.agent} failed`,
+        );
+      }
+      assertInstalledSubset(consumer, version, ["lodestar-setup"]);
+      const principles = assertPrinciplesBesideSetup(consumer, [shape.parent]);
+      results.push({ ...shape, principles });
+    } finally {
+      fs.rmSync(consumer, { recursive: true, force: true });
+    }
+  }
+  return results;
+}
+
+/**
+ * Assert non-audit partial installs do not ship lodestar-audit (Fallow gating).
+ */
+export function assertFallowGatingMatrices() {
+  for (const subset of NON_AUDIT_MATRICES) {
+    if (subset.includes("lodestar-audit") || subset.includes("lodestar-fix")) {
+      throw new Error(
+        `non-audit matrix unexpectedly includes audit/fix: ${subset.join(",")}`,
+      );
+    }
+  }
+  return NON_AUDIT_MATRICES;
+}
+/**
  * Install each partial matrix into its own consumer and assert exact set.
  * Used by unit tests (when CLI available) and optional smoke extension.
  */
@@ -173,9 +269,15 @@ export function smokeInstall(root = ROOT, options = {}) {
     fs.writeFileSync(path.join(consumer, "README.md"), "consumer\n");
     addSkills(dest, consumer);
     const installed = assertInstalled(consumer, version);
+    assertPrinciplesBesideSetup(
+      consumer,
+      [...new Set(installedSkills(consumer).map((item) => item.parent))],
+    );
 
     // Partial-install Done-when matrices (separate consumers).
     smokePartialInstalls(dest, version);
+    assertFallowGatingMatrices();
+    smokeAdapterPrinciples(dest, version);
 
     fs.cpSync(dest, older, { recursive: true });
     setVersion("0.0.9", older);

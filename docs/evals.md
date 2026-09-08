@@ -1,238 +1,69 @@
 # Manual eval checklist
 
-Update this file when skill behavior or triggering changes.
+Update when skill behavior or triggering changes. Full contracts live in
+each skill's `SKILL.md` / `references/` and the unit tests — this file
+lists executable scenarios and assertions only.
 
 ## Measured runs
-
-Capture agent runs with `scripts/eval-run.mjs` (no harness, no runtime
-telemetry). Unknown host metrics stay `null`, never guessed as zero.
 
 ```bash
 node scripts/eval-run.mjs validate path/to/run.json
 node scripts/eval-run.mjs summarize path/to/run.json
 node scripts/eval-run.mjs compare --baseline tests/fixtures/evals/baseline.json path/to/run.json
 node scripts/eval-run.mjs list-scenarios
+node scripts/eval-run.mjs validate-baseline
+node scripts/eval-run.mjs list-hosts
 ```
 
-Scenarios live under `tests/fixtures/evals/scenarios/`. Write raw captures
-under `tests/fixtures/evals/results/` (gitignored). Commit only the reviewed
+Scenarios: `tests/fixtures/evals/scenarios/`. Raw captures:
+`tests/fixtures/evals/results/` (gitignored). Commit only the reviewed
 aggregate in `tests/fixtures/evals/baseline.json`.
 
-`pnpm check` gates each skill's aggregate `markdownWords` (whitespace word
-count of reachable skill markdown — not model tokens) against that baseline.
-A rise requires updating the baseline with the quality benefit.
+`pnpm check` gates each skill's aggregate `markdownWords` against that
+baseline. A rise needs an explicit baseline update naming the quality
+benefit. Unknown host metrics stay `null`. Host journeys are
+`passed` / `failed` / `untested` — never mark an unavailable host passed.
 
-Spot-check triggering with the phrases below. All seven skills set
-`disable-model-invocation: true`. They must load only when the user names the
-skill (slash command, `$skill`, or the client's skills UI). Ambient task
-language must not load them.
+After every workflow change, re-run the five stage-01 scenarios and
+compare cost, precision, seeded recall, questions, artifact size, and
+resume success to baseline. Explain accepted regressions in the
+aggregate `notes`.
 
-## lodestar-setup
+All seven skills set `disable-model-invocation: true`. Spot-check with
+the phrases below; ambient task language must not load them.
 
-Should trigger:
+## Scenarios
 
-- "Run lodestar-setup in this repository."
-- "Initialize lodestar-setup. Keep the deployment section already in AGENTS.md untouched."
-- "You stopped after listing packages. Finish lodestar-setup and write the config files."
-- `/lodestar-setup`
+| Id | Skills | Assert |
+| --- | --- | --- |
+| `setup-architecture-no-fallow` | setup, architecture | No Fallow checks/writes on non-audit install |
+| `single-package-setup-audit-fix` | setup, audit, fix | Setup → audit → fix; compact items; consent commits |
+| `mixed-vue-scoped-audit-resume` | audit | Scoped/changed scan, interrupt, next-day resume |
+| `plan-implement-dirty-no-commit` | plan, implement | Dirty files stop; no-commit choice; filesystem index |
+| `architecture-docs-cleanup-safety` | architecture, docs | Advisory only; live audits protected |
 
-Near-miss (should not trigger):
+## Triggering (exact name)
 
-- "We just installed the lodestar skills. Document our packages and agent guidance."
-- "We added a billing package. Refresh the lodestar context file without auditing."
-- "Is my lodestar context still accurate?"
-- "We switched from npm to pnpm. Update the lodestar setup files."
-- "Set up engineering principles but ask me to confirm package responsibilities before writing."
-- "Wire up the agent engineering docs for this monorepo the way the principles suite expects."
-- Audit / apply fixes / redesign layout / advice-only AGENTS.md questions / unrelated lint, README, commit, or CI work.
+| Skill | Should trigger | Near-miss (must not) |
+| --- | --- | --- |
+| setup | "Run lodestar-setup…", `/lodestar-setup` | "Document our packages…", "Is my lodestar context still accurate?" |
+| audit | "Run lodestar-audit…", "Is my lodestar context still accurate?", `/lodestar-audit` | "Find architecture violations…", "Produce the lodestar finding files…" |
+| fix | "Run lodestar-fix…", `/lodestar-fix` | "Apply all unstarted low-risk items…", "Land the lodestar action items…" |
+| architecture | "Run lodestar-architecture…", `/lodestar-architecture` | "Describe this repository's package architecture…", "Write the architecture-review report…" |
+| docs | "Run lodestar-docs…", `/lodestar-docs` | "Clean up the docs folder.", "Delete the done plans." |
+| plan | "Write a lodestar-plan…", `/lodestar-plan` | "Write a plan under docs/plans/…", "Create a plan for implement-plan." |
+| implement | "Run lodestar-implement…", `/lodestar-implement` | "Execute the plan under docs/plans/.", "Land the remaining stages…" |
 
-Expected outcomes (once explicitly invoked):
+## Smoke / adapters
 
-- Step procedures live one hop from `SKILL.md` under [`skills/lodestar-setup/references/`](../skills/lodestar-setup/references/00-confirm-scannable.md): [Step 0](../skills/lodestar-setup/references/00-confirm-scannable.md), [Step 1](../skills/lodestar-setup/references/01-collect-facts.md), [Step 2](../skills/lodestar-setup/references/02-review.md), [Step 3](../skills/lodestar-setup/references/03-permissions.md), Step 4 ([write](../skills/lodestar-setup/references/04-write-files.md), [cleanup](../skills/lodestar-setup/references/05-cleanup.md), [fallow](../skills/lodestar-setup/references/06-fallow.md), [linters](../skills/lodestar-setup/references/07-linters.md)), [Step 5](../skills/lodestar-setup/references/08-confirm.md).
-- Setup does **not** write `## Resolved Decisions`. `validate-input` derives `probePlan`, `activeDetectors`, and `blindSpots` in memory from Conventions, Package Layout, Dependency Policy (when present), and the linter cell. An old section is ignored; the next setup re-run deletes it. The package manager is always resolved and recorded before writing `context.md` — no downstream skill asks for it.
-- Two consent gates, not ten. An unambiguous lockfile asks exactly once (the review screen) then once more (the permissions screen). No lockfile, or several, adds one question before the review: manager name, exec prefix, add-dev. Everything observed is one review message — commands, layout table, docs trees (skip the Docs heading when none exist), circular imports, excluded paths, conventions (one line each, no evidence paths), review rubric (repo-owned extras; principles implicit from installed setup), audit-scope/Fallow/commit only when audit is installed — then `ok` or corrections, one round, taken at face value. Writes outside `.agents/` are one tick list. When audit is installed, pre-ticked: Fallow install, `.fallowrc.json`, gitignore. When audit is absent, omit every Fallow row. Unticked: `AGENTS.md` (`skills-only` unless ticked), linter rule tightening. Omit rows that cannot apply (Fallow already in range, no linter, no pre-0.3 `AGENTS.md` sections, gitignore already covering both entries). Procedure files ask nothing.
-- Docs trees: Step 1 runs `discover-docs.mjs`. The review names each path as harvest / sweep leftovers / in progress / not sure — not the Role keys. Writes `## Docs Layout` between Package Layout and Conventions, or omits it when there are no rows. A recorded row keeps its role on re-run; new paths are guessed; gone paths are dropped. Do not create docs folders.
-- Guideline sources: Step 1 checks well-known paths (`CONTRIBUTING.md`, `AGENTS.md`, `CLAUDE.md`, host-agent rules, style docs under the observed docs tree) — existence only, no tree walk. The review lists repo-owned extras only; suite principles resolve from the installed setup skill and are not listed. Writes `## Review Rubric` between Conventions and Audit Configuration even when the extras list is empty. A `context.md` without the section still parses; absent means principles only. No version gate.
-- `.agents/lodestar/context.md` is written when the repo has TypeScript or JavaScript to audit — it is the primary facts file (Package Layout, Docs Layout, optional Dependency Policy, Build & Test, Conventions, Audit Configuration when audit is installed). Architecture/docs/plan/implement can discover when it is absent. Step 0 counts scannable files first: zero TS/JS (and no framework extensions like `.vue`) → stop, write nothing, name the languages found with counts. Setup infers active UI frameworks from dependencies, config, and file counts (judgment, not a fixed rule list), shows them on the review screen, and writes `scan-extensions` under `## Audit Configuration`. Step 1 runs `detect-linter.mjs` and setup writes the `lint` cell as `dev-command; tool; probe-command` (or `n/a`). Fallow must be declared in root `package.json` and installed under `node_modules/.bin`; setup add-dev + install when ticked, never accepting a global PATH-only install. A mixed repo keeps unscannable packages as `Scannable: no` rows (with a language note), names them at the Step 2 review and again in the Step 5 summary, and writes no Fallow zone for them. Layout discovery is open-ended: `pnpm-workspace.yaml`, `package.json` `workspaces`, `nx.json`, `turbo.json`, and `lerna.json` are hints, not a closed set — prefer the package manager's own declaration when several exist, and walk non-root `package.json` dirs only when nothing declares a workspace; else a single-package source root — offering feature/module dirs one level down when they exist, or one row for the source root. Directory rows are valid. Each row records Entry points from `exports` / `typesVersions` / `main` (default `index.ts`). Optional `## Dependency Policy` is user-stated intent only — setup never writes the observed import graph as policy. Ephemeral cycle observation may appear on the review screen; Fallow may use the live graph for `.fallowrc.json` without persisting it. Legacy `## Dependency Direction` is ignored. Without policy, audit gates `imports` #6; cycles (#3) still run. Conventions are stated on the review screen, pre-checked from a bounded evidence sweep (Result/Either, branded helpers, `export *`, design tokens, coverage threshold); a recorded `## Conventions` value beats a sweep miss. The table is written in both enforcement modes; absent means default (every convention on, coverage floor 80). No layout table, command table, or skills index may be written into `AGENTS.md`. Ticking `AGENTS.md` on the permissions screen records `full` and appends only a short `## Lodestar` pointer section; leaving it unticked keeps `skills-only` and leaves `AGENTS.md` completely untouched. Pre-0.3 lodestar sections in `AGENTS.md` are a conditional unticked row, not a separate ask. `principles.md` itself is never copied or edited — skills resolve it from the installed `lodestar-setup` skill directory on every install path. Never edit `packages/**` / `src/**`. Do not write `CLAUDE.md` or `.github/copilot-instructions.md`. Fallow install, `.fallowrc.json`, and gitignore are rows on the permissions screen only when audit is installed, not independent asks. Step 5 is a completion summary with no post-write confirm question. Never install over a copy that already resolves in range. A declined or failed install is not a setup failure — it prints the install command and says `lodestar-audit` needs a compatible Fallow. Existing `.fallowrc.json` merges the import-boundary section (replace named as the alternative). After writing `.fallowrc.json`, setup verifies boundaries (`list-boundaries`, every zone `file_count > 0`) and entry points (`list-entry-points`, `entry_point_count > 0`; multi-app repos add an `entry` array and use `--minimum N`). Single-app repos usually omit `entry` and rely on auto-discovery. Setup does not ask about Audit Configuration keys; it writes defaults (`categories: all`, `output-root: docs/audit`, `fallow: required`).
-- Refresh after structure or package-manager change without auditing or redesigning architecture.
-- Layout discovery is open-ended: `pnpm-workspace.yaml` / `workspaces` / `nx.json` / `turbo.json` / `lerna.json` are hints, not a closed set; only with no declaration does setup walk `package.json` dirs. Commands come from `package.json` scripts or Makefile / justfile / Nx / Turbo / README; a missing check is `n/a`. Bun is detected from `bun.lock` / `bun.lockb` (both still count as Bun; Bun plus another manager is still ambiguous). An unrecognized manager, or several lockfiles, is asked before the review screen and recorded as a `pkg-manager` row (`name; exec; add-dev <pkg>`) that wins over lockfile detection. Deno and Bazel are unsupported.
-- Excluded-path candidates are a heading on the review screen, not a second confirmation; setup writes `### Excluded Paths` under `## Audit Configuration` in both enforcement modes. The audit produces no findings from an excluded directory.
-- Commit policy defaults to **ask each time**. Format, trailer, protected branches, and hooks are written to `## Audit Configuration` in both modes and are not shown on the review screen. `subject-format` and `trailer` must each be a single line of at most 200 characters: a newline, control character, or over-long value fails at `validate-input` and again at `commit-message` time, naming the `## Audit Configuration` field rather than trimming the value. `lodestar-fix` and `lodestar-docs` honor `commits: never` without asking; a protected branch stops the session and offers to continue without committing.
-- Step 1 measures churn with four git/filesystem commands (no source reading). The review screen states the audit-scope default, not a question — how many source files there are and how many changed in the last 90 days, then the default and a one-line reason. It must not print the word "churn", a ratio, a threshold, or the keys `changed-since` / `all`. Default "only code you touch from now on" when files ≥ 80 and 90-day churn < 0.30, else "all of it". On the former, record `changed-since` and capture `git rev-parse HEAD` and today's date. Not a git repo → `mode: all` with no heading. Step 5 names the scope and, when scoped, says the next audit will look almost empty by design and that existing code is the `INDEX.md` backlog.
-- All seven skills phrase user-facing questions and summaries in plain language: one question at a time, each choice saying what it does, internal config keys and status values kept out of the prompt, counts rather than ratios, no threshold arithmetic left to the user, and a warning never trimmed or deferred. They are also laid out for skimming: point first, bullets over paragraphs, a blank line between blocks, bold lead-ins carrying the gist. Templated output — action items, `INDEX.md`, the architecture report, commit messages, the `lodestar-fix` session report — keeps its own shape. Each `SKILL.md` carries a "How to talk to the user" section; the setup step references point at it.
-- A 0.8.x `context.md` (old section names) fails `validate-input` and names re-run `lodestar-setup`. A 0.9 file missing `## Audit Configuration` uses today's defaults. A file missing `## Review Rubric` still parses — principles only, no fail-closed path. Missing `Scannable` / `Entry points` columns still default as before.
-- Redirect redesign requests to `lodestar-architecture`.
+```bash
+node scripts/smoke_install.mjs
+pnpm test -- tests/smoke_install.test.mjs
+pnpm dlx skills add . --list
+```
 
-## lodestar-audit
-
-Should trigger:
-
-- "Run lodestar-audit on this TypeScript monorepo. Do not fix source."
-- "I edited findings.md. Re-run only the plan phase of lodestar-audit."
-- "Is my lodestar context still accurate?"
-- `/lodestar-audit`
-
-Near-miss: setup docs, applying fixes, architecture review, advice-only, security/coverage/format/perf tasks, and ambient discovery requests that do not name the skill:
-
-- "Find architecture, boundary, and duplication violations and write action items under docs/audit/."
-- "Only check imports and dry. Pause after findings.md."
-- "Resume today's audit. findings.md is incomplete."
-- "Scan for any, swallowed errors, and testability issues. Discovery only."
-- "Audit inline styles and raw colour literals. Don't change components."
-- "Produce the lodestar finding files for this repo."
-
-Expected outcomes (once explicitly invoked):
-
-- Discovery + plan under the configured `output-root` (default `docs/audit/`); no application source edits except an optional consented `## Audit Configuration` persist of a category subset.
-- Action items are validated after each write and again before `INDEX.md` (`validate-output` on the file / run dir). Malformed frontmatter (nested `scope`/`findings`), placeholders, empty files lists, or paths outside the repo are rejected.
-- Resume candidates span every unfinished run date; today’s date is only for allocating a new run ID.
-- `source-scan` recipes keep configured framework extensions (`.vue`, `.svelte`, …) instead of replacing the scan set with TS/JS-only defaults.
-- A missing `## Conventions` section is backward-compatible: every convention at its default, output identical to pre-0.5 aside from styling B now waiting for a third occurrence (aligned with `ssot` A). Audit reads `## Review Rubric` paths when present; a missing section still parses and still audits against `principles.md` only. A missing `Scannable` column is likewise `yes` — pre-0.6 files audit as today. A missing `Entry points` column is `index.ts`. Missing `### Excluded Paths` or git keys in `## Audit Configuration` keeps today's skip rules and commit question. `Scannable: no` packages are listed in `INDEX.md` known-blind-spots (`<name>` — `<language>, not scanned`) and are not scanned. A `Scannable: yes` row with zero TS/JS files fails `validate-input`. A single-package repo (one scannable row, empty graph) lists `imports` #6 and `boundaries` B as not applicable in `INDEX.md`, not as a silent pass; other subtypes in those categories still run. Declared `exports` subpaths are not `imports` #1 findings. Excluded globs are skipped by every detector.
-- `validate-input` returns `activeDetectors`, `blindSpots`, and `probePlan` derived from conventions and Package Layout (and ignores any leftover `## Resolved Decisions`). The audit reads `activeDetectors` to decide which subtypes to run — it does not re-evaluate convention gates. Known blind spots in `INDEX.md` start from `validate-input` `blindSpots` (convention-gated, unscannable packages, single-package not-applicable); runtime entries (coverage, not-scanned scope) are appended. No mid-audit pkgManager question — setup always resolves and records it; `pkgManagerProvenance: none` is a warning only.
-- Gated detectors skip and are listed in `INDEX.md` known-blind-spots: `result-types: no` → no `errors` B; `design-tokens: no` → no `styling` findings; `barrel-exports: yes` → no `imports` #4; `branded-types: no` → no `boundaries` A / `types` #4. `coverage-floor: none` drops the coverage blind-spot line and does not add a skip. Gated-off categories still checkpoint complete with count 0. Gates are read from `activeDetectors`, not re-evaluated from `conventions`.
-- If `## Audit Configuration` `categories` is a subset, present it as the default; the user can widen for one run. Persist back to `context.md` only if they ask.
-- Apply category and changed-file scope **before** detector work. A `changed-since` audit scans only changed files under scannable packages (`source-scan --file` / filtered seed hits); `INDEX.md` states what was not scanned and must not claim an exact whole-repo backlog count. Widening Discover runs only newly selected files/categories and merges — it does not rescan completed scope. After findings, ask which slice needs fix instructions (recommended low-risk / category / package / all / stop); expand only that slice. Phase 2 writes action items for `in_scope: true` only; `INDEX.md` `## Backlog` counts compact findings. In-scope finding count + backlog count = `findings.md` total. Promoting a slice re-runs Phase 2 on the same `findings.md` and appends action items.
-- A missing `mode` key is `mode: all`. An unresolvable `baseline-ref` fails `validate-input` (no fallback to `all`).
-- `imports` subtype #6 (`wrong-direction`) means an import opposes a documented edge or path in `context.md`; documented cycle edges surface as #3 `circular-import` instead.
-- Honor category subsets and pause after `findings.md` when asked. Read `output-root` rather than hardcoding `docs/audit`.
-- Stop and point at `lodestar-setup` / Fallow when `.agents/lodestar/context.md` is missing or has no Package Layout. An `AGENTS.md` that still carries an old layout table must not be used as a fallback. Missing `CLAUDE.md` or `.agents/skills/README.md` is not a blocker.
-- "Is my lodestar context still accurate?" runs `check-freshness` only — report drifted facts (including missing or extra docs paths when `## Docs Layout` is present) or that the file still matches. An absent Docs Layout section is not drift. Do not start an audit run. Do not re-run `lodestar-setup` (that is "Refresh the lodestar context file without auditing").
-- Fallow is required for every audit (setup prepares it when audit is installed). Schema acceptance: a schema above the contract baseline passes when every required field is present. On the first encounter the contract script writes `.agents/lodestar/fallow-compat.json` and prints a one-line note to stderr; subsequent runs with that schema are silent. When that write fails the audit still continues, with a stderr warning naming the file and saying the next run will re-verify. A schema above the baseline that dropped a required field fails with a "pin to last known-good version" message instead of the upgrade message. `fallow: optional`, ephemeral Fallow, and grep-only degraded audit modes are removed — missing/invalid Fallow is a hard stop with the exact install or `lodestar-setup` remedy. Mechanical detectors run in the orchestrator (no per-package sub-agent fan-out); semantic checks collect cheap candidates then use a bounded judgment sub-agent only when needed. Fallow must be declared in root `package.json` (`devDependencies` or `dependencies`) **and** resolve from `node_modules/.bin` — a global `PATH` install alone is not accepted. Action items are single-concern contracts (evidence, files, change, decision, scope exceptions, acceptance) without ready-made executor prompts; `lodestar-fix` applies resident generic rules plus item overrides.
-- `scan-extensions` in `## Audit Configuration` lists file extensions for grep and `source-scan` (default TS/JS base). Setup infers framework-specific extensions (`.vue`, `.svelte`, …) from dependencies, config, and file counts, states them on the review screen, and writes the tailored list. `validate-input` returns `scanExtensions` and `linter` (`tool`, `probe`, or `null` when the lint cell is `n/a`). A lint dev-command without `tool; probe` fails `validate-input`. `check-freshness --facts commands` also compares the recorded linter to `detect-linter.mjs`. Linter probes follow [linter-probe.md](../skills/lodestar-audit/references/linter-probe.md); skip when `<lint>` is `n/a` or `linter` is null.
-
-## lodestar-fix
-
-Should trigger:
-
-- "Run lodestar-fix on the latest audit. Do not commit."
-- "Fix only the imports and types action items from docs/audit/2026-08-10 with lodestar-fix."
-- `/lodestar-fix`
-
-Near-miss: discovery-only audit, setup, advisory review, unrelated refactors, advice, PR review, dep bumps, deleting audit files, and ambient fix requests that do not name the skill:
-
-- "Apply all unstarted low-risk items. Stop on scope creep."
-- "Work through requires_decision items in 2026-08-10. Ask before each source change."
-- "Resume audit remediation. One item is in_progress with a partial diff."
-- "Execute 003 and 004 from the current audit run. Verify before marking done."
-- "Apply remaining items and auto-commit each one separately."
-- "Land the lodestar action items that are still in the run root."
-
-Expected outcomes (once explicitly invoked):
-
-- Honor each item's file list; no `git add -A`; stop on scope creep.
-- Apply resident generic safety/check rules plus the item's Scope
-  exceptions and Acceptance overrides; do not require copied category docs.
-- Stop before editing a `files:` path that already has unrelated uncommitted
-  changes; name the paths and let the user resolve them.
-- Execute items serially. No mutating sub-agent fan-out.
-- Run the item's declared acceptance method (typecheck, test, lint, targeted
-  test, or deterministic inspection). No usable method is a stop. A failed
-  normal or resumed check leaves the item deferred with the exact failure and
-  never moves it to `done/`.
-- Ask before decision items and before overwriting `in_progress` work.
-- After the user picks a batch, print the distinct files it will touch
-  and confirm once before Step 3; declining returns to triage.
-  `requires_decision: false` items stay prompt-free inside the loop.
-- Offer only runs that have both `INDEX.md` and at least one `NNN-*.md` in the run root; if none qualify, point at `lodestar-audit`'s Plan phase. Stop if `INDEX.md` is missing after selection.
-- Commit policy comes from git keys in `## Audit Configuration` (defaults if absent): skip the auto-commit question when `per-item` or `never`; `never` leaves edits unstaged; a protected branch stops and offers to continue without committing; a rejecting hook defers the item with the hook output and does not `--no-verify`.
-- Steps 2–4 and Resuming live one hop under [`skills/lodestar-fix/references/`](../skills/lodestar-fix/references/triage.md); `SKILL.md` keeps Inputs, Step 1, and `## Rules`.
-
-## lodestar-architecture
-
-Should trigger:
-
-- "Run lodestar-architecture. Describe only."
-- "You asked describe vs suggest and I said 2. Continue lodestar-architecture."
-- `/lodestar-architecture`
-
-Near-miss: violation hunt, applying audit items, documenting current layout, starting a refactor, generic architecture advice, ADRs, component/API review, load tests, and ambient review requests that do not name the skill:
-
-- "Describe this repository's package architecture for a new engineer. Do not suggest changes."
-- "Review the package layout before a large refactor and propose at most two alternatives."
-- "The architecture feels wrong. Review the documented layout with evidence."
-- "Review the architecture. The lodestar context file has no Package Layout table."
-- "Does our dependency direction still match the code? Advisory only."
-- "Write the architecture-review report for this monorepo."
-
-Expected outcomes (once explicitly invoked):
-
-- Ask describe vs suggest once; write under the derived architecture root (`docs/architecture-review` when `output-root` is `docs/audit`, otherwise `<output-root>/architecture-review`); never edit application source.
-- Write the report from [`templates/report.md`](../skills/lodestar-architecture/templates/report.md); describe-only stops after the always-written sections and skips the suggestion half.
-- At most two evidence-mapped alternatives with trade-offs when asked to suggest.
-- Architecture does **not** require setup. Missing `context.md` uses discovery
-  ([`references/discover-context.md`](../skills/lodestar-architecture/references/discover-context.md)). Soft-skip freshness when audit or context is absent. Missing `AGENTS.md`, `CLAUDE.md`, or `.agents/skills/README.md` is not a blocker.
-
-## lodestar-docs
-
-Should trigger:
-
-- "Run lodestar-docs."
-- "Sweep leftover audit writeups with lodestar-docs."
-- `/lodestar-docs`
-
-Near-miss: generic tidy-docs / clean-up-the-folder talk, planning housekeeping, deleting audit files by hand, and ambient prune requests that do not name the skill:
-
-- "Clean up the docs folder."
-- "Delete the done plans."
-- "Tidy docs/audit/done."
-- "Archive old architecture reviews."
-
-Expected outcomes (once explicitly invoked):
-
-- Default scope is `staging` rows from `## Docs Layout` (audit `done/`/`abandoned` when the output-root is staging). `--full` or a named `--tree` only when the user asks. Absent Docs Layout: observe the same way setup would.
-- Survey from `skills/lodestar-docs/scripts/scope.mjs`. Live audit runs (`findings.md`, `.checkpoint.json`, and/or `NNN-*.md` in the run root — even without `INDEX.md`) and in-flight plans are protected.
-- Canonical homes are `home` rows in `## Docs Layout` (or the same observation if that section is absent). Never create a new home. Harvest with nowhere to go is a needs-a-home list, not a new file.
-- One proposal, then wait for OK. Every deletion — including build output and `.DS_Store` — is a row in that proposal. Honor `commits` from Audit Configuration (`never` leaves edits unstaged; otherwise harvest commit then delete commit).
-- Never edit application source or `.agents/lodestar/context.md`. Do not rewrite `AGENTS.md` unless a Docs map already exists and the user ticks that row.
-- Spec-vs-code clashes are asked, never silently resolved toward the code.
-- Missing `context.md` is not a stop — discover docs trees or use `--tree` / `--full` ([`references/discover-context.md`](../skills/lodestar-docs/references/discover-context.md)).
-
-## lodestar-plan
-
-Should trigger:
-
-- "Write a lodestar-plan for splitting the billing package."
-- "Run lodestar-plan. Keep it a single file."
-- `/lodestar-plan`
-
-Near-miss: implementing a plan, auditing, architecture review, generic "write a design doc", and ambient planning that does not name the skill:
-
-- "Write a plan under docs/plans/ for the refactor."
-- "Break this work into stages and put it in the plans folder."
-- "Create a plan for implement-plan."
-- "Draft the next architecture change as a plan with rigor: light."
-
-Expected outcomes (once explicitly invoked):
-
-- Resolves the plans root from `## Docs Layout` `inflight` (default `docs/plans/`). Missing `context.md` is not a stop and never a hand-off to `lodestar-setup` — it falls back to the default and discovers the rest ([`references/discover-context.md`](../skills/lodestar-plan/references/discover-context.md)): package manager from the single lockfile (zero or several → ask), commands from `package.json` `scripts` plus `Makefile` / `justfile` / `Taskfile` / `nx.json` / `turbo.json` (none → `n/a`, stated in the plan), layout from the workspace declaration else non-root `package.json` dirs else one source root, direction from the imports that exist today. It names what it found, where it came from, and invites corrections; `lodestar-setup` is offered once as optional, never required. It does not write `context.md`.
-- Grounds before writing: every Scope / files path not marked `(new)` must exist; every named command must be a real script, Build & Test cell, or task-file target; assumed imports must match `## Dependency Policy` when present, or — with no policy / no `context.md` — must not create a cycle against today's imports. A miss stops the write and creates no scaffold.
-- Creates the plans root only when writing a valid plan (`ensure-root`). Does not create `done/` or a machine-parsed ledger. An optional human `README.md` is never parsed.
-- Routes oversized work: audit action items stay one concern / one change / one acceptance unit; multi-stage, cross-package, or unresolved product/architecture work belongs here.
-- Carries the discovered commands into the plan's `Accept` lines so `lodestar-implement` does not discover them again.
-- Writes `rigor: light | standard | full` from size, then risk. Risk (public API / schema, migration, auth / security / money / data-deletion, unresolved decision) forces `full`. `light` is always a single file with one stage; a folder plan is never `light`.
-- Does not implement. Does not edit application source. Does not commit unless asked.
-
-## lodestar-implement
-
-Should trigger:
-
-- "Run lodestar-implement on the billing-split plan."
-- "Implement docs/plans/2026-09-06-tiny.md with lodestar-implement."
-- `/lodestar-implement`
-
-Near-miss: writing a plan, auditing, applying audit items, generic "implement the plan", and ambient execution that does not name the skill:
-
-- "Execute the plan under docs/plans/."
-- "Work through the next stage of the plan and commit."
-- "Run implement-plan on the current folder plan."
-- "Land the remaining stages and move the plan to done/."
-
-Expected outcomes (once explicitly invoked):
-
-- pick-up resolves the plan; a slug in both the plans root and `done/` stops as a prior incomplete move. The filesystem is the index (pending / `done/` / `abandoned/`); there is no ledger.
-- One opening commit choice: commit each stage or leave all changes unstaged. Read a recorded policy when present. Never commit or rewrite history without that consent.
-- `rigor:` from frontmatter, or inferred and written back. `light` is one unscoped acceptance run and one commit (when consent allows) that includes move-done. `standard` reviews once at plan end with scoped per-stage checks and only affected integration checks at completion. `full` reviews per stage and skips a duplicate whole-repo sweep unless the plan crosses integration boundaries. Escalation is stage-local, announced, not prompted.
-- Rubric is `## Review Rubric` or principles only. No branded-types / `any` / `manualEpoch` checklist.
-- Missing `context.md` is not a stop and never a hand-off to `lodestar-setup` ([`references/discover-context.md`](../skills/lodestar-implement/references/discover-context.md)): a plan `Accept` line wins, then `package.json` scripts (`typecheck` / `tsc` / `types`, `test`, `lint`) and task-file targets; no script means that check is skipped exactly as a recorded `n/a` would be, and several plausible scripts are asked about once before the first stage. Rubric falls back to `principles.md` plus whichever of `CONTRIBUTING.md`, `AGENTS.md`, `CLAUDE.md`, and host-agent rules files exist — read as rubric paths, not turned into a repo-specific checklist. The resolved commands are printed before the first edit. It does not write `context.md`.
-- `move-done` is a script with a verified post-condition: source gone, destination present. Creates `done/` only when completing. Never a copy that leaves the original behind. No docs-only housekeeping commit for the move — fold into the final code commit when safe, otherwise leave as a working-tree change.
-- One stage one commit when consent allows (`light` excepted as above). No `git add -A`. Plan bodies stay immutable. Completion `commit:` SHA is written after the commit exists, or omitted when commits are disabled.
+Clean install/update/rollback, partial-install matrices, Fallow gating
+(non-audit installs omit audit), and bundled `principles.md` beside
+setup for cursor / claude-code / codex adapter shapes. Record full
+agent journeys on Cursor and at least one other host in
+`baseline.hostJourneys`; leave the rest `untested`.

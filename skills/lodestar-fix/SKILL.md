@@ -37,6 +37,15 @@ Anything you print or ask is read by a person who is skimming. The Step 4 report
 - Point first. Bullets, not paragraphs. Blank line between blocks.
 - Bold the first few words of each bullet.
 
+### Milestones
+
+Concise chat progress — not diagnostic logs or run files:
+
+- **Opening** — selected items, output path, checks, mutation/commit policy
+- **Before long work** — current item
+- **At boundaries** — done/skipped/deferred counts and next item
+- **Closing** — artifacts, skipped coverage, actionable failures
+
 ---
 
 ## Inputs

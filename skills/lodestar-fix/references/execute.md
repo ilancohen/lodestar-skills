@@ -1,5 +1,8 @@
 ## Step 3 — Execute
 
+Print a milestone before each item (name + files). After each item,
+print done/skipped/deferred counts and the next item.
+
 For each selected item, in the order from Step 2:
 
 ### Step 3.1 — Read the item
@@ -86,6 +89,9 @@ Write stdout to a temp file, then:
 git add <files from item>
 git commit -F <temp>
 ```
+
+Delete the temp message file after the commit attempt (success or
+failure). Do not leave diagnostic temps in the repo.
 
 ```
 node <lodestar-fix-skill>/scripts/action-state.mjs commit-message \

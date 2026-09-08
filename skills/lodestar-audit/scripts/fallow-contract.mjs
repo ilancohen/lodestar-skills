@@ -4,7 +4,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import {
   findFallowDeclaration,
@@ -438,14 +438,132 @@ export function resolveFallow(root, contract = loadContract()) {
   };
 }
 
-export function runFallow(bin, argv, { cwd } = {}) {
+/** Default cap for Fallow / long probe child processes (10 minutes). */
+export const LIVENESS_TIMEOUT_MS = 10 * 60 * 1000;
+/** Sparse heartbeat while a child is silent (15 seconds). */
+export const LIVENESS_HEARTBEAT_MS = 15_000;
+
+/**
+ * Run a child with streamed stderr, sparse heartbeats, and a hard timeout.
+ * Collects stdout for the caller; does not write persistent run logs.
+ * Returns `{ stdout, stderr, status, durationMs }`.
+ */
+export function runWithLiveness(bin, argv, options = {}) {
+  const {
+    cwd,
+    timeoutMs = LIVENESS_TIMEOUT_MS,
+    heartbeatMs = LIVENESS_HEARTBEAT_MS,
+    label = path.basename(bin),
+    env = process.env,
+    stream = true,
+  } = options;
+
+  return new Promise((resolve, reject) => {
+    const started = Date.now();
+    let stdout = "";
+    let stderr = "";
+    let settled = false;
+    let lastOutputAt = started;
+    let timedOut = false;
+
+    const child = spawn(bin, argv, {
+      cwd,
+      env,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    const finish = (fn, value) => {
+      if (settled) return;
+      settled = true;
+      clearInterval(heartbeat);
+      clearTimeout(timer);
+      fn(value);
+    };
+
+    const heartbeat = setInterval(() => {
+      const silentFor = Date.now() - lastOutputAt;
+      if (silentFor < heartbeatMs) return;
+      if (stream) {
+        process.stderr.write(
+          `[${label}] still running (${Math.round((Date.now() - started) / 1000)}s)…\n`,
+        );
+      }
+      lastOutputAt = Date.now();
+    }, Math.min(heartbeatMs, 5_000));
+
+    const timer = setTimeout(() => {
+      timedOut = true;
+      child.kill("SIGTERM");
+      setTimeout(() => {
+        if (!settled) child.kill("SIGKILL");
+      }, 2_000).unref?.();
+    }, timeoutMs);
+
+    child.stdout.on("data", (chunk) => {
+      const text = chunk.toString();
+      stdout += text;
+      lastOutputAt = Date.now();
+    });
+    child.stderr.on("data", (chunk) => {
+      const text = chunk.toString();
+      stderr += text;
+      lastOutputAt = Date.now();
+      if (stream) process.stderr.write(text);
+    });
+
+    child.on("error", (error) => {
+      error.durationMs = Date.now() - started;
+      finish(reject, error);
+    });
+
+    child.on("close", (status) => {
+      const durationMs = Date.now() - started;
+      if (stream) {
+        process.stderr.write(
+          `[${label}] finished in ${(durationMs / 1000).toFixed(1)}s (exit ${status ?? "?"})\n`,
+        );
+      }
+      if (timedOut) {
+        const error = new Error(
+          `${label} timed out after ${Math.round(timeoutMs / 1000)}s`,
+        );
+        error.exitCode = null;
+        error.stdout = stdout;
+        error.stderr = stderr;
+        error.durationMs = durationMs;
+        finish(reject, error);
+        return;
+      }
+      finish(resolve, { stdout, stderr, status, durationMs });
+    });
+  });
+}
+
+/**
+ * Run Fallow (sync). Exit 0 = clean, 1 = findings — both succeed.
+ * Uses a hard timeout. For streamed stderr + heartbeat during long runs,
+ * use `runFallowAsync` (CLI `run` command does).
+ */
+export function runFallow(bin, argv, options = {}) {
+  const { cwd, timeoutMs = LIVENESS_TIMEOUT_MS } = options;
+  const started = Date.now();
   const result = spawnSync(bin, argv, {
     cwd,
     encoding: "utf8",
     maxBuffer: 32 * 1024 * 1024,
+    timeout: timeoutMs,
   });
+  const durationMs = Date.now() - started;
   const stdout = result.stdout || "";
-  // Exit 0 = clean, 1 = findings — both are successful runs.
+  if (result.error?.code === "ETIMEDOUT" || result.signal === "SIGTERM") {
+    const error = new Error(
+      `fallow timed out after ${Math.round(timeoutMs / 1000)}s`,
+    );
+    error.exitCode = null;
+    error.stdout = stdout;
+    error.durationMs = durationMs;
+    throw error;
+  }
   if (result.status !== 0 && result.status !== 1) {
     let message = result.stderr?.trim() || `fallow exited ${result.status}`;
     try {
@@ -457,6 +575,34 @@ export function runFallow(bin, argv, { cwd } = {}) {
     const error = new Error(message);
     error.exitCode = result.status;
     error.stdout = stdout;
+    error.durationMs = durationMs;
+    throw error;
+  }
+  return stdout;
+}
+
+/** Async Fallow run with streamed stderr, sparse heartbeat, and duration. */
+export async function runFallowAsync(bin, argv, options = {}) {
+  const result = await runWithLiveness(bin, argv, {
+    cwd: options.cwd,
+    timeoutMs: options.timeoutMs ?? LIVENESS_TIMEOUT_MS,
+    heartbeatMs: options.heartbeatMs ?? LIVENESS_HEARTBEAT_MS,
+    label: "fallow",
+    stream: options.stream !== false,
+  });
+  const stdout = result.stdout || "";
+  if (result.status !== 0 && result.status !== 1) {
+    let message = result.stderr?.trim() || `fallow exited ${result.status}`;
+    try {
+      const envelope = JSON.parse(stdout);
+      if (envelope?.error) message = envelope.message || message;
+    } catch {
+      // keep stderr message
+    }
+    const error = new Error(message);
+    error.exitCode = result.status;
+    error.stdout = stdout;
+    error.durationMs = result.durationMs;
     throw error;
   }
   return stdout;
@@ -562,7 +708,7 @@ function substituteArgv(argv, flags) {
   });
 }
 
-function cmdRun(flags, contract) {
+async function cmdRun(flags, contract) {
   const root = flags.root || process.cwd();
   const id = flags.id || flags.kind || "combined";
   const spec = commandSpec(contract, id);
@@ -576,7 +722,7 @@ function cmdRun(flags, contract) {
   }
   let stdout;
   try {
-    stdout = runFallow(resolved.bin, argv, { cwd: root });
+    stdout = await runFallowAsync(resolved.bin, argv, { cwd: root });
   } catch (error) {
     fail(
       remediation(contract, error.message, {
@@ -638,27 +784,80 @@ const COMMANDS = {
   "resolve-bin": cmdResolveBin,
   validate: cmdValidate,
   run: cmdRun,
+  "run-liveness": cmdRunLiveness,
 };
 
-export function main(argv = process.argv.slice(2)) {
+/**
+ * Run an arbitrary long child (e.g. linter probe) with the same liveness
+ * guarantees as Fallow: streamed stderr, sparse heartbeat, hard timeout,
+ * duration on completion. Writes stdout to --out. Exit status mirrors the
+ * child (timeout → exit 2).
+ *
+ * Usage:
+ *   node fallow-contract.mjs run-liveness --out PATH [--root DIR] [--label NAME] -- <bin> [args…]
+ */
+async function cmdRunLiveness(flags, _contract, restArgv = []) {
+  const root = flags.root || process.cwd();
+  const outRaw = flags.out;
+  if (!outRaw || outRaw === true) {
+    fail("run-liveness requires --out PATH", 2);
+  }
+  if (!restArgv.length) {
+    fail("run-liveness requires a command after -- (bin and args)", 2);
+  }
+  const [bin, ...argv] = restArgv;
+  const outPath = path.isAbsolute(outRaw) ? outRaw : path.resolve(root, outRaw);
+  try {
+    const result = await runWithLiveness(bin, argv, {
+      cwd: root,
+      label: typeof flags.label === "string" ? flags.label : "probe",
+      timeoutMs: flags.timeout
+        ? Number(flags.timeout)
+        : LIVENESS_TIMEOUT_MS,
+      heartbeatMs: flags.heartbeat
+        ? Number(flags.heartbeat)
+        : LIVENESS_HEARTBEAT_MS,
+    });
+    fs.mkdirSync(path.dirname(outPath), { recursive: true });
+    fs.writeFileSync(outPath, result.stdout ?? "", "utf8");
+    process.exit(result.status ?? 0);
+  } catch (error) {
+    if (error.stdout != null) {
+      try {
+        fs.mkdirSync(path.dirname(outPath), { recursive: true });
+        fs.writeFileSync(outPath, error.stdout, "utf8");
+      } catch {
+        // best-effort
+      }
+    }
+    fail(error.message || String(error), 2);
+  }
+}
+
+export async function main(argv = process.argv.slice(2)) {
   const contract = loadContract();
-  const { flags, positionals } = parseArgs(argv);
+  const dd = argv.indexOf("--");
+  const before = dd === -1 ? argv : argv.slice(0, dd);
+  const after = dd === -1 ? [] : argv.slice(dd + 1);
+  const { flags, positionals } = parseArgs(before);
   const command = positionals[0];
   if (!command) {
     process.stderr.write(
-      "Usage: fallow-contract resolve-bin|validate|run [options]\n",
+      "Usage: fallow-contract resolve-bin|validate|run|run-liveness [options]\n",
     );
     process.exit(1);
   }
   const handler = COMMANDS[command];
   if (!handler) fail(`unknown command ${command}`, 1);
-  handler(flags, contract);
+  if (command === "run-liveness") {
+    await handler(flags, contract, after);
+    return;
+  }
+  await handler(flags, contract);
 }
 
 if (isMain(import.meta.url)) {
-  try {
-    main();
-  } catch (error) {
+  main().catch((error) => {
     fail(error.message || String(error), 2);
-  }
+  });
 }

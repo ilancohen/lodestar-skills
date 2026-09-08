@@ -27,6 +27,20 @@ export const QUALITY_FIELDS = [
   "evidence",
 ];
 
+export const HOST_JOURNEY_STATUSES = new Set([
+  "passed",
+  "failed",
+  "untested",
+]);
+
+/** Default host matrix — unavailable hosts stay untested, never passed. */
+export const DEFAULT_HOST_JOURNEYS = {
+  cursor: "untested",
+  "claude-code": "untested",
+  codex: "untested",
+  "gemini-cli": "untested",
+  "github-copilot": "untested",
+};
 const RESUME_VALUES = new Set([null, "success", "failed", "n/a"]);
 const USEFULNESS_VALUES = new Set([
   "high",
@@ -233,9 +247,56 @@ export function compareToBaseline(baseline, records) {
         questions: delta("questions"),
         retries: delta("retries"),
         artifactBytes: delta("artifactBytes"),
+        seededFound: delta("seededFound"),
+        seededMissed: delta("seededMissed"),
+        falsePositives: delta("falsePositives"),
       },
     };
   });
+}
+
+/**
+ * Validate baseline hostJourneys: only passed|failed|untested;
+ * never invent a pass for an unavailable host.
+ */
+export function validateHostJourneys(hostJourneys) {
+  const errors = [];
+  if (
+    !hostJourneys ||
+    typeof hostJourneys !== "object" ||
+    Array.isArray(hostJourneys)
+  ) {
+    return { ok: false, errors: ["hostJourneys must be an object"] };
+  }
+  for (const [host, status] of Object.entries(hostJourneys)) {
+    if (!HOST_JOURNEY_STATUSES.has(status)) {
+      errors.push(
+        `hostJourneys.${host} must be passed|failed|untested (got ${JSON.stringify(status)})`,
+      );
+    }
+  }
+  return { ok: errors.length === 0, errors };
+}
+
+export function validateBaseline(baseline) {
+  const errors = [];
+  if (!baseline || typeof baseline !== "object") {
+    return { ok: false, errors: ["baseline must be a JSON object"] };
+  }
+  if (!Array.isArray(baseline.scenarioIds) || baseline.scenarioIds.length === 0) {
+    errors.push("scenarioIds must be a non-empty array");
+  }
+  if (
+    !baseline.markdownWords ||
+    typeof baseline.markdownWords !== "object"
+  ) {
+    errors.push("markdownWords is required");
+  }
+  if (baseline.hostJourneys) {
+    const hosts = validateHostJourneys(baseline.hostJourneys);
+    errors.push(...hosts.errors);
+  }
+  return { ok: errors.length === 0, errors };
 }
 
 export function listScenarioFiles(dir = path.join(ROOT, "tests/fixtures/evals/scenarios")) {
@@ -253,6 +314,8 @@ function printUsage() {
   node scripts/eval-run.mjs summarize <run.json|dir>
   node scripts/eval-run.mjs compare --baseline <baseline.json> <run.json|dir>
   node scripts/eval-run.mjs list-scenarios
+  node scripts/eval-run.mjs validate-baseline [baseline.json]
+  node scripts/eval-run.mjs list-hosts [baseline.json]
 `);
 }
 
@@ -287,6 +350,39 @@ function main(argv = process.argv.slice(2)) {
       process.stdout.write(
         `${scenario.id}\t${scenario.skills.join(",")}\t${scenario.title}\n`,
       );
+    }
+    return;
+  }
+
+  if (command === "validate-baseline") {
+    const file =
+      rest[0] || path.join(ROOT, "tests/fixtures/evals/baseline.json");
+    const baseline = loadJson(file);
+    const result = validateBaseline(baseline);
+    if (!result.ok) {
+      for (const error of result.errors) {
+        process.stderr.write(`ERROR: ${error}\n`);
+      }
+      process.exit(1);
+    }
+    process.stdout.write(`OK ${file}\n`);
+    return;
+  }
+
+  if (command === "list-hosts") {
+    const file =
+      rest[0] || path.join(ROOT, "tests/fixtures/evals/baseline.json");
+    const baseline = loadJson(file);
+    const hosts = baseline.hostJourneys || DEFAULT_HOST_JOURNEYS;
+    const result = validateHostJourneys(hosts);
+    if (!result.ok) {
+      for (const error of result.errors) {
+        process.stderr.write(`ERROR: ${error}\n`);
+      }
+      process.exit(1);
+    }
+    for (const [host, status] of Object.entries(hosts).sort()) {
+      process.stdout.write(`${host}\t${status}\n`);
     }
     return;
   }

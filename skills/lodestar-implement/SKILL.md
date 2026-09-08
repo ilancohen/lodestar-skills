@@ -45,6 +45,15 @@ Anything you print or ask is read by a person who is skimming.
 - Point first. Bullets, not paragraphs. Blank line between blocks.
 - Bold the first few words of each bullet.
 
+### Milestones
+
+Concise chat progress — not diagnostic logs or run files:
+
+- **Opening** — plan path, rigor, checks, mutation/commit policy
+- **Before long work** — current stage id
+- **At boundaries** — completed stages and next stage
+- **Closing** — artifacts, skipped checks, actionable failures
+
 ## Steps
 
 1. **Locate** — [references/locate.md](references/locate.md). Pick the

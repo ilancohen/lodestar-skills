@@ -27,6 +27,77 @@ Scripts that must not prompt:
 npx skills add ilancohen/lodestar-skills --skill '*' -y
 ```
 
+## Upgrading past 0.17.0 — suite evaluation followups
+
+Pre-1.0 format breaks from the 2026-09-07 evaluation plan. No version
+bump ships with these notes alone — re-install skills, then re-run setup
+when context shape changed.
+
+### Removed `## Resolved Decisions`
+
+That section is ignored. `validate-input` derives detector gates in
+memory. The next `lodestar-setup` re-run deletes a leftover section.
+
+### Optional `## Dependency Policy`
+
+Observed import graphs are not policy. Setup writes `## Dependency Policy`
+only when you state intended import order. Legacy `## Dependency Direction`
+is ignored and deleted on the next setup. Without policy, audit still
+detects cycles but gates wrong-direction (`imports` #6).
+
+### Changed-scope audits
+
+A `changed-since` audit scans only changed files under scannable
+packages. `INDEX.md` states what was not scanned — it does not invent an
+exact whole-repo backlog count.
+
+### Compact action items
+
+Audit writes single-concern contracts (evidence, files, change, decision,
+scope exceptions, acceptance) without ready-made executor prompts.
+`lodestar-fix` applies resident generic rules plus item overrides.
+Multi-stage redesign belongs in `lodestar-plan`.
+
+### Commit consent
+
+Git commits and history rewrites always need explicit consent (`ask` /
+`per-item` / `never`). Fix and implement never auto-rebase or
+`--no-verify`.
+
+### Partial installs
+
+Supported when the selection includes `lodestar-setup` plus the chosen
+workflow pair or standalone advisory skill. Recommended pairs:
+`audit`+`fix`, `plan`+`implement`. Architecture and docs may stand alone
+with setup.
+
+### Audit-gated Fallow; no degraded mode
+
+Setup installs/configures Fallow only when `lodestar-audit` is among the
+installed siblings. Audit requires a declared, local, compatible Fallow.
+`fallow: optional`, ephemeral Fallow, and grep-only degraded audit modes
+are removed — missing Fallow is a hard stop with the install remedy.
+
+### Plans ledger removed
+
+Plan state is the filesystem: pending under the plans root, completed in
+`done/`, abandoned in `abandoned/`. There is no machine-parsed ledger and
+no docs-only housekeeping commit for `move-done` (folded into the final
+code commit when safe).
+
+### Principles path
+
+Principles resolve from the installed `lodestar-setup` skill (beside
+`SKILL.md`) on every adapter shape — not a fixed
+`.agents/skills/lodestar-setup/principles.md` path.
+
+### Chat milestones
+
+Long runs print concise milestones (opening, current stage/category,
+boundary counts, closing artifacts). Fallow/probes stream stderr with
+sparse heartbeats and bounded timeouts. No persistent diagnostic run
+logs.
+
 ## Upgrading past 0.17.0 — Dependency Policy + portable principles
 
 `## Dependency Direction` (observed import graph) is retired as recorded

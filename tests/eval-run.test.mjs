@@ -9,7 +9,10 @@ import {
   listScenarioFiles,
   loadScenario,
   summarizeRuns,
+  validateBaseline,
+  validateHostJourneys,
   validateRunRecord,
+  DEFAULT_HOST_JOURNEYS,
 } from "../scripts/eval-run.mjs";
 import { measureSkillRunCost } from "../scripts/check_package.mjs";
 
@@ -65,6 +68,7 @@ test("scenarios cover every public skill and both mutation workflows", () => {
 
 test("baseline lists every scenario and markdownWords for each skill", () => {
   const baseline = JSON.parse(fs.readFileSync(BASELINE, "utf8"));
+  assert.equal(validateBaseline(baseline).ok, true);
   assert.deepEqual(
     [...baseline.scenarioIds].sort(),
     listScenarioFiles()
@@ -79,6 +83,29 @@ test("baseline lists every scenario and markdownWords for each skill", () => {
       `${skill}: ${cost.markdownWords} > baseline ${baseline.markdownWords[skill].words}`,
     );
   }
+  const hosts = validateHostJourneys(
+    baseline.hostJourneys || DEFAULT_HOST_JOURNEYS,
+  );
+  assert.equal(hosts.ok, true, hosts.errors.join("; "));
+  // Unavailable hosts must stay untested — never recorded as passed by default.
+  for (const [host, status] of Object.entries(
+    baseline.hostJourneys || DEFAULT_HOST_JOURNEYS,
+  )) {
+    assert.ok(
+      status === "passed" || status === "failed" || status === "untested",
+      host,
+    );
+  }
+});
+
+test("validateHostJourneys rejects invented pass labels", () => {
+  assert.equal(
+    validateHostJourneys({ cursor: "passed", codex: "untested" }).ok,
+    true,
+  );
+  const bad = validateHostJourneys({ cursor: "ok" });
+  assert.equal(bad.ok, false);
+  assert.ok(bad.errors.some((error) => /passed\|failed\|untested/.test(error)));
 });
 
 test("validateRunRecord accepts null telemetry and rejects missing usage fields", () => {
