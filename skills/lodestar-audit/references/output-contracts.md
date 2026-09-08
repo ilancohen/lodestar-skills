@@ -49,9 +49,12 @@ Invariants:
   `one-entity`, `one-class`, `one-symbol`, or `advisory`.
 - `requires_decision` is `true` when the sub-doc stop conditions apply,
   or when the fix needs judgment. Default `false` for mechanical fixes.
-- `in_scope` is `true` or `false`. Missing means `true` (an older
-  `findings.md` still validates). A human may flip it between phases to
-  pull one old-code finding into this run's action items.
+- `in_scope` is `true` or `false`. After Discover, merge with
+  `--expand none` so findings stay compact until Plan chooses a slice.
+  Missing `in_scope` means await expansion (`false`) when `--expand none`
+  was used; older `findings.md` files without the flag still validate.
+  A human may flip it between phases to pull one finding into this run's
+  action items.
 
 When `.checkpoint.json` has a `drift` key, `merge-findings` re-emits a
 `## Stale basis` block under the header (which facts drifted; re-run
@@ -67,10 +70,19 @@ node scripts/audit-state.mjs merge-findings --in a.json --in b.json --out <outpu
 ```
 
 Dedupes by category, subtype, package, files, and evidence. Sorts by
-category order then file path. Reassigns IDs from `F0001`. With
-`--changed-files`, each finding gets `in_scope: true` when any of its
-`files` is in the set, or when `scope_unit` is `advisory`. Without the
-flag, every finding is `in_scope: true`.
+category order then file path. Reassigns IDs from `F0001`.
+
+Expansion flags:
+
+- `--expand none` (Discover default) — every finding `in_scope: false`
+  until Plan chooses a slice.
+- `--expand all` — every finding `in_scope: true` (or use Plan to flip
+  only the chosen category/package/recommended set).
+- `--changed-files '["path"]'` — each finding `in_scope: true` when any
+  of its `files` is in the set, or when `scope_unit` is `advisory`.
+
+Without `--expand` / `--changed-files`, behavior matches `--expand all`
+for older callers; new Discover runs must pass `--expand none`.
 
 ## Validate
 

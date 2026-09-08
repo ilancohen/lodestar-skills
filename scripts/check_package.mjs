@@ -285,6 +285,28 @@ function validateContributorGuidance(root, errors) {
   }
 }
 
+/**
+ * Audit must hard-stop without Fallow — no optional / grep-only degraded mode.
+ */
+function validateAuditFallowHardStop(root, errors) {
+  const auditDir = path.join(root, "skills", "lodestar-audit");
+  if (!fs.existsSync(auditDir)) return;
+  for (const file of walkMarkdown(auditDir)) {
+    const text = fs.readFileSync(file, "utf8");
+    const relative = path.relative(root, file);
+    if (/continue with grep-only/i.test(text)) {
+      errors.push(
+        `${relative}: must not offer grep-only degraded audit when Fallow is missing`,
+      );
+    }
+    if (/fallow:\s*optional[^\n]{0,120}continue/i.test(text)) {
+      errors.push(
+        `${relative}: fallow: optional must not be a supported continue path`,
+      );
+    }
+  }
+}
+
 const BASELINE_PATH = path.join("tests", "fixtures", "evals", "baseline.json");
 
 /**
@@ -398,6 +420,7 @@ export function checkPackage(root = ROOT) {
   validateModuleSharingRule(root, errors);
   validateContributorGuidance(root, errors);
   validateLocalPackageManager(root, errors);
+  validateAuditFallowHardStop(root, errors);
 
   const runCosts = [];
 

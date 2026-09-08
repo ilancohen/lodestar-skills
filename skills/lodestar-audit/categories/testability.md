@@ -82,7 +82,11 @@ grep -rEn "^(let|var) " <all_pkg_roots> --include="*.ts" \
   - Counter / accumulator → into a class or closure.
   - Feature flag / config → injected at startup, not mutated at runtime.
 
-## Scope rules (must appear verbatim in generated action items)
+## Scope exceptions (item-specific only)
+
+Do **not** copy this block into every action item. Put only unusual
+overrides into `## Scope exceptions`. Category defaults stay in this
+doc for the auditor; `lodestar-fix` applies its resident generic rules.
 
 - Behaviour must be preserved. Refactor only.
 - One file / variable per commit.

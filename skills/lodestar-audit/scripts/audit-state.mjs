@@ -68,10 +68,10 @@ Commands:
   check-freshness --root DIR [--facts layout,commands,docs]
   derive-direction --root DIR
   changed-files --root DIR --since REF
-  merge-findings --in FILE [--in FILE ...] [--out FILE] [--changed-files JSON]
+  merge-findings --in FILE [--in FILE ...] [--out FILE] [--changed-files JSON] [--expand all|none]
   validate-output --path FILE [--root DIR]
   validate-output --path RUN_DIR [--root DIR]
-  checkpoint --run-dir DIR --category NAME --status complete|partial --count N [--package NAME]
+  checkpoint --run-dir DIR --category NAME --status complete|partial --count N [--package NAME] [--scan-files JSON]
   recover --run-dir DIR
 `);
 }
@@ -1315,9 +1315,14 @@ function parseCategorySetting(raw) {
 }
 
 function parseFallowSetting(raw) {
-  if (raw === "required" || raw === "optional") return raw;
+  if (raw === "required") return raw;
+  if (raw === "optional") {
+    throw new Error(
+      "## Audit Configuration has `fallow: optional`, which is no longer supported. Fallow is required for every audit. Remove the `fallow` row (default required) or set `fallow: required`, then install a compatible local Fallow (re-run `lodestar-setup` with `lodestar-audit` installed, or add `fallow@^3.15.0` and install deps).",
+    );
+  }
   throw new Error(
-    `## Audit Configuration has an invalid value for \`fallow\`: \`${raw}\`. Expected required or optional.`,
+    `## Audit Configuration has an invalid value for \`fallow\`: \`${raw}\`. Expected \`required\` (or omit the row).`,
   );
 }
 
@@ -1699,16 +1704,56 @@ export function findingInScope(finding, changedSet) {
   );
 }
 
-export function applyChangedFiles(findings, changedFiles) {
-  if (changedFiles == null) {
+/**
+ * Limit detector roots to files that fall under a package path.
+ * Used for changed-since / widen: discover only these paths.
+ */
+export function filterPathsUnderRoots(filePaths, pkgRoots, cwd = process.cwd()) {
+  const roots = (pkgRoots || []).map((root) =>
+    path.resolve(cwd, root).replace(/\\/g, "/"),
+  );
+  return (filePaths || [])
+    .map((filePath) => String(filePath).replace(/\\/g, "/"))
+    .filter((filePath) => {
+      const abs = path.resolve(cwd, filePath).replace(/\\/g, "/");
+      return roots.some(
+        (root) => abs === root || abs.startsWith(`${root}/`),
+      );
+    });
+}
+
+/**
+ * Apply expansion scope after Discover.
+ * - changedFiles set → in_scope by file intersection (legacy partition;
+ *   prefer scanning only those files instead of whole-repo then filtering).
+ * - expand "all" → every finding in_scope true.
+ * - expand "none" / default without changedFiles → compact findings
+ *   (in_scope false) awaiting the Plan slice question.
+ * - expand omitted with prior in_scope preserved when already boolean.
+ */
+export function applyChangedFiles(findings, changedFiles, expand = null) {
+  if (changedFiles != null) {
+    const changedSet = new Set(
+      changedFiles.map((filePath) => String(filePath).replace(/\\/g, "/")),
+    );
+    return findings.map((finding) => ({
+      ...finding,
+      in_scope: findingInScope(finding, changedSet),
+    }));
+  }
+  if (expand === "all") {
     return findings.map((finding) => ({ ...finding, in_scope: true }));
   }
-  const changedSet = new Set(
-    changedFiles.map((filePath) => String(filePath).replace(/\\/g, "/")),
-  );
+  if (expand === "none") {
+    return findings.map((finding) => ({ ...finding, in_scope: false }));
+  }
+  // Default: keep an explicit boolean; otherwise await expansion (false).
   return findings.map((finding) => ({
     ...finding,
-    in_scope: findingInScope(finding, changedSet),
+    in_scope:
+      finding.in_scope === true || finding.in_scope === false
+        ? finding.in_scope
+        : false,
   }));
 }
 
@@ -1937,12 +1982,10 @@ export function validateFinding(finding) {
 }
 
 const ACTION_RISKS = new Set(["low", "medium", "high"]);
-const ACTION_ITEM_SECTIONS = [
-  "Problem",
-  "Suggested fix",
-  "Scope rules",
-  "Acceptance check",
-];
+/** Required body sections for every action item. */
+const ACTION_ITEM_SECTIONS = ["Problem", "Suggested fix", "Acceptance check"];
+/** Optional; omit when resident lodestar-fix rules suffice. */
+const ACTION_ITEM_OPTIONAL_SECTIONS = ["Scope exceptions", "Decision"];
 
 function parseActionFrontmatter(text) {
   const match = text.replace(/\r\n/g, "\n").match(/^---\n([\s\S]*?)\n---\n/);
@@ -2061,6 +2104,21 @@ export function validateActionItem(text, options = {}) {
       "findings must be a top-level frontmatter field, not nested under files",
     );
   }
+  if (sectionBody(text, "Scope rules") !== null) {
+    errors.push(
+      "## Scope rules is removed — use ## Scope exceptions for item-specific overrides only (generic safety lives in lodestar-fix)",
+    );
+  }
+  if (sectionBody(text, "Prompt for an agent") !== null) {
+    errors.push(
+      "## Prompt for an agent is removed — lodestar-fix owns the executor prompt",
+    );
+  }
+  if (sectionBody(text, "Why this matters") !== null) {
+    errors.push(
+      "## Why this matters is removed — keep evidence in ## Problem",
+    );
+  }
   for (const heading of ACTION_ITEM_SECTIONS) {
     const body = sectionBody(text, heading);
     if (body === null) {
@@ -2085,6 +2143,24 @@ export function validateActionItem(text, options = {}) {
     }
     if (heading === "Acceptance check" && body.length < 5) {
       errors.push("## Acceptance check must name a usable method");
+    }
+  }
+  for (const heading of ACTION_ITEM_OPTIONAL_SECTIONS) {
+    const body = sectionBody(text, heading);
+    if (body === null) continue;
+    if (
+      !body ||
+      (/[<>].*[<>]/.test(body) && /PLACEHOLDER|path\/to|e\.g\./i.test(body))
+    ) {
+      errors.push(`## ${heading} is empty or still a placeholder`);
+    }
+  }
+  if (fields.requires_decision === "true") {
+    const decision = sectionBody(text, "Decision");
+    if (decision === null || !decision) {
+      errors.push(
+        "## Decision is required when requires_decision is true",
+      );
     }
   }
   return { ok: errors.length === 0, errors, fields };
@@ -2342,9 +2418,16 @@ function cmdMergeFindings(flags) {
   } catch (error) {
     fail(error.message, 2);
   }
+  const expandRaw = flags.expand;
+  let expand = null;
+  if (expandRaw === "all" || expandRaw === "none") expand = expandRaw;
+  else if (expandRaw != null && expandRaw !== true) {
+    fail("merge-findings --expand must be all or none", 2);
+  }
   const merged = applyChangedFiles(
     assignIds(dedupeFindings(sortFindings(findings))),
     changedFiles,
+    expand,
   );
   const runId = flags["run-id"] || "merged";
   const complete = [];
@@ -2502,6 +2585,34 @@ function cmdCheckpoint(flags) {
   };
   if (flags.package) checkpoint.package = flags.package;
   if (status === "complete") delete checkpoint.package;
+  if (flags["scan-files"]) {
+    try {
+      const scanned = JSON.parse(flags["scan-files"]);
+      if (!Array.isArray(scanned)) {
+        fail("checkpoint --scan-files must be a JSON array of paths", 2);
+      }
+      const prior = Array.isArray(previous.scannedFiles)
+        ? previous.scannedFiles
+        : [];
+      checkpoint.scannedFiles = [
+        ...new Set([
+          ...prior.map((p) => String(p).replace(/\\/g, "/")),
+          ...scanned.map((p) => String(p).replace(/\\/g, "/")),
+        ]),
+      ];
+    } catch (error) {
+      fail(`invalid --scan-files: ${error.message}`, 2);
+    }
+  }
+  const completedCategories = Array.isArray(previous.completedCategories)
+    ? [...previous.completedCategories]
+    : [];
+  if (status === "complete" && !completedCategories.includes(category)) {
+    completedCategories.push(category);
+  }
+  if (completedCategories.length) {
+    checkpoint.completedCategories = completedCategories;
+  }
   atomicWrite(markerPath, `${JSON.stringify(checkpoint, null, 2)}\n`);
   printJson({ ok: true, ...checkpoint, path: findingsPath });
 }

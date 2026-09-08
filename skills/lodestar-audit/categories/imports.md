@@ -144,7 +144,11 @@ When `pnpm check:deps` and the fallow seed both report the same `(file:line, tar
 - #9 — fix the specifier: correct the typo, install the missing dep,
   or add the alias to `tsconfig.json` `paths`. Never use a wildcard.
 
-## Scope rules (must appear verbatim in generated action items)
+## Scope exceptions (item-specific only)
+
+Do **not** copy this block into every action item. Put only unusual
+overrides into `## Scope exceptions`. Category defaults stay in this
+doc for the auditor; `lodestar-fix` applies its resident generic rules.
 
 - No implementation changes beyond the import or re-export line.
 - No moving files unless the fix is "extract to the shared package" (#3, #6).

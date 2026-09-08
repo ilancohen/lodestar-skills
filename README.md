@@ -106,9 +106,11 @@ skill missing its base will say so and stop. A few more ways to run it:
 
 Adopting this in a large, long-lived repo does not have to open with a
 thousand action items. Setup can scope the audit to code changed since
-today's commit and keep the rest as a counted backlog in `INDEX.md`. A
-`context.md` with no `mode` row in `## Audit Configuration` still expands every
-finding.
+today's commit; the audit scans those files only and states what was not
+scanned — it does not invent an exact whole-repo backlog count. After
+findings, you choose which slice gets fix instructions. A `context.md`
+with no `mode` row in `## Audit Configuration` still scans every
+scannable file.
 
 | Want to...       | Run                                                                           |
 | ---------------- | ----------------------------------------------------------------------------- |

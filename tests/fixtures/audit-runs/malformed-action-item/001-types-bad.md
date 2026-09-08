@@ -20,9 +20,9 @@ Something wrong in src/a.ts with any.
 
 1. Remove any.
 
-## Scope rules
+## Scope exceptions
 
-Do not modify files outside files:.
+None.
 
 ## Acceptance check
 

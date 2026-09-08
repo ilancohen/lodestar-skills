@@ -20,10 +20,6 @@ findings: F0001
 
 1. Import from `@repo/core` instead of `@repo/core/src/...`.
 
-## Scope rules
-
-Do not modify files outside `files:`.
-
 ## Acceptance check
 
 Run `npm run typecheck` and `npm test`.

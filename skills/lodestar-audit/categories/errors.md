@@ -87,7 +87,11 @@ grep -rEn "throw new (Error|NotFound|Validation|Unauthorized)" \
   `return { ok: false, error: '…' }`, update every caller in the same
   commit, update tests that expected thrown errors.
 
-## Scope rules (must appear verbatim in generated action items)
+## Scope exceptions (item-specific only)
+
+Do **not** copy this block into every action item. Put only unusual
+overrides into `## Scope exceptions`. Category defaults stay in this
+doc for the auditor; `lodestar-fix` applies its resident generic rules.
 
 - Never convert a function without updating all callers in the same commit.
 - Never mix A-style and B-style fixes in one commit.

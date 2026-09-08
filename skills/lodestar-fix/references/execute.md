@@ -4,8 +4,13 @@ For each selected item, in the order from Step 2:
 
 ### Step 3.1 — Read the item
 
-Open the `NNN-<category>-<slug>.md` file. Read every section:
-problem, suggested fix, scope rules, acceptance check, files list.
+Open the `NNN-<category>-<slug>.md` file. Read every section present:
+problem, suggested fix, decision (when present), scope exceptions (when
+present), acceptance check, files list.
+
+Apply **resident generic safety and check rules** from `SKILL.md` Rules,
+then the item's specific **Scope exceptions** and **Acceptance check**.
+Do not load category documents from the audit skill.
 
 ### Step 3.2 — Decision gate
 
@@ -36,7 +41,8 @@ leave the item `in_progress` or set `status: deferred` with
 edit into a dirty file, and never stage a whole dirty file that mixes
 pre-existing edits with this fix.
 
-Follow **Suggested fix** exactly. Honor **Scope rules** verbatim.
+Follow **Suggested fix** exactly. Honor **Scope exceptions** when
+present, plus resident `lodestar-fix` rules.
 
 Do not edit files outside `files:`. If the fix needs one, stop, set
 `status: deferred` with `note: scope-creep — <files outside list>`,

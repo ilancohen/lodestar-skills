@@ -180,7 +180,11 @@ grep -rln ":root" <pkg_root> --include="*.css" --include="*.scss"
 - **D** — replace the raw literal with `var(--token-name)` in CSS, or
   `tokens.foo` in TS-driven styles. Run `<typecheck>` and `<test>`.
 
-## Scope rules (must appear verbatim in generated action items)
+## Scope exceptions (item-specific only)
+
+Do **not** copy this block into every action item. Put only unusual
+overrides into `## Scope exceptions`. Category defaults stay in this
+doc for the auditor; `lodestar-fix` applies its resident generic rules.
 
 - No behaviour change — pixel-equivalent output before and after.
 - For A: do not introduce new CSS files unless the package's convention

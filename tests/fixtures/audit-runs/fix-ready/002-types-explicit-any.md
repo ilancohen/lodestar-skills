@@ -20,10 +20,6 @@ findings: F0003
 
 1. Change `export function listUsers(): any` to `export function listUsers()`.
 
-## Scope rules
-
-Do not modify files outside `files:`.
-
 ## Acceptance check
 
 Run `npm run typecheck` and `npm test`.

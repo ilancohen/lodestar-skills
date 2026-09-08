@@ -218,16 +218,18 @@ this section at those defaults and does not ask about categories,
 output-root, or fallow. `lodestar-audit` may offer to persist a category
 subset here after a run.
 
-Discovery still scans the whole repo; `mode` only decides which findings
-become action items.
+Discovery scans only the selected files and categories for this run.
+`mode: changed-since` limits which files are scanned (and which findings
+become action items); `INDEX.md` states what was not scanned rather than
+claiming an exact whole-repo backlog.
 
 | Key               | Value                | Notes                                                                                                                                                                                                                           |
 | ----------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `categories`      | `all`                | `all`, or a comma-separated list of category names (`imports`, `types`, …)                                                                                                                                                      |
 | `output-root`     | `docs/audit`         | Where audit runs land (`<output-root>/<RUN_ID>/`). Relative, no `..`.                                                                                                                                                           |
-| `fallow`          | `required`           | `required` stops if Fallow is missing or out of range. `optional` continues with grep-only detectors.                                                                                                                           |
+| `fallow`          | `required`           | Fallow is required for every audit. Missing or out-of-range Fallow is a hard stop — install a compatible local version (re-run setup with audit installed, or add the pin). There is no optional / grep-only degraded mode.                                                                      |
 | `scan-extensions` | `.ts, .tsx, .vue`    | Comma-separated file extensions (with leading dot) for grep and `source-scan`. **Absent means default:** `.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`, `.mts`, `.cts`. Setup writes a tailored list after observing frameworks. |
-| `mode`            | `all`                | `all` expands every finding. `changed-since` expands only findings that touch code changed since `baseline-ref`.                                                                                                                |
+| `mode`            | `all`                | `all` scans every selected category across the layout. `changed-since` scans only files changed since `baseline-ref` (and expands action items from that scan).                                                                                                                                |
 | `baseline-ref`    | `[commit sha]`       | Required when `mode: changed-since`. Omit the row when `mode` is `all`.                                                                                                                                                         |
 | `baseline-date`   | `[YYYY-MM-DD]`       | Human-readable capture date. Informational; never parsed.                                                                                                                                                                       |
 | `commits`         | `ask`                | `ask` keeps today's question. `per-item` commits without asking. `never` never asks and never commits — edits stay unstaged.                                                                                                    |
@@ -241,8 +243,9 @@ Architecture reports derive from the same root: `docs/audit` →
 `<output-root>/architecture-review`.
 
 `mode: changed-since` without a resolvable `baseline-ref` is an error
-at audit time, not a silent fallback to `all`. Out-of-scope findings
-stay in `findings.md` and are counted as a backlog in `INDEX.md`.
+at audit time, not a silent fallback to `all`. Files and categories
+outside this run's scan stay out of `findings.md`; `INDEX.md` states
+what was not scanned rather than claiming an exact whole-repo backlog.
 
 Unknown keys are ignored. A typo in a known value, or a `subject-format`
 with no `<slug>`, is an error at audit time, not a silent default.

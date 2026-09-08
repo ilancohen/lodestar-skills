@@ -130,6 +130,7 @@ export function remediation(contract, details, extras = {}) {
       `Supported version: ^${contract.tool_version} (schema ${contract.schema_version} or newer, fields must be intact).`,
       `Received schema/kind: ${schema}/${kind}.`,
       `Fallow ${installed} changed fields the audit reads. Pin to the last known-good version with: ${install}`,
+      "Or re-run lodestar-setup with lodestar-audit installed so setup prepares the declared local Fallow.",
     ].join(" ");
   }
 
@@ -145,6 +146,7 @@ export function remediation(contract, details, extras = {}) {
     `Supported version: ${range} (schema ${contract.schema_version} or newer).`,
     `Received schema/kind: ${schema}/${kind}.`,
     `Install a compatible version with: ${install}`,
+    "Or re-run lodestar-setup with lodestar-audit installed so setup prepares the declared local Fallow.",
   ].join(" ");
 }
 

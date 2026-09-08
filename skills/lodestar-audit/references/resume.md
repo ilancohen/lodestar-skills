@@ -74,6 +74,7 @@ the failed category.
 | After checkpoint      | skip completed categories                                |
 | During Plan           | skip existing `NNN-*.md`, continue                       |
 | Done, backlog remains | flip the slice's `in_scope`, Plan only — do not Discover |
+| Done, widen scan      | Discover only new files/categories; merge; do not rescan |
 
 To re-run Plan from scratch after editing `findings.md`, delete
 `NNN-*.md` and `INDEX.md` in that run directory only. To promote a
@@ -82,10 +83,20 @@ backlog slice, do **not** delete them — see below.
 ## Promote a backlog slice
 
 Do not re-run Discover. Keep `findings.md`. Flip `in_scope: true` on
-the slice to promote (one category, one package, or every finding),
-then re-run Phase 2. Existing `NNN-*.md` files are skipped, so
-promotion is additive. Numbering continues from the highest existing
-ID (`003` on disk → next file is `004`). Rewrite `INDEX.md` so the
-Backlog table matches what remains out of scope.
+the slice to promote (recommended low-risk / one category / one package /
+every finding), then re-run Phase 2. Existing `NNN-*.md` files are
+skipped, so promotion is additive. Numbering continues from the highest
+existing ID (`003` on disk → next file is `004`). Rewrite `INDEX.md` so
+the Backlog table matches what remains compact.
 
-This is how old code is chipped away: cheap, no second scan.
+This is how compact findings are expanded: cheap, no second scan.
+
+## Widen scan scope
+
+When the user adds files or categories after Discover has started:
+
+1. Diff against `.checkpoint.json` `scannedFiles` /
+   `completedCategories`.
+2. Discover **only** the newly selected slice.
+3. `merge-findings` into the existing run.
+4. Do not rescan completed categories over already-scanned files.

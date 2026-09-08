@@ -2,34 +2,34 @@
 
 [`fallow`](https://docs.fallow.tools) is a Rust-native codebase-intelligence
 tool for TS/JS that builds a project-wide module graph in milliseconds. It is
-**required** unless `## Audit Configuration` records `fallow: optional`. Several
+**required** for every audit. Setup prepares a declared local compatible
+install when the installed skill set includes `lodestar-audit`. Several
 detection categories have no viable alternative — `imports.unused-file`,
 `imports.unused-dependency`, and `imports.unresolved-import` are fallow-only,
-and the accuracy of several other categories degrades significantly without it.
+and the accuracy of several other categories depends on the seed.
 
-When `fallow` is `optional` and the seed cannot run, skip this file's
-commands, run grep-only detectors, and list the unchecked subtypes in
-`INDEX.md` (`imports` #7–#9, `dry` A, `soc-yagni` A ranking).
-`boundaries` B is grep-only and still runs.
+When Fallow is missing or invalid, **stop**. Print the contract remediation
+(exact install or re-run `lodestar-setup` with audit installed). Do not
+run grep-only detectors in place of the seed.
 
 ---
 
 ## When to use this seed
 
 Run the seed **once** at the start of Discover, after
-package-set resolution and before iterating categories. Cache the JSON in memory; each category sub-doc consumes the
-relevant slice.
+package-set and scan-file resolution and before iterating categories.
+Validate the declared local version once at startup. Cache the JSON in
+memory; each category sub-doc consumes the relevant slice.
 
 Supported Fallow version and schema live in
 `scripts/fallow-contract.json`. Resolve the binary, run the combined seed,
 and validate the envelope **before** any findings are written. Do not use
-`|| true` — exit 0/1 are success; exit 2 and contract failures stop the
-audit when `fallow` is `required`. When `fallow` is `optional`, print the
-remediation message, skip the seed, and continue Discover.
+`|| true` — exit 0/1 are success; exit 2 and contract failures **stop**
+the audit.
 
 ```bash
 # Scripts live under the installed lodestar-audit skill. --out must be under <repo>.
-# required: non-zero stops. optional: print, skip seed, continue.
+# Non-zero always stops — there is no optional / degraded path.
 node scripts/fallow-contract.mjs resolve-bin --root <repo>
 node scripts/fallow-contract.mjs run \
   --root <repo> \
@@ -39,23 +39,17 @@ node scripts/fallow-contract.mjs run \
 
 ```powershell
 node scripts/fallow-contract.mjs resolve-bin --root <repo>
-if ($LASTEXITCODE -ne 0) {
-  if ("<fallow>" -eq "optional") { Write-Host "skip seed; continue Discover"; return }
-  throw "fallow contract failed"
-}
+if ($LASTEXITCODE -ne 0) { throw "fallow contract failed" }
 node scripts/fallow-contract.mjs run --root <repo> --id combined --out <repo>/.audit-fallow-seed.json
-if ($LASTEXITCODE -ne 0) {
-  if ("<fallow>" -eq "optional") { Write-Host "skip seed; continue Discover"; return }
-  throw "fallow contract failed"
-}
+if ($LASTEXITCODE -ne 0) { throw "fallow contract failed" }
 ```
 
 On failure the script prints one remediation message with the installed
-version, supported version, received schema/kind, and the install command
-for this repo's package manager. When `fallow` is `required` (the default),
-stop and report that message — do not create or change findings. When
-`fallow` is `optional`, print the message, skip the seed, and continue
-Discover with grep-only detectors. Two distinct failure modes:
+version, supported version, received schema/kind, the install command
+for this repo's package manager, and a `lodestar-setup` re-run hint.
+Stop and report that message — do not create or change findings.
+
+Two distinct failure modes:
 
 - **Version below the floor** — message suggests upgrading:
   `pnpm add -D fallow@^3.15.0` (or the npm / yarn equivalent). If the
@@ -76,6 +70,10 @@ re-verification.
 Phase 1 completes; never commit it. (The audit skill is read-only outside
 `<output-root>/` (default `docs/audit/`), but the seed is allowed in the repo root because it's
 ephemeral and reproducible.)
+
+When Discover uses a changed-file scan list, still run the combined seed
+(project graph), then **filter** seed hits to paths in the scan list before
+emitting findings.
 
 ---
 
@@ -127,7 +125,8 @@ schema excludes those files from analysis entirely, so `dupes` and
 
 If `.fallowrc.json` is absent, fallow still produces useful output for
 every other field above — `check.boundary_violations` is just empty. In that
-case, `imports` #6 falls back to its grep heuristic.
+case, `imports` #6 falls back to its grep heuristic (still within the scan
+file list).
 
 To verify the boundary config matches what the audit expects, run:
 
@@ -167,8 +166,9 @@ grep- and domain-judgment detectors:
 - `soc-yagni.B` (boolean flag params) — signature inspection, not graph
 - `soc-yagni.C` (optional param with no caller)
 
-For these, the existing grep + per-package LLM walk in each sub-doc
-remains the only detector.
+For these, run deterministic `source-scan` / grep recipes in the
+orchestrator, then a bounded judgment pass only when candidates need it.
+Never spawn mechanical per-package sub-agents.
 
 ---
 

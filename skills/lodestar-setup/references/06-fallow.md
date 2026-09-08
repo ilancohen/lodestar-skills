@@ -4,11 +4,11 @@
 siblings.** No Fallow check, download, or target-repository write.
 
 The audit skill **requires** [fallow](https://docs.fallow.tools) as the
-primary graph-based detector for `imports`, `dry`, and `soc-yagni`
-unless `## Audit Configuration` records `fallow: optional`. Configured, it
-also supplies wrong-direction findings when Dependency Policy (or
-`.fallowrc.json` boundaries from the live graph) allows them. Without
-`.fallowrc.json`, boundaries fall back to a heuristic grep.
+primary graph-based detector for `imports`, `dry`, and `soc-yagni`.
+There is no `fallow: optional` path. Configured, it also supplies
+wrong-direction findings when Dependency Policy (or `.fallowrc.json`
+boundaries from the live graph) allows them. Without `.fallowrc.json`,
+boundaries fall back to a heuristic grep.
 
 Honor the permissions-screen ticks. Ask nothing here.
 

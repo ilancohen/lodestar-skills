@@ -165,7 +165,11 @@ If the fix would move logic between packages and the layout itself is
 unclear, mark `requires_decision: true` and add a note suggesting
 `lodestar-architecture`.
 
-## Scope rules (must appear verbatim in generated action items)
+## Scope exceptions (item-specific only)
+
+Do **not** copy this block into every action item. Put only unusual
+overrides into `## Scope exceptions`. Category defaults stay in this
+doc for the auditor; `lodestar-fix` applies its resident generic rules.
 
 - One entity / route / function / concept per commit.
 - Update all call sites in the same commit.

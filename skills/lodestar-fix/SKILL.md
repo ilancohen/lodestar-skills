@@ -132,10 +132,23 @@ If the run root has `in_progress` or `deferred`, load
 ## Rules
 
 - **Read each item before acting.** The action item is the contract —
-  not a category template. Per-item scope and `files:` bind the executor.
-- **Scope rules are stop conditions.** Hitting one → `status: deferred`,
+  evidence, files, requested change, decision, scope exceptions, and
+  acceptance. Do not load whole category documents; the item must stand
+  alone with these resident rules.
+- **Resident safety (always).** Apply unless the item's **Scope
+  exceptions** or **Acceptance check** override them:
+  - Edit only paths in `files:` (plus paths named in Scope exceptions).
+  - Do not rewrite unrelated dirty hunks; stop on dirty listed files.
+  - Never `git add -A`; stage only the item's files.
+  - Honor stop conditions in Scope exceptions; hitting one → `deferred`.
+  - Run the item's Acceptance check; when it names `<typecheck>` /
+    `<lint>` / `<test>`, use context commands (`n/a` skips that cell).
+  - One concern per item — do not expand into multi-stage redesign
+    (`lodestar-plan`).
+- **Scope exceptions are stop conditions.** Hitting one → `status: deferred`,
   never "ignore and proceed".
-- **`requires_decision: true` always asks.** Even under a bulk pick.
+- **`requires_decision: true` always asks.** Even under a bulk pick. Use
+  the item's **Decision** section when present.
 - **Never modify the body of an action-item file.** Only frontmatter
   gains `status:`, `completed_at:`, `commit:`, `note:`. Problem / fix /
   scope / acceptance stay immutable.

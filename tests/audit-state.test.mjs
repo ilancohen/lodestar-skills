@@ -10,6 +10,7 @@ import {
   applyChangedFiles,
   assignIds,
   architectureOutputRoot,
+  filterPathsUnderRoots,
   CATEGORIES,
   CATEGORY_SUBTYPES,
   CONVENTION_DEFAULTS,
@@ -433,12 +434,29 @@ test("applyChangedFiles keeps advisory findings in scope", () => {
   assert.equal(findings[0].in_scope, true);
 });
 
-test("applyChangedFiles without a changed set marks every finding in scope", () => {
+test("applyChangedFiles without a changed set keeps compact findings", () => {
   const findings = applyChangedFiles(
     [sampleFinding({ in_scope: false })],
     null,
   );
-  assert.equal(findings[0].in_scope, true);
+  assert.equal(findings[0].in_scope, false);
+  const expanded = applyChangedFiles([sampleFinding()], null, "all");
+  assert.equal(expanded[0].in_scope, true);
+  const compact = applyChangedFiles(
+    [sampleFinding({ in_scope: true })],
+    null,
+    "none",
+  );
+  assert.equal(compact[0].in_scope, false);
+});
+
+test("filterPathsUnderRoots keeps only files inside package roots", () => {
+  const kept = filterPathsUnderRoots(
+    ["packages/api/src/a.ts", "other/x.ts", "packages/core/b.ts"],
+    ["packages/api", "packages/core"],
+    "/repo",
+  );
+  assert.deepEqual(kept, ["packages/api/src/a.ts", "packages/core/b.ts"]);
 });
 
 test("missing in_scope in findings.md defaults to true and still validates", () => {
@@ -1009,11 +1027,12 @@ test("pre-0.9 section names fail closed with a re-run-setup remedy", () => {
   );
 });
 
-test("parseAuditSettings parses fallow optional", () => {
-  const parsed = parseAuditSettings(
-    auditSettingsMarkdown([["fallow", "optional"]]),
+test("parseAuditSettings rejects fallow optional", () => {
+  assert.throws(
+    () =>
+      parseAuditSettings(auditSettingsMarkdown([["fallow", "optional"]])),
+    /fallow: optional.*no longer supported|Fallow is required/i,
   );
-  assert.equal(parsed.fallow, "optional");
 });
 
 test("parseAuditSettings parses scan-extensions", () => {

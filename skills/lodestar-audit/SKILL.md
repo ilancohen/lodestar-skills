@@ -13,19 +13,21 @@ license: MIT
 compatibility: >-
   Requires git, a POSIX-compatible shell, Node.js, and Fallow ^3.15.0
   (combined schema 10 or newer) declared in root package.json and
-  installed under node_modules/.bin unless Audit Configuration records
-  fallow optional.
-  Designed for JavaScript/TypeScript repositories. Lockfiles detect npm, pnpm, yarn, and Bun; other managers via context.md. No Deno or Bazel.
+  installed under node_modules/.bin. Designed for JavaScript/TypeScript
+  repositories. Lockfiles detect npm, pnpm, yarn, and Bun; other managers
+  via context.md. No Deno or Bazel.
 metadata:
   author: Ilan Cohen
   version: "0.17.0"
 ---
 
 You are running a lodestar audit. **Discover** and
-**document** violations as self-contained action items. Do not fix them.
+**document** violations as compact findings, then expand a chosen slice
+into single-concern action items. Do not fix them.
 
-Each action-item file must stand alone: an agent reading only that file
-should have everything needed to land the fix.
+Each action-item file is a contract for `lodestar-fix`: evidence, files,
+requested change, decision (when needed), scope exceptions, and
+acceptance — without repeating generic executor boilerplate.
 
 Scripts live beside this `SKILL.md` under `scripts/`. Run them with
 `node scripts/<name>.mjs` from this skill directory, or with an absolute
@@ -64,10 +66,12 @@ This audit is **structure-agnostic**. It does not assume roles like
    the installed `lodestar-setup/principles.md`. Absent means principles
    only. Do not invent extra checklist items beyond that list.
 5. `## Audit Configuration` — optional category subset, `output-root`
-   (default `docs/audit`), and `fallow` (default `required`).
+   (default `docs/audit`). Fallow is always required (omit `fallow` or
+   set `required`; `optional` is rejected).
 
-Detectors run package-by-package. Kind-of-code rules use the
-Responsibility column and path patterns, never the package name alone.
+Detectors run against the **selected file and category scope**. Kind-of-code
+rules use the Responsibility column and path patterns, never the package
+name alone.
 
 ---
 
@@ -78,13 +82,14 @@ Phase 1 — DISCOVER     →  <output-root>/<RUN_ID>/findings.md
 Phase 2 — PLAN         →  <output-root>/<RUN_ID>/INDEX.md + NNN-….md files
 ```
 
-`findings.md` is the seam. Discover writes finding blocks only — the
-same set under every scope. Plan expands in-scope findings into action
+`findings.md` is the seam. Discover writes finding blocks only — limited
+to the scan scope. Plan expands a **chosen slice** of findings into action
 items. A human may edit `findings.md` between phases, including flipping
-`in_scope`. Both phases are restartable with the same `<RUN_ID>`. The first run
-under a scope is the working set; `INDEX.md`'s Backlog says how much is
-left and where; a later session promotes one category or package at a
-time without re-discovering.
+`in_scope`. Both phases are restartable with the same `<RUN_ID>`.
+`INDEX.md` reports compact (not expanded) findings and states what was
+not scanned; it does not invent an exact whole-repo backlog for unscanned
+code. A later session promotes one category or package at a time without
+re-discovering completed scope.
 
 Never overwrite a previous run. Output stays under
 `<output-root>/<RUN_ID>/` (`outputRoot` from `validate-input` /
@@ -109,8 +114,8 @@ If that command exits non-zero, print its error and stop. It rejects a
 missing Package Layout, placeholder Responsibilities (shorter than 20
 characters, `TODO`/`TBD`/`???`/`one sentence`, or a bare noun like
 `core`), a `Scannable: yes` row with zero TypeScript or JavaScript
-files, an unparseable `## Conventions` value, and an unparseable
-`## Audit Configuration` value.
+files, an unparseable `## Conventions` value, an unparseable
+`## Audit Configuration` value, and `fallow: optional`.
 
 Then, unless the user is resuming an existing run, run:
 
@@ -150,6 +155,10 @@ installed setup skill's `principles.md`. Absent means principles only
 `SKILL.md`). Do not bake in repo-specific checklist items beyond those
 paths.
 
+Validate Fallow once at startup (`fallow-contract resolve-bin`). Missing
+or invalid Fallow is a hard stop with the install / setup remedy — never
+degrade to grep-only audit.
+
 ---
 
 ## Categories
@@ -161,7 +170,7 @@ load `references/`.
 
 | Category      | Sub-doc                     | Risk        | Detection style               | Gated by (see `activeDetectors` from `validate-input`)   |
 | ------------- | --------------------------- | ----------- | ----------------------------- | -------------------------------------------------------- |
-| `imports`     | `categories/imports.md`     | low         | mechanical (Fallow preferred) | `#4` when `barrel-exports` is `yes`; `#6` single-package |
+| `imports`     | `categories/imports.md`     | low         | mechanical (Fallow)           | `#4` when `barrel-exports` is `yes`; `#6` single-package |
 | `types`       | `categories/types.md`       | low         | mechanical                    | `#4` when `branded-types` is `no`                        |
 | `boundaries`  | `categories/boundaries.md`  | medium–high | mechanical                    | `A` when `branded-types` is `no`; `B` single-package     |
 | `errors`      | `categories/errors.md`      | high        | mechanical                    | `B` when `result-types` is `no`                          |
@@ -197,8 +206,8 @@ writing or merging `findings.md`.
    If `inProgress` is empty, look at the latest run directory under
    `outputRoot` (not only today's date). When `INDEX.md` exists and
    `findings.md` has any `in_scope: false` (or `## Backlog` total >
-   0), offer: "The last audit left `<N>` problems in its backlog without
-   fix instructions. Want me to write those up now, instead of scanning
+   0), offer: "The last audit left `<N>` findings without fix
+   instructions. Want me to write those up now, instead of scanning
    again? (write them up / scan again)". On the first: `--resume` that id,
    **skip Discover**, flip `in_scope: true` on the chosen slice (one
    category, one package, or all), re-run Plan only. Do not re-merge. Do
@@ -219,17 +228,17 @@ writing or merging `findings.md`.
    when the stored subset already matches. This edits `context.md`, not
    application source.
 5. If `validate-input` `scope.mode` is `changed-since`, say in plain words
-   that setup limited fix instructions to code changed since `<date>`, and
-   that everything else is still found but only listed. Then offer, for
-   **this run only** (do not write the answer to `context.md`): keep it
-   that way / write up everything / write up the backlog for one area /
-   write up the backlog for one package. Widen-all → omit
-   `--changed-files`. One category or package → after merge, flip those
-   findings to `in_scope: true` before Phase 2. Say that widening here
-   changes this run only, not the setting.
-6. After Discover, ask: "Want me to write up fix instructions for these
-   now, or stop here? (write them up / stop)". If they stop, stop. The run
-   stays resumable.
+   that setup limited this audit to code changed since `<date>`, and that
+   the rest of the repo will **not** be scanned (no exact backlog count for
+   unscanned paths). Then offer, for **this run only** (do not write the
+   answer to `context.md`): keep that file scope / widen to all files /
+   widen to one package's files. Widening starts Discover only for newly
+   selected files and merges into this run — it does not rescan completed
+   scope. Say that widening here changes this run only, not the setting.
+6. After Discover, ask which slice needs fix instructions: recommended
+   low-risk items in the current scan scope / one category / one package /
+   all / stop. Expand only that slice; preserve the rest as compact
+   findings. If they stop, the run stays resumable.
 
 Skip steps 4–6 and Discover when step 2 chose promote.
 
@@ -240,15 +249,17 @@ Do not scan before those confirmations.
 ## Discover (Phase 1)
 
 Follow [references/discover.md](references/discover.md) for package set,
-Fallow seed, passes, merge, validate, and checkpoints. Discovery never
-modifies application source — allowed writes are under Rules.
+file/category scope, Fallow seed, passes, merge, validate, and
+checkpoints. Discovery never modifies application source — allowed writes
+are under Rules.
 
 ---
 
 ## Plan (Phase 2)
 
-Follow [references/plan.md](references/plan.md) for recover, grouping,
-numbering, action items, INDEX (incl. blind spots), and category order.
+Follow [references/plan.md](references/plan.md) for recover, expansion
+slice, grouping, numbering, action items, INDEX (incl. blind spots), and
+category order.
 
 ---
 
@@ -258,25 +269,32 @@ numbering, action items, INDEX (incl. blind spots), and category order.
   an optional consented `## Audit Configuration` edit, the transient
   `.audit-fallow-seed.json`, plus `.agents/lodestar/fallow-compat.json`
   when a newer Fallow schema is accepted.
-- **Consent first.** Category subset and Phase 2 start are questions.
-  Wait for answers.
+- **Consent first.** Category subset, file-scope widen, and Plan expansion
+  slice are questions. Wait for answers.
 - **Stop conditions:** missing setup files; `validate-input` failure
-  (including a `Scannable: yes` package with zero scannable files);
-  freshness drift when the user chooses stop; Fallow missing or invalid
-  when `fallow` is `required`; required commands missing; the user says
-  stop.
+  (including a `Scannable: yes` package with zero scannable files, or
+  `fallow: optional`); freshness drift when the user chooses stop; Fallow
+  missing or invalid; required commands missing; the user says stop.
+- **Scoped work.** Detectors honor the scan file list and category set.
+  Work scales with selection.
 - **In-scope only.** Write an action item only for `in_scope: true`.
-  The backlog is reported in `INDEX.md`, never silently dropped.
-- **One concern per action item.** Split "and also…".
-- **Self-contained.** No "see the audit skill" in generated files.
+  Compact findings are reported in `INDEX.md` Backlog, never silently
+  dropped.
+- **One concern per action item.** Split "and also…". Multi-stage redesign
+  → `lodestar-plan`.
+- **Lean contracts.** No "see the audit skill", no ready-made executor
+  prompts, no copied category Scope rules blocks in generated files.
 - **No placeholder leaks.** Treat any `<typecheck>`-style leftover as a
   bug; `validate-output` must pass.
 - **`requires_decision: true`** is the default for semantic findings.
 - **Don't fix.** Don't propose layout changes; mention
   `lodestar-architecture` in `notes:` if needed.
+- **No mechanical sub-agent fan-out.** Deterministic recipes run in the
+  orchestrator; bounded judgment sub-agents only for semantic candidates.
 - **Restartable.** Interrupted runs resume from checkpoints. Past run
-  directories are never replaced. Promoting a backlog slice may append
-  `NNN-*.md` files and rewrite `INDEX.md` in that same run.
+  epochs are never replaced. Promoting a backlog slice may append
+  `NNN-*.md` files and rewrite `INDEX.md` in that same run. Widening
+  discovery merges without rescanning completed scope.
 
 ---
 
@@ -287,3 +305,5 @@ from the last checkpoint. To re-run Plan from scratch after editing
 `findings.md`, delete `NNN-….md` plus `INDEX.md` first. To **promote a
 backlog slice**, keep those files: skip Discover, flip `in_scope` on
 the slice, re-run Plan so new files append and `INDEX.md` is rewritten.
+To **widen scan scope**, Discover only the newly selected files or
+categories and merge.

@@ -1,20 +1,30 @@
 {
   "id": "mixed-vue-scoped-audit-resume",
   "title": "Mixed monorepo with .vue, category/scope selection, interrupt, next-day resume",
-  "skills": ["lodestar-setup", "lodestar-audit"],
+  "skills": [
+    "lodestar-setup",
+    "lodestar-audit"
+  ],
   "fixture": "tests/fixtures/repos/fresh-workspace",
-  "install": ["lodestar-setup", "lodestar-audit", "lodestar-fix"],
+  "install": [
+    "lodestar-setup",
+    "lodestar-audit",
+    "lodestar-fix"
+  ],
   "steps": [
     "Ensure scan-extensions include .vue (or equivalent fixture source).",
     "Run lodestar-audit with a category subset and changed-since or package scope.",
     "Interrupt mid-discover or mid-plan; stop the session.",
     "Resume on a later calendar day from findings.md / checkpoints.",
-    "Record usage.resume success|failed and artifact bytes."
+    "Record usage.resume success|failed, before/after run cost fields, and artifact bytes."
   ],
   "asserts": {
     "supportsVue": true,
     "supportsScopeSelection": true,
     "supportsInterruptResume": true,
-    "skillsCovered": ["lodestar-setup", "lodestar-audit"]
+    "skillsCovered": [
+      "lodestar-setup",
+      "lodestar-audit"
+    ]
   }
 }

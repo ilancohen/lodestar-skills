@@ -1,7 +1,11 @@
 {
   "id": "single-package-setup-audit-fix",
   "title": "Small single-package TypeScript setup → audit → fix",
-  "skills": ["lodestar-setup", "lodestar-audit", "lodestar-fix"],
+  "skills": [
+    "lodestar-setup",
+    "lodestar-audit",
+    "lodestar-fix"
+  ],
   "fixture": "tests/fixtures/repos/single-package",
   "install": [
     "lodestar-setup",
@@ -12,10 +16,15 @@
     "Run lodestar-setup on the single-package TypeScript fixture.",
     "Run lodestar-audit for a full discovery + plan.",
     "Run lodestar-fix on a small batch of action items.",
-    "Record usage and seeded quality with evidence paths."
+    "Record usage and seeded quality with evidence paths.",
+    "Record before/after run cost (model calls, tokens when exposed, elapsed, shell commands, questions) and artifact bytes."
   ],
   "asserts": {
     "mutationWorkflow": "lodestar-fix",
-    "skillsCovered": ["lodestar-setup", "lodestar-audit", "lodestar-fix"]
+    "skillsCovered": [
+      "lodestar-setup",
+      "lodestar-audit",
+      "lodestar-fix"
+    ]
   }
 }

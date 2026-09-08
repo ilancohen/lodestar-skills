@@ -402,6 +402,10 @@ test("remediation names installed version, range, schema/kind, and install comma
   assert.match(message, /Supported version: \^3\.15\.0 \(schema 10 or newer\)/);
   assert.match(message, /Received schema\/kind: 9\/combined/);
   assert.match(message, /npm install --save-dev fallow@\^3\.15\.0/);
+  assert.match(
+    message,
+    /re-run lodestar-setup with lodestar-audit installed/i,
+  );
   assert.doesNotMatch(message, /ask which package manager/);
 });
 

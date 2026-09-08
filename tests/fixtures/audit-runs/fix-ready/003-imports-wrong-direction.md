@@ -20,9 +20,10 @@ findings: F0002
 
 1. Ask which inversion to use, then remove the api import.
 
-## Scope rules
+## Decision
 
-Do not modify files outside `files:`. Ask before editing.
+Yes: remove the api import from core (or move the call site). No: skip.
+Defer: leave deferred until Dependency Policy is clear.
 
 ## Acceptance check
 

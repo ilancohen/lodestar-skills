@@ -1,9 +1,9 @@
 # Category: `dry`
 
 Duplicated logic, structurally similar code, and "wide-diff" smell.
-Mostly **semantic** — LLM-driven analysis, optionally seeded by a clone
-detector. Action items in this category almost always require a human
-or LLM to read the cited code and decide on the right shape; mark
+Mostly **semantic** — Fallow seeds candidates; bounded judgment confirms
+structural clones. Action items in this category almost always require a
+human or LLM to read the cited code and decide on the right shape; mark
 `requires_decision: true` by default unless the duplication is exact and
 trivial to extract.
 
@@ -51,10 +51,11 @@ table in `context.md`. Substitute before running.
 
 ### Preferred: fallow seed
 
-If `.audit-fallow-seed.json` exists from Discover, parse `dupes.clone_groups[]`:
+Parse `dupes.clone_groups[]` from `.audit-fallow-seed.json` (required):
 
 - Each entry is one clone family. Every `instances[]` item provides `file`,
-  `start_line`, and `end_line`. Emit one finding per clone family for **A**.
+  `start_line`, and `end_line`. Emit one finding per clone family for **A**,
+  filtered to the scan file list.
 - For **B**, run a second pass in semantic mode (catches renamed-variable /
   renamed-literal clones the default mild mode misses):
 
@@ -66,31 +67,27 @@ If `.audit-fallow-seed.json` exists from Discover, parse `dupes.clone_groups[]`:
   ```
 
   Parse only a `kind: "dupes"` envelope with the contracted
-  `schema_version` (8 or newer); a contract
-  failure stops the audit. Each `clone_groups[]` entry from
-  this run that is **not** also present in the mild-mode output is a B-style
-  finding. Match groups by `fingerprint`. Confirm by reading the bodies
-  before flagging — semantic mode has more false positives than mild. Delete
+  `schema_version` (8 or newer); a contract failure **stops** the audit.
+  Each `clone_groups[]` entry from this run that is **not** also present
+  in the mild-mode output is a B-style candidate. Match groups by
+  `fingerprint`. Confirm with a bounded judgment pass on the clone
+  snippets only — semantic mode has more false positives than mild. Delete
   `.audit-fallow-dupes-semantic.json` after parsing.
 
 ### Grep seed for B
 
 ```bash
-# B — semantic duplication. No shell command. Process:
-#   For each package in <packages> (one at a time, to keep context manageable):
-#     1. List exported functions and top-level utility functions in <pkg_root>.
-#     2. Group them by name pattern (`formatX`, `validateX`, `parseX`, etc.).
-#     3. For each group of 2+, read the bodies and decide:
+# B — semantic duplication. Cheap candidate collection in the orchestrator
+# (no per-package sub-agent). Restrict to the scan file list:
+#   1. List exported / top-level utility functions in those files.
+#   2. Group by name pattern (`formatX`, `validateX`, `parseX`, etc.).
+#   3. For each group of 2+, bounded judgment on the snippets only:
 #        - Same shape, different details → flag for extraction
-#        - Different shapes that happen to share a name → no flag
-#     4. Also scan for repeated patterns across packages — e.g. the same
-#        validation logic copied across multiple packages' handler files.
+#        - Different shapes that share a name → no flag
 #
-#   Heuristic seed (used to focus the semantic pass on likely areas):
-grep -rEn "^(export )?(async )?function [a-z][A-Za-z0-9_]+" \
-  <all_pkg_roots> --include="*.ts" \
-  | awk -F: '{print $1, $NF}' \
-  | sort -k2 | uniq -d -f1
+#   Heuristic seed (focus the judgment pass):
+#   node scripts/source-scan.mjs --pattern '^(export )?(async )?function ' \
+#     --file <each scan path> --cwd <repo>
 ```
 
 ### C — wide-diff smell
@@ -138,15 +135,17 @@ the message describes one logical change.
   for change Y; a missing abstraction is likely). Do not propose a fix —
   the value of the item is in surfacing the smell, not prescribing.
 
-## Scope rules (must appear verbatim in generated action items)
+## Scope exceptions (item-specific only)
 
-- **A** — extraction must preserve behaviour. Update every cited call site
-  in the same commit. No public API changes.
-- **B** — if the proposed abstraction would have fewer than 3 confident
-  call sites after the work (and no evidence of immediate divergence
-  risk), do not extract; record the duplication at two and wait for the
-  third (Rule of Three / DRY). Mark `requires_decision: true`.
-- **C** — advisory only. No code changes prescribed by this action item.
+Do **not** copy this block into every action item. Put only unusual
+overrides into `## Scope exceptions`.
+
+- **A** — extraction must preserve behaviour; update every cited call site
+  in the same commit; no public API changes unless Decision says otherwise.
+- **B** — if the abstraction would have fewer than 3 confident call sites
+  (and no evidence of immediate divergence risk), do not extract; record
+  under Decision / Suggested fix (Rule of Three).
+- **C** — advisory only; no code changes.
 
 ## Acceptance check
 

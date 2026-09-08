@@ -59,28 +59,29 @@ table in `context.md`. Substitute before running.
 
 ### A — file/class with multiple responsibilities (semantic)
 
-**Preferred (with fallow seed):** narrow the LLM-driven walk to files
-flagged as complexity hotspots.
+**Cheap candidates first (orchestrator):** narrow to complexity hotspots
+from the fallow seed, restricted to the scan file list.
 
-1. From `.audit-fallow-seed.json`, collect candidate paths:
+1. From `.audit-fallow-seed.json`, collect candidate paths in the scan
+   list:
    - Every `health.findings[].path` (functions already over threshold).
    - When that set is large or empty, rank `health.file_scores[]` by
      `total_cyclomatic` then `total_cognitive` and take the top paths.
      Prefer `file_scores` rows with `crap_above_threshold > 0` when present.
 
-2. For each file in that set, summarize its responsibility in one
-   sentence. Compare to the owning package's Responsibility column in
-   `context.md`. Flag any that:
+2. For each candidate, use a **bounded judgment** pass only when the
+   orchestrator cannot decide from the snippet alone. Send only the
+   candidate file excerpt plus this subtype's rubric — not the whole
+   package and not unrelated category docs. Flag any that:
    - Need "and" / describe two unrelated nouns; or
    - Describe work outside the package's stated responsibility.
 
-   Skip the same exclusions as the fallback (under 30 lines, index /
-   re-export, type-only).
+   Skip under 30 lines, index / re-export, type-only.
 
-3. After the seed-driven set is processed, extend with any files in
-   `<all_pkg_roots>` over 200 lines that fallow didn't flag — large files
-   often hide responsibility overload even when no individual function is
-   over the complexity threshold.
+3. After the seed-driven set is processed, extend with any files in the
+   scan list over 200 lines that fallow didn't flag — large files often
+   hide responsibility overload even when no individual function is over
+   the complexity threshold.
 
 ### B, C — signature inspection (mechanical, fallow not applicable)
 
@@ -159,17 +160,20 @@ candidates with Fallow's trace envelope (`kind: "trace"`).
   - Move the implementation closer to the single caller and keep it
     unexported.
 
-## Scope rules (must appear verbatim in generated action items)
+## Scope exceptions (item-specific only)
 
-- **A** — describe the responsibilities and the proposed split. Do **not**
-  execute the split inside the action item if it touches more than 3 files;
-  mark `requires_decision: true` and produce a plan only. If the split
-  would move code between packages, also mark `requires_decision: true`
-  and add a note suggesting `lodestar-architecture`.
-- **B**, **C**, **D** — update every call site in the same commit.
+Do **not** copy this block into every action item. Put only the overrides
+that differ from resident `lodestar-fix` rules into `## Scope exceptions`.
+
+- **A** — if the proposed split touches more than 3 files or moves code
+  between packages, keep `requires_decision: true` and describe the split
+  rather than prescribing execution (note `lodestar-architecture` when
+  cross-package).
+- **B**, **C**, **D** — update every call site in the same commit (state
+  in Suggested fix / Acceptance; no need to restate in Scope exceptions
+  unless something unusual applies).
 - For **D**: do not remove the export if any test outside the package
-  imports it. Move the test or revisit.
-- Run `<typecheck>` and `<test>` after every commit.
+  imports it — say so under Scope exceptions when that applies.
 
 ## Acceptance check
 

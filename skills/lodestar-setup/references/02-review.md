@@ -116,8 +116,10 @@ full list stays useful.
 
 Record "only code you touch" as `changed-since`: capture
 `git rev-parse HEAD` and today's `YYYY-MM-DD`. Tell the user the short
-sha, and that older-code problems are still counted, just not written up
-as fixes. Record "all of it" as `mode: all` with no baseline rows.
+sha, and that the audit will **scan only files changed since that
+baseline** — older code is listed in `INDEX.md` as not scanned, not as a
+whole-repo backlog count. They can widen a later audit run to include
+more files. Record "all of it" as `mode: all` with no baseline rows.
 
 **Commit default** — only when audit is installed. `lodestar-fix` will
 **ask each time** before it commits. Do not show commit-message format,

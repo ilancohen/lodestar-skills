@@ -1,19 +1,30 @@
 {
   "id": "plan-implement-dirty-no-commit",
   "title": "Plan → implement with dirty files, no-commit choice, and full review",
-  "skills": ["lodestar-plan", "lodestar-implement"],
+  "skills": [
+    "lodestar-plan",
+    "lodestar-implement"
+  ],
   "fixture": "tests/fixtures/plans/folder-repo",
-  "install": ["lodestar-setup", "lodestar-plan", "lodestar-implement"],
+  "install": [
+    "lodestar-setup",
+    "lodestar-plan",
+    "lodestar-implement"
+  ],
   "steps": [
     "Start with a dirty working tree (unrelated unstaged files).",
     "Run lodestar-plan for a small change; record rigor full.",
     "Run lodestar-implement; choose not to commit when asked.",
     "Confirm plan body stayed immutable and no git add -A.",
-    "Complete full-tier review path without housekeeping rewrite of history."
+    "Complete full-tier review path without housekeeping rewrite of history.",
+    "Record before/after run cost (model calls, tokens when exposed, elapsed, shell commands, questions) and artifact bytes."
   ],
   "asserts": {
     "mutationWorkflow": "lodestar-implement",
     "honorsNoCommit": true,
-    "skillsCovered": ["lodestar-plan", "lodestar-implement"]
+    "skillsCovered": [
+      "lodestar-plan",
+      "lodestar-implement"
+    ]
   }
 }

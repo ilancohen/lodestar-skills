@@ -87,28 +87,63 @@ Never run a command that still contains `<placeholder>` text. The
 Responsibility column is advisory context for judgment detectors, not a
 string to pattern-match.
 
-Every detector runs repo-wide under every scope. Scope is applied when
-findings are merged, never when files are selected.
+## File and category scope (before detectors)
+
+Apply category and changed-file scope **before** any detector work.
+
+1. **Categories** — only categories confirmed in Consent (and present in
+   `activeDetectors`). Skip gated-off categories as above.
+2. **Files** — when `scope.mode` is `changed-since`, resolve the changed
+   set once:
+
+   ```text
+   node scripts/audit-state.mjs changed-files --root <repo> --since <baselineRef>
+   ```
+
+   Intersect with scannable package roots (`filterPathsUnderRoots` /
+   keep only paths under `allPkgRoots`). That intersection is the
+   **scan file list** for this Discover pass. Pass it to every
+   `source-scan` as repeated `--file <path>` (or comma `--files`). Do
+   not walk package trees for files outside the list.
+3. When `scope.mode` is `all`, the scan file list is every scannable
+   source file under `allPkgRoots` (normal `--root` walks).
+
+A changed-code audit scans changed code only. It does **not** scan the
+whole repo to manufacture an exact backlog count. `INDEX.md` states what
+was not scanned; it must not claim an exact whole-repo finding total for
+unscanned paths.
+
+Record the scan file list on checkpoint with
+`--scan-files '<json array>'` so widen/resume knows what is already done.
+
+## Widening an existing run
+
+When the user widens files or categories on a run that already has
+Discover work:
+
+1. Compute the **newly selected** files and/or categories (not already
+   in `.checkpoint.json` `scannedFiles` / `completedCategories`).
+2. Run detectors only for that new slice.
+3. Merge new findings into the existing `findings.md` with
+   `merge-findings` (do not wipe prior findings).
+4. Do **not** rescan completed categories over files already in
+   `scannedFiles`.
 
 ## Fallow seed
 
-Read `categories/fallow-seed.md` once. Run
-`scripts/fallow-contract.mjs` to resolve the binary and validate every
-envelope before writing findings. Cache JSON in memory or write
-`.audit-fallow-seed.json` at the repo root and delete it at the end of
-Phase 1.
+Read `categories/fallow-seed.md` once. Fallow is the audit engine —
+required for every audit. Setup already prepared a declared local
+compatible install because the installed skill set includes
+`lodestar-audit`. Validate that version once at Discover startup via
+`scripts/fallow-contract.mjs`, then run the seed. Cache JSON in memory
+or write `.audit-fallow-seed.json` at the repo root and delete it at the
+end of Phase 1.
 
-If Fallow is missing, out of the supported range, or the envelope fails
-the contract:
-
-- `fallow: required` (default, including a missing `## Audit Configuration`
-  section) — **stop** before writing findings.
-- `fallow: optional` — continue with grep-only detectors. Do not write
-  a seed file. Record for `INDEX.md` that these subtypes were **not
-  checked at all**: `imports` #7–#9, `dry` A, `soc-yagni` A ranking.
-  Put that list at the top of known-blind-spots, not buried. Still run
-  every grep-only detector the category docs name (`boundaries` B is
-  among them).
+If Fallow is missing, out of range, undeclared, or the envelope fails
+the contract: **stop** immediately. Print the script's remediation
+(install / pin / re-run `lodestar-setup` with audit installed). Do not
+write findings. There is no `fallow: optional`, no ephemeral Fallow
+execution, and no grep-only degraded audit mode.
 
 The seed never modifies source.
 
@@ -119,6 +154,9 @@ Order: `imports`, `types`, `boundaries`, `errors`, `testability`,
 UI-bearing packages only). Discover's scan order and Plan's output
 order differ on purpose — do not "fix" them to match.
 
+Run deterministic recipes **in the orchestrator**. Do not spawn
+mechanical per-package sub-agents.
+
 For each category:
 
 1. Open the category sub-doc. Check `activeDetectors` from `validate-input`:
@@ -128,7 +166,8 @@ For each category:
    category's `subtypes` list from `activeDetectors`. Subtypes absent
    from the list are gated off — skip them. Do not re-evaluate gates.
    Prefer `node scripts/source-scan.mjs`
-   recipes over POSIX `grep` pipelines. Iterate `<pkg_root>` per
+   recipes over POSIX `grep` pipelines. When a scan file list exists,
+   pass `--file` for each path; otherwise iterate `<pkg_root>` per
    **scannable** package row with repeated `--root` flags (paths may
    contain spaces). Skip `scannable: no` rows — do not grep them.
 3. Drop false positives in tests and excluded paths from
@@ -141,52 +180,37 @@ For each category:
    afterward. `*.d.ts` and `eslint-disable`-guarded `any` stay dropped.
 4. Append finding objects. Do not write action-item files here.
 5. Checkpoint:
-   `node scripts/audit-state.mjs checkpoint --run-dir <output-root>/<RUN_ID> --category <name> --status complete --count N`
+   `node scripts/audit-state.mjs checkpoint --run-dir <output-root>/<RUN_ID> --category <name> --status complete --count N --scan-files '<json>'`
    A category whose gated subtypes were skipped still checkpoints here
    (count is findings actually emitted, which may be 0).
 
 When resuming, skip categories that already have
 `## category: <name> — complete` in `findings.md`.
 
-## Optional mechanical fan-out
-
-If a sub-agent tool exists and there are 4+ **scannable** packages, spawn one
-sub-agent per scannable package (package row, categories, principle text,
-exclusion list, the `conventions` object, and which categories /
-subtypes this run must skip). Do not spawn for `scannable: no` rows. Sub-agents skip those detectors the same
-way the inline loop does. Constraints: read-only, JSON findings only, no
-`findings.md` writes, no nested spawns, no Fallow re-run. Inline loop
-is canonical when fan-out is unavailable.
-
-Merge with `merge-findings`. Append
-`## skipped: <category> in <package> — sub-agent did not return` for
-missing (package × category) results.
-
 ## Semantic pass
 
-Detectors: `soc-yagni.A`, `dry.B`, `dry.C`. Work one scannable package at a time.
+Detectors: `soc-yagni.A`, `dry.B`, `dry.C`. Work in the orchestrator.
 
-- `soc-yagni.A`: non-trivial source files (≥ 30 lines, not re-export,
-  not type-only). If the file's responsibility needs "and", or sits
-  outside the package Responsibility, write a finding.
-- `dry.B`: group exported functions by name pattern; confirm in code.
-- `dry.C`: exactly one advisory finding per run from recent git
-  history. Orchestrator only; do not fan out.
+1. Collect **cheap candidates** first (Fallow health/dupes seed,
+   `source-scan` heuristics, size thresholds) restricted to the scan
+   file list.
+2. Use a **bounded sub-agent only when evidence needs judgment**. Send
+   only the candidate snippets plus the relevant rubric excerpt — not
+   whole packages or whole category docs. No mechanical fan-out; no
+   one-sub-agent-per-package loop.
+3. `dry.C`: exactly one advisory finding per run from recent git
+   history. Orchestrator only.
 
-Optional fan-out: one sub-agent per package for `soc-yagni.A` and
-`dry.B` (same read-only / structured-return / no-nested-spawn rules).
-
-After each package, record progress in `.checkpoint.json` (`status:
-partial`, `package: <name>`). Only call `checkpoint` with a real
-category name when that category is finished for every package.
+After each package or candidate batch, record progress in
+`.checkpoint.json` (`status: partial`, `package: <name>`). Only call
+`checkpoint` with a real category name when that category is finished.
 
 ## Finish Discover
 
-Merge with `merge-findings`. When `scope.mode` is `changed-since`, pass
-`--changed-files` from `changed-files --root <repo> --since
-<baselineRef>`. Scope is not part of run state — checkpoints and resume
-are unchanged; a run started under one scope can be resumed under
-another.
+Merge with `merge-findings`. Prefer `--expand none` so findings stay
+compact until Plan asks which slice needs fix instructions. Do **not**
+pass `--changed-files` to invent a whole-repo backlog after a scoped
+scan — scope already limited which files were scanned.
 
 Then validate:
 
@@ -196,4 +220,5 @@ node scripts/audit-state.mjs validate-output --path <output-root>/<RUN_ID>/findi
 
 Any unresolved placeholder is a bug. Fix the block in place.
 
-Print finding counts by category. Ask whether to proceed to Plan.
+Print finding counts by category. Ask which slice needs fix
+instructions (see `SKILL.md` Consent step 6 / [plan.md](plan.md)).

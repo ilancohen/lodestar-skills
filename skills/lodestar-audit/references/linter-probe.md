@@ -17,8 +17,8 @@ Delete the cached file at the end of Phase 1 — whether the probe
 succeeded, failed, or the JSON could not be parsed.
 
 When the probe binary is not on `PATH`, prefix with the package manager
-exec (`<run> eslint …`, `npx eslint …`, …) the same way Fallow install
-commands are composed.
+exec (`<run> eslint …`, `npx eslint …`, …) the same way other local
+devDependency binaries are invoked.
 
 ```bash
 LINT_DIR="$(node -e "process.stdout.write(require('node:os').tmpdir())")"

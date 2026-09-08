@@ -129,7 +129,11 @@ output is separately consumed by `dry`.
   repos (server + browser), accept that there may be two such modules
   (one per runtime) but each is itself canonical for its runtime.
 
-## Scope rules (must appear verbatim in generated action items)
+## Scope exceptions (item-specific only)
+
+Do **not** copy this block into every action item. Put only unusual
+overrides into `## Scope exceptions`. Category defaults stay in this
+doc for the auditor; `lodestar-fix` applies its resident generic rules.
 
 - The literals or schemas must mean the same thing semantically, not
   just share a value. Confirm by reading each cited site before

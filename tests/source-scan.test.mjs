@@ -227,3 +227,30 @@ test("explicit-any and inline-style keep configured .vue and .svelte files", () 
     anyFiles,
   );
 });
+
+test("source-scan --file limits hits to listed paths", () => {
+  const tmp = tempDir("lodestar-scan-files-");
+  try {
+    fs.mkdirSync(path.join(tmp, "src"), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, "src", "a.ts"),
+      "export function f(): any { return 1 }\n",
+    );
+    fs.writeFileSync(
+      path.join(tmp, "src", "b.ts"),
+      "export function g(): any { return 1 }\n",
+    );
+    const result = scan([
+      "--recipe",
+      "explicit-any",
+      "--cwd",
+      tmp,
+      "--file",
+      "src/a.ts",
+    ]);
+    assert.equal(result.count, 1);
+    assert.match(result.hits[0].file, /a\.ts$/);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});

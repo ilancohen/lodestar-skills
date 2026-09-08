@@ -269,11 +269,35 @@ export function scan(argv = []) {
     fail("source-scan requires --recipe NAME or --pattern REGEX", 1);
   }
 
+  const fileList = [
+    ...flagList(flags.file),
+    ...flagList(flags.files),
+  ].flatMap((value) =>
+    String(value)
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean),
+  );
+
   const hits = [];
-  for (const root of rootsFrom(flags)) {
-    for (const file of walk(root, searchInclude, excludeTests, [], options)) {
-      if (fileFilter && path.basename(file) !== fileFilter) continue;
-      hits.push(...matchLines(file, regex));
+  if (fileList.length) {
+    const cwd = options.cwd;
+    for (const rel of fileList) {
+      const abs = path.isAbsolute(rel) ? rel : path.resolve(cwd, rel);
+      if (!fs.existsSync(abs) || !fs.statSync(abs).isFile()) continue;
+      if (isExcluded(abs, options.excludeGlobs, cwd, false, cwd)) continue;
+      if (excludeTests && isTestFile(abs, options.testGlobs, cwd, cwd))
+        continue;
+      if (!includeFile(abs, searchInclude)) continue;
+      if (fileFilter && path.basename(abs) !== fileFilter) continue;
+      hits.push(...matchLines(abs, regex));
+    }
+  } else {
+    for (const root of rootsFrom(flags)) {
+      for (const file of walk(root, searchInclude, excludeTests, [], options)) {
+        if (fileFilter && path.basename(file) !== fileFilter) continue;
+        hits.push(...matchLines(file, regex));
+      }
     }
   }
   return { count: hits.length, hits };

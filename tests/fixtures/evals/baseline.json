@@ -1,18 +1,18 @@
 {
   "version": 1,
   "capturedAt": "2026-09-08",
-  "notes": "Stage 05 portable lean setup: Dependency Policy, sibling-gated Fallow, discover-context for architecture/docs, principles resolve from installed setup skill.",
+  "notes": "Stage 06 cheap adaptive audit: file-scoped discovery, required Fallow hard-stop, lean action-item contracts, expansion-slice Plan, no mechanical sub-agent fan-out. Category Scope exceptions + setup/Fallow wording and output-contracts expand defaults aligned after review.",
   "markdownWords": {
     "lodestar-setup": {
-      "words": 12231,
+      "words": 12310,
       "files": 16
     },
     "lodestar-audit": {
-      "words": 16315,
+      "words": 17018,
       "files": 18
     },
     "lodestar-fix": {
-      "words": 2590,
+      "words": 2743,
       "files": 5
     },
     "lodestar-architecture": {

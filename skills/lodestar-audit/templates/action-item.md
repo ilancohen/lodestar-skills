@@ -1,8 +1,8 @@
 <!--
 Template for a single action-item file.
-Replace every <PLACEHOLDER>. Delete sections that don't apply except where
-marked "required". The generated file must be self-contained — assume the
-executor has access only to this file and the repo.
+Replace every <PLACEHOLDER>. Omit ## Decision unless requires_decision is
+true. Omit ## Scope exceptions when resident lodestar-fix rules suffice.
+The file must be understandable alone, without copying whole category docs.
 -->
 
 ---
@@ -22,47 +22,28 @@ findings: <comma-separated F-IDs this action item absorbs, e.g. F0007, F0008>
 
 ## Problem
 
-<2–4 sentences. What's wrong, where, and the principle it violates. Cite the
-principle by name as it appears in the paths under `## Review Rubric` in
-`.agents/lodestar/context.md` (or, when that section is absent, in the
-installed `lodestar-setup/principles.md`)
-(e.g. "Centralize types", "Parse Don't Validate", "CQS"). Include the exact
-file path(s) and, where useful, a short code excerpt.>
-
-## Why this matters
-
-<1–3 sentences linking the violation to a concrete cost: tests that can't
-run in isolation, a duplicated type drifting out of sync, an error that
-crosses a boundary unhandled, etc. No hand-waving — name the failure mode.>
+<2–4 sentences. Concrete evidence: what is wrong, where (paths / short
+excerpt), and which principle it violates by name from `## Review Rubric`
+or installed `lodestar-setup/principles.md`.>
 
 ## Suggested fix
 
-<Step-by-step, numbered. Concrete enough that an agent can execute without
-asking follow-up questions. Reference real file paths. If a new file needs
-to be created, name it and describe its content shape.>
+<Step-by-step, numbered. The requested change only — concrete enough to
+execute. Reference real paths. One concern; no multi-stage redesign.>
 
-## Scope rules
+## Decision
 
-<Copy verbatim from the matching categories/<category>.md sub-doc. These
-rules constrain the executor and define stop conditions.>
+<Required when `requires_decision: true`. State the open choice and what
+yes / no / defer means. Omit this section when `requires_decision: false`.>
+
+## Scope exceptions
+
+<Only item-specific overrides beyond resident lodestar-fix rules (e.g.
+"also update the generated barrel in packages/api/index.ts"). Omit this
+section when there are none.>
 
 ## Acceptance check
 
-<Copy verbatim from the matching categories/<category>.md sub-doc, with
-`<typecheck>`, `<lint>`, `<test>` substituted with the real commands from
-`.agents/lodestar/context.md`.>
-
-## Depends on
-
-<Optional. List of action item IDs that must land first. Omit the section
-entirely if there are no dependencies.>
-
-## Prompt for an agent
-
-<A ready-to-paste prompt the user can drop into an LLM. Should reference
-this file's path. Example:
-
-> Read `<output-root>/<RUN_ID>/<this-file>.md`. Implement the fix exactly as
-> specified. Do not modify files outside the `files:` list. Run
-> `<typecheck>` and `<test>` before committing. If any scope rule is hit,
-> stop and report rather than guessing.>
+<item-specific checks with `<typecheck>` / `<lint>` / `<test>` substituted
+from `.agents/lodestar/context.md`. lodestar-fix also applies its resident
+generic checks unless this section overrides them.>

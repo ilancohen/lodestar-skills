@@ -86,7 +86,11 @@ all #1 findings `requires_decision: true` and explain in `notes:`.
 Never widen a type to fix a compile error. If narrowing breaks something,
 mark `requires_decision: true`.
 
-## Scope rules (must appear verbatim in generated action items)
+## Scope exceptions (item-specific only)
+
+Do **not** copy this block into every action item. Put only unusual
+overrides into `## Scope exceptions`. Category defaults stay in this
+doc for the auditor; `lodestar-fix` applies its resident generic rules.
 
 - No logic changes — type signatures and imports only.
 - One type / one file per commit.
