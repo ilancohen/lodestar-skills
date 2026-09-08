@@ -11,7 +11,7 @@ license: MIT
 compatibility: Works with or without .agents/lodestar/context.md. When context is absent, discovers package layout and commands from the repo; treats live imports as evidence and optional Dependency Policy when context exists. Lockfiles detect npm, pnpm, yarn, and Bun; other managers via context.md. No Deno or Bazel. Does not require Fallow.
 metadata:
   author: Ilan Cohen
-  version: "0.17.0"
+  version: "0.18.0"
 ---
 
 You are running an architecture review. **Describe** and **suggest** —

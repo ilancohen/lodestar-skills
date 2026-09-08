@@ -1,7 +1,7 @@
 {
   "name": "lodestar",
   "displayName": "Lodestar",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "description": "Set up engineering principles, audit repositories, apply scoped fixes, review package architecture, write and execute implementation plans, and optionally prune leftover docs.",
   "author": {
     "name": "Ilan Cohen"

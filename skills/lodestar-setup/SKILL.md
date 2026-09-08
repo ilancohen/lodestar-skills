@@ -12,7 +12,7 @@ license: MIT
 compatibility: Requires filesystem write access and a POSIX-compatible shell. When lodestar-audit is installed, also needs network access if you accept the Fallow install. Lockfiles detect npm, pnpm, yarn, and Bun; other managers via context.md. No Deno or Bazel.
 metadata:
   author: Ilan Cohen
-  version: "0.17.0"
+  version: "0.18.0"
 ---
 
 Write the agent-neutral config the lodestar skills need. The one file that

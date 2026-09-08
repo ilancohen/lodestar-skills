@@ -13,7 +13,7 @@ license: MIT
 compatibility: Requires git and Node.js. Works with or without .agents/lodestar/context.md — discovers docs trees when context is absent. Does not require Fallow. npm, pnpm, yarn, and Bun are detected from lockfiles; any other manager works when recorded in context.md.
 metadata:
   author: Ilan Cohen
-  version: "0.17.0"
+  version: "0.18.0"
 ---
 
 You are running `lodestar-docs`. The job is to **harvest**, then **delete**
