@@ -18,7 +18,7 @@ write that live graph into `context.md`.
 
 ### Resolve fallow, declare in package.json, and install only if ticked
 
-1. Prefer the project copy in `node_modules/.bin` via
+1. Soft `status` then project copy in `node_modules/.bin` via
    `lodestar-audit/scripts/fallow-contract.mjs` — **not** a global
    `PATH` install:
    ```bash

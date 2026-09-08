@@ -25,6 +25,12 @@ const EXPECTED_EXPORTS = [
   "utcDate",
   "printJson",
   "isMain",
+  "posixPath",
+  "capText",
+  "spawnCaptureToTemp",
+  "cleanupCapture",
+  "sortedJson",
+  "sortKeysDeep",
 ];
 
 // Each gateway re-exports only what its own skill uses. This map documents that

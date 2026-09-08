@@ -12,7 +12,7 @@ by name, so it needs no placeholder substitution.
 
 ### .agents/lodestar/context.md
 
-This is the load-bearing file. Start from `context-md.md`. Fill in:
+Prefer `setup-state.mjs write-context`, else fill `context-md.md`:
 
 - One-sentence project description.
 - The exact commands in the Build & Test table. When lint exists, write

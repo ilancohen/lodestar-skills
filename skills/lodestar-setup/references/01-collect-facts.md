@@ -1,5 +1,7 @@
 # Step 1 — Collect the minimum required facts
 
+Prefer `setup-state.mjs collect`. Else:
+
 ### Installed sibling skills
 
 Before anything else, list directories named `lodestar-*` that sit beside

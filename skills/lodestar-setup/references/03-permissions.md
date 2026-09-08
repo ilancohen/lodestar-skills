@@ -11,7 +11,7 @@ about Fallow. Continue with the non-Fallow rows below that still apply.
 When audit **is** installed, before the list, gather what the Fallow
 rows need — do not load another step reference:
 
-- Run `resolve-bin` (same command the fallow procedure will re-run):
+- Soft `status`/collector `fallow`, then `resolve-bin` as fallow will:
   `node <lodestar-audit-skill>/scripts/fallow-contract.mjs resolve-bin --root <repo>`.
   In-range **and** declared in `package.json` **and** present under
   `node_modules/.bin` → omit the install row. Missing declaration,

@@ -778,7 +778,19 @@ async function cmdRun(flags, contract) {
   }
 }
 
+/**
+ * Soft pre-consent status. Prints fallowProjectStatus JSON; never throws for
+ * missing/out-of-range fallow (unlike resolve-bin).
+ *
+ * Usage: node fallow-contract.mjs status --root DIR
+ */
+function cmdStatus(flags, contract) {
+  const root = flags.root || process.cwd();
+  printJson(fallowProjectStatus(root, contract));
+}
+
 const COMMANDS = {
+  status: cmdStatus,
   "resolve-bin": cmdResolveBin,
   validate: cmdValidate,
   run: cmdRun,
@@ -841,7 +853,7 @@ export async function main(argv = process.argv.slice(2)) {
   const command = positionals[0];
   if (!command) {
     process.stderr.write(
-      "Usage: fallow-contract resolve-bin|validate|run|run-liveness [options]\n",
+      "Usage: fallow-contract status|resolve-bin|validate|run|run-liveness [options]\n",
     );
     process.exit(1);
   }
