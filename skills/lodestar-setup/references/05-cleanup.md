@@ -1,15 +1,12 @@
 # Clean up a pre-0.3 install
 
-Older versions of this skill put the `## Build & Test`,
-`## Dependency Direction` (now optional `## Dependency Policy`),
-`## Package Layout`, `## Skills`, and `## Audit Output` sections in
-`AGENTS.md`. If you found any of them there in Step 1, their values now
-live in `context.md`.
+Honor the permissions tick `agents-cleanup` only.
 
-Honor the permissions-screen tick. If the cleanup row was ticked, remove
-only those sections (plus the `## Lodestar` section if
-`ENFORCEMENT_MODE` is `skills-only`) and leave the rest of `AGENTS.md`
-untouched. If it was unticked or omitted, leave `AGENTS.md` as it is —
-and if those sections are still there, tell them `AGENTS.md` now has an
-out-of-date copy that nothing reads, and `context.md` is the one that
-counts.
+If ticked: remove only the listed legacy sections from `AGENTS.md`
+(plus `## Lodestar` when still `skills-only`). Leave everything else.
+
+If unticked or omitted: leave `AGENTS.md` alone. If legacy sections
+remain, note once that `context.md` is the copy that counts.
+
+`record-result` immediately (`changed|skipped|failed` + path + remedy).
+Never invent paths from dirty git.

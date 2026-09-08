@@ -1,11 +1,9 @@
 # Step 0 — Confirm the repo is scannable
 
-Count scannable files by extension across top-level source dirs, excluding
-`node_modules` and `.git` (or collector `scannable`). Use (`.ts`, `.tsx`,
-`.js`, `.jsx`, `.mjs`, `.cjs`, `.mts`, `.cts`) plus any framework
-extensions you already know apply (`.vue`, `.svelte`, …). Count only.
-Tally other extensions (`.py`, `.go`, `.rs`, …) in the same pass.
+Scannability comes from the collector projection (`scannable.total` /
+`counts` / `other`). Do not re-walk the tree.
 
-- **Zero scannable files** → **stop**. Write nothing. Name the
-  languages found with counts. Do not offer a partial setup.
-- **Some scannable, some not** → continue; carry counts into Step 1.
+- **`scannable.total === 0`** → **stop**. Write nothing. Name languages
+  from `other` (and empty `counts`). Do not offer a partial setup.
+- **Some scannable** → continue with the same collect stdout; do not
+  re-run discovery.

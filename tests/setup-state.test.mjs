@@ -10,7 +10,10 @@ import {
   MAX_STDOUT_BYTES,
   STATE_VERSION,
   collectState,
+  composeFallowAddDev,
   mergeContext,
+  prioritizePackagesForReview,
+  projectPermissions,
   projectReview,
   renderContext,
 } from "../skills/lodestar-setup/scripts/setup-state.mjs";
@@ -671,5 +674,444 @@ test("renderContext/mergeContext helpers are deterministic", () => {
     assert.equal(mergeContext(merged, state, corrections), merged);
   } finally {
     fs.rmSync(repo, { recursive: true, force: true });
+  }
+});
+
+test("large and small workspaces share the same stdout byte cap", () => {
+  const small = makeRepo("lodestar-setup-small-cap-", {
+    "package.json": JSON.stringify({ name: "small" }),
+    "pnpm-lock.yaml": "lockfileVersion: 9\n",
+    "src/index.ts": "export {};\n",
+  });
+  const files = {
+    "package.json": JSON.stringify({
+      name: "huge",
+      private: true,
+      workspaces: ["packages/*"],
+    }),
+    "pnpm-lock.yaml": "lockfileVersion: 9\n",
+    "pnpm-workspace.yaml": "packages:\n  - 'packages/*'\n",
+  };
+  for (let i = 0; i < 40; i += 1) {
+    files[`packages/pkg${String(i).padStart(2, "0")}/package.json`] =
+      JSON.stringify({ name: `@repo/pkg${i}` });
+    files[`packages/pkg${String(i).padStart(2, "0")}/src/index.ts`] =
+      "export {};\n";
+  }
+  const large = makeRepo("lodestar-setup-large-cap-", files);
+  const smallOut = path.join(os.tmpdir(), `cap-small-${process.pid}.json`);
+  const largeOut = path.join(os.tmpdir(), `cap-large-${process.pid}.json`);
+  try {
+    const smallRun = run([
+      "collect",
+      "--root",
+      small,
+      "--out",
+      smallOut,
+      "--skill-dir",
+      SETUP_SKILL,
+    ]);
+    const largeRun = run([
+      "collect",
+      "--root",
+      large,
+      "--out",
+      largeOut,
+      "--skill-dir",
+      SETUP_SKILL,
+    ]);
+    assert.equal(smallRun.status, 0, smallRun.stderr);
+    assert.equal(largeRun.status, 0, largeRun.stderr);
+    assert.ok(Buffer.byteLength(smallRun.stdout, "utf8") <= MAX_STDOUT_BYTES);
+    assert.ok(Buffer.byteLength(largeRun.stdout, "utf8") <= MAX_STDOUT_BYTES);
+    const largeState = JSON.parse(fs.readFileSync(largeOut, "utf8"));
+    assert.ok(largeState.layout.packages.length >= 40);
+    const largeProj = JSON.parse(largeRun.stdout);
+    assert.ok(largeProj.layout.packages.length <= 20);
+  } finally {
+    fs.rmSync(small, { recursive: true, force: true });
+    fs.rmSync(large, { recursive: true, force: true });
+    fs.rmSync(smallOut, { force: true });
+    fs.rmSync(largeOut, { force: true });
+  }
+});
+
+test("review projection omits raw git log and fallow envelopes", () => {
+  const state = {
+    stateVersion: 1,
+    siblings: ["lodestar-setup", "lodestar-audit"],
+    hasAudit: true,
+    scannable: { total: 2, counts: { ".ts": 2 }, other: {} },
+    pkgManager: { pkgManager: "pnpm", ambiguous: false, lockfiles: ["pnpm"] },
+    needsInput: [],
+    commands: { test: "pnpm test" },
+    linter: { tool: "eslint", probe: "eslint .", signals: ["x".repeat(200)] },
+    layout: {
+      source: "pnpm-workspace.yaml",
+      packages: [
+        {
+          name: "warn-pkg",
+          path: "packages/warn",
+          alias: "n/a",
+          responsibility: "",
+          scannable: "no",
+          language: "Python",
+          entryPoints: ["index.ts"],
+        },
+        {
+          name: "alpha",
+          path: "packages/alpha",
+          alias: "n/a",
+          responsibility: "",
+          scannable: "yes",
+          entryPoints: ["index.ts"],
+        },
+        {
+          name: "beta",
+          path: "packages/beta",
+          alias: "n/a",
+          responsibility: "",
+          scannable: "yes",
+          entryPoints: ["index.ts"],
+        },
+      ],
+    },
+    docs: { rows: [] },
+    conventions: {
+      suggested: {},
+      evidence: { "result-types": { path: "src/result.ts", found: true } },
+    },
+    rubric: { paths: [] },
+    existing: {},
+    failures: [],
+    importEdges: [
+      { from: "alpha", to: "beta", via: "beta" },
+      { from: "beta", to: "alpha", via: "alpha" },
+    ],
+    frameworks: {
+      frameworks: ["vue"],
+      signals: [{ kind: "dep", name: "vue" }],
+      scanExtensions: [".ts", ".vue"],
+    },
+    exclusions: [],
+    commitPolicy: {
+      suggested: { commits: "ask" },
+      evidence: {
+        commitlint: null,
+        hooks: [],
+        branch: "main",
+        recentSubjects: {
+          count: 3,
+          sample: ["feat: raw subject one", "fix: raw subject two"],
+        },
+      },
+    },
+    auditScope: {
+      noGit: false,
+      fileCount: 100,
+      touched90d: 10,
+      churn: 0.1,
+      modeDefault: "changed-since",
+      firstCommit: "2019-01-01",
+    },
+    fallow: {
+      attempted: true,
+      status: {
+        declared: false,
+        compatible: false,
+        needsDeclare: true,
+        needsInstall: false,
+        needsUpgrade: false,
+        version: null,
+        manager: "pnpm",
+        addDev: "pnpm add -D -w",
+        $schema: "https://example.invalid/fallow-envelope.json",
+        envelope: { huge: true },
+      },
+    },
+  };
+  const text = projectReview(state);
+  assert.ok(Buffer.byteLength(text, "utf8") <= MAX_STDOUT_BYTES);
+  assert.doesNotMatch(text, /feat: raw subject/);
+  assert.doesNotMatch(text, /recentSubjects/);
+  assert.doesNotMatch(text, /fallow-envelope/);
+  assert.doesNotMatch(text, /"envelope"/);
+  const projection = JSON.parse(text);
+  assert.equal(projection.layout.packages[0].name, "warn-pkg");
+  assert.ok(projection.importEdges.cyclicPackages.includes("alpha"));
+  assert.equal(projection.commitPolicy.evidence.recentSubjectCount, 3);
+  assert.equal(projection.conventions.evidenceHits["result-types"], true);
+});
+
+test("permissions projection does not repeat layout or conventions", () => {
+  const repo = makeRepo("lodestar-setup-perm-", {
+    "package.json": JSON.stringify({ name: "perm" }),
+    "pnpm-lock.yaml": "lockfileVersion: 9\n",
+    "src/index.ts": "export {};\n",
+    "AGENTS.md": "# AGENTS\n\n## Package Layout\n\n| name |\n",
+  });
+  const statePath = path.join(os.tmpdir(), `perm-state-${process.pid}.json`);
+  try {
+    const tree = fs.mkdtempSync(
+      path.join(os.tmpdir(), "lodestar-perm-skills-"),
+    );
+    writeSkillsTree(tree, ["lodestar-setup", "lodestar-audit"]);
+    const skillDir = path.join(tree, "lodestar-setup");
+    const collect = run([
+      "collect",
+      "--root",
+      repo,
+      "--out",
+      statePath,
+      "--skill-dir",
+      skillDir,
+    ]);
+    assert.equal(collect.status, 0, collect.stderr);
+    // Force audit + fallow needs for rows even if status script missing.
+    const state = JSON.parse(fs.readFileSync(statePath, "utf8"));
+    state.hasAudit = true;
+    state.linter = { tool: "eslint", probe: null, signals: [] };
+    state.fallow = {
+      attempted: true,
+      status: {
+        declared: false,
+        compatible: false,
+        needsDeclare: true,
+        needsInstall: false,
+        needsUpgrade: false,
+        version: null,
+        manager: "pnpm",
+        addDev: "pnpm add -D -w fallow",
+      },
+    };
+    state.existing = {
+      ...(state.existing || {}),
+      legacyAgentsSections: ["Package Layout"],
+    };
+    fs.writeFileSync(statePath, JSON.stringify(state));
+    const result = run(["permissions-projection", "--state", statePath]);
+    assert.equal(result.status, 0, result.stderr);
+    const projection = JSON.parse(result.stdout);
+    assert.ok(Array.isArray(projection.rows));
+    assert.ok(projection.rows.length >= 2);
+    const blob = JSON.stringify(projection);
+    assert.doesNotMatch(blob, /"packages"/);
+    assert.doesNotMatch(blob, /"conventions"/);
+    assert.doesNotMatch(blob, /"commands"/);
+    assert.ok(projection.rows.every((row) => row.id && row.path));
+    fs.rmSync(tree, { recursive: true, force: true });
+  } finally {
+    fs.rmSync(repo, { recursive: true, force: true });
+    fs.rmSync(statePath, { force: true });
+  }
+});
+
+test("record-result never invents paths from repo dirt", () => {
+  const repo = makeRepo("lodestar-setup-dirt-", {
+    "package.json": JSON.stringify({ name: "dirt" }),
+    "unrelated-dirty.txt": "user edit\n",
+  });
+  const resultsPath = path.join(
+    os.tmpdir(),
+    `dirt-results-${process.pid}.json`,
+  );
+  try {
+    let result = run([
+      "record-result",
+      "--results",
+      resultsPath,
+      "--op",
+      "context",
+      "--status",
+      "changed",
+      "--path",
+      ".agents/lodestar/context.md",
+    ]);
+    assert.equal(result.status, 0, result.stderr);
+    result = run(["summarize-results", "--results", resultsPath]);
+    assert.equal(result.status, 0, result.stderr);
+    const summary = JSON.parse(result.stdout);
+    assert.deepEqual(summary.changed, [".agents/lodestar/context.md"]);
+    assert.ok(!JSON.stringify(summary).includes("unrelated-dirty.txt"));
+    assert.ok(!JSON.stringify(summary).includes(repo));
+  } finally {
+    fs.rmSync(repo, { recursive: true, force: true });
+    fs.rmSync(resultsPath, { force: true });
+  }
+});
+
+test("prioritizePackagesForReview orders unscannable then cyclic then alpha", () => {
+  const ordered = prioritizePackagesForReview(
+    [
+      { name: "zeta", scannable: "yes" },
+      { name: "alpha", scannable: "yes" },
+      { name: "warn", scannable: "no", language: "Go" },
+      { name: "cycle-b", scannable: "yes" },
+      { name: "cycle-a", scannable: "yes" },
+    ],
+    [
+      { from: "cycle-a", to: "cycle-b" },
+      { from: "cycle-b", to: "cycle-a" },
+    ],
+  );
+  assert.equal(ordered[0].name, "warn");
+  assert.deepEqual(
+    ordered.slice(1, 3).map((row) => row.name),
+    ["cycle-a", "cycle-b"],
+  );
+  assert.deepEqual(
+    ordered.slice(3).map((row) => row.name),
+    ["alpha", "zeta"],
+  );
+});
+
+test("composeFallowAddDev pins fallow@^tool_version never bare ranges", () => {
+  assert.match(
+    composeFallowAddDev(
+      { needsDeclare: true, manager: "pnpm", addDev: null, declaredRange: null },
+      { pkgManager: "pnpm" },
+      "3.15.0",
+    ),
+    /pnpm add -D fallow@\^3\.15\.0/,
+  );
+  assert.match(
+    composeFallowAddDev(
+      {
+        needsUpgrade: true,
+        manager: "pnpm",
+        addDev: null,
+        declaredRange: "^3.14.0",
+        version: "3.14.0",
+      },
+      { pkgManager: "pnpm" },
+      "3.15.0",
+    ),
+    /pnpm add -D fallow@\^3\.15\.0/,
+  );
+  assert.doesNotMatch(
+    composeFallowAddDev(
+      {
+        needsInstall: true,
+        manager: "npm",
+        declaredRange: "^3.14.0",
+      },
+      { pkgManager: "npm" },
+      "3.15.0",
+    ),
+    /save-dev \^/,
+  );
+});
+
+test("null fallow status still emits install consent row", () => {
+  const text = projectPermissions({
+    stateVersion: 1,
+    root: os.tmpdir(),
+    skillDir: SETUP_SKILL,
+    hasAudit: true,
+    pkgManager: { pkgManager: "pnpm" },
+    commands: { install: "pnpm install" },
+    fallow: { attempted: true, status: null },
+    existing: {},
+  });
+  const projection = JSON.parse(text);
+  const install = projection.rows.find((row) => row.id === "fallow-install");
+  assert.ok(install);
+  assert.match(install.command, /fallow@\^/);
+  assert.match(install.consequence, /could not be read|compatible pin/i);
+});
+
+test("projectPermissions helper stays free of layout lists", () => {
+  const text = projectPermissions({
+    stateVersion: 1,
+    root: os.tmpdir(),
+    hasAudit: true,
+    pkgManager: { pkgManager: "pnpm" },
+    commands: { install: "pnpm install", test: "pnpm test" },
+    linter: { tool: "eslint" },
+    fallow: {
+      status: {
+        needsDeclare: true,
+        needsInstall: false,
+        needsUpgrade: false,
+        compatible: false,
+        manager: "pnpm",
+        addDev: "pnpm add -D -w",
+      },
+    },
+    existing: { legacyAgentsSections: ["Skills"] },
+    layout: { packages: [{ name: "should-not-appear" }] },
+    conventions: { suggested: { "result-types": "yes" } },
+  });
+  const projection = JSON.parse(text);
+  assert.ok(projection.rows.some((row) => row.id === "fallow-install"));
+  assert.ok(projection.rows.some((row) => row.id === "agents-cleanup"));
+  assert.doesNotMatch(text, /should-not-appear/);
+  assert.doesNotMatch(text, /result-types/);
+  assert.doesNotMatch(text, /pnpm test/);
+});
+
+test("permissions projection never strips consequences or byte-chops JSON", () => {
+  const hugeLegacy = Array.from(
+    { length: 400 },
+    (_, i) => `Section-${i}-${"x".repeat(40)}`,
+  );
+  assert.throws(
+    () =>
+      projectPermissions({
+        stateVersion: 1,
+        root: os.tmpdir(),
+        hasAudit: false,
+        existing: { legacyAgentsSections: hugeLegacy },
+      }),
+    /Consent rows cannot be truncated/,
+  );
+  const ok = JSON.parse(
+    projectPermissions({
+      stateVersion: 1,
+      root: os.tmpdir(),
+      hasAudit: false,
+      existing: { legacyAgentsSections: ["Skills"] },
+    }),
+  );
+  assert.ok(ok.rows.every((row) => row.consequence));
+});
+
+test("summarize-results emits next tips from --state siblings", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-sum-"));
+  const resultsPath = path.join(dir, "results.json");
+  const statePath = path.join(dir, "state.json");
+  try {
+    fs.writeFileSync(
+      resultsPath,
+      JSON.stringify({
+        version: 1,
+        operations: [
+          {
+            op: "write-context",
+            status: "changed",
+            path: ".agents/lodestar/context.md",
+          },
+        ],
+      }),
+    );
+    fs.writeFileSync(
+      statePath,
+      JSON.stringify({
+        siblings: ["lodestar-setup", "lodestar-audit", "lodestar-fix"],
+      }),
+    );
+    const result = run([
+      "summarize-results",
+      "--results",
+      resultsPath,
+      "--state",
+      statePath,
+    ]);
+    assert.equal(result.status, 0, result.stderr);
+    const summary = JSON.parse(result.stdout);
+    assert.deepEqual(summary.changed, [".agents/lodestar/context.md"]);
+    assert.ok(summary.next.some((tip) => /lodestar-audit/.test(tip)));
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
   }
 });

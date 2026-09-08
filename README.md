@@ -42,6 +42,22 @@ with setup. Architecture, docs, plan, and implement can discover what
 they need when `context.md` is absent; audit and fix need setup (and
 Fallow only when audit is installed).
 
+## Quickstart
+
+```bash
+npx skills add ilancohen/lodestar-skills
+```
+
+Detects your agent, pre-selects all seven skills — press Enter to confirm. Then, in your repo:
+
+1. `/lodestar-setup` — one deterministic collector pass (bounded chat
+   projection), then one review and one write consent; writes
+   `.agents/lodestar/context.md`.
+2. `/lodestar-audit` — scans for violations, writes each one as a standalone action item.
+3. `/lodestar-fix` — applies those action items, one scoped change at a time, with your sign-off.
+
+That's the main loop. For larger work: `/lodestar-plan` writes a staged plan; `/lodestar-implement` executes it.
+
 ## The rules it checks for
 
 Full definitions: [`skills/lodestar-setup/principles.md`](skills/lodestar-setup/principles.md).
@@ -144,15 +160,15 @@ Updating, pinning a version, or rolling back? See [UPGRADING.md](UPGRADING.md).
 Skills don't activate on their own — invoke them by exact name
 (`/lodestar-setup`, `$lodestar-setup`, or your agent's skills UI).
 
-| Outcome | Skill |
-| --- | --- |
-| Record how the repo is built | `lodestar-setup` → `.agents/lodestar/context.md` |
-| Find rule breaks as action items | `lodestar-audit` → `docs/audit/<run>/` |
-| Apply those action items | `lodestar-fix` |
-| Second opinion on package layout | `lodestar-architecture` |
-| Staged plan for larger work | `lodestar-plan` |
-| Execute that plan stage by stage | `lodestar-implement` |
-| Harvest then delete leftover writeups | `lodestar-docs` (optional) |
+| Outcome                               | Skill                                            |
+| ------------------------------------- | ------------------------------------------------ |
+| Record how the repo is built          | `lodestar-setup` → `.agents/lodestar/context.md` |
+| Find rule breaks as action items      | `lodestar-audit` → `docs/audit/<run>/`           |
+| Apply those action items              | `lodestar-fix`                                   |
+| Second opinion on package layout      | `lodestar-architecture`                          |
+| Staged plan for larger work           | `lodestar-plan`                                  |
+| Execute that plan stage by stage      | `lodestar-implement`                             |
+| Harvest then delete leftover writeups | `lodestar-docs` (optional)                       |
 
 Normal path: setup once → audit → fix. Use plan → implement for
 multi-stage or cross-package work. Architecture and docs are advisory /
@@ -160,8 +176,9 @@ hygiene. Runs print concise milestones (opening scope, current
 stage/category, counts at boundaries, final artifacts) — not verbose
 logs.
 
-1. `lodestar-setup` — one review correction and one write consent. Fallow
-   only when audit is installed. No post-write confirm.
+1. `lodestar-setup` — one collector discovery, one review correction, and
+   one write consent. Bounded stdout only (full state stays in OS temp).
+   Fallow only when audit is installed. No post-write confirm.
 2. `lodestar-audit` — scoped scan; expand only the slice you choose for
    fix instructions.
 3. `lodestar-fix` — serial fixes; commits only with consent.

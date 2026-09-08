@@ -1,17 +1,10 @@
 # Linting rules for higher-accuracy audit findings
 
-The lodestar-audit skill runs an opportunistic linter probe when detecting
-`types` (#1, #3), `errors` (A, B), and `boundaries.B` violations. Enabling
-the relevant rules in your existing linter config makes those findings
-definitive rather than heuristic — no packages to install beyond what you
-already use.
+Honor the `linter-tighten` tick only. Omit when unticked, no linter, or
+audit absent.
 
-**Only do this if the project has a linter already configured.** Do not
-set up a new linter.
+If ticked: read [linters.md](../linters.md) and enable only the in-place
+rules for the detected linter. Do not add plugins or packages.
 
-Honor the permissions-screen tick. If the linter row was omitted or
-unticked, skip. If it was ticked, read [linters.md](../linters.md) and
-enable only the in-place rules it names for the detected linter. Do
-not add plugins or packages — `eslint-plugin-boundaries` stays
-advisory, not part of this tick. For linters not listed there, enable
-equivalent rules when they exist in that tool's docs.
+`record-result` immediately (`changed|skipped|failed` + path + remedy).
+Do not install a new linter.

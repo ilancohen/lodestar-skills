@@ -5,9 +5,10 @@
  *
  * Subcommands:
  *   collect --root DIR --out FILE [--skill-dir DIR]
+ *   permissions-projection --state FILE
  *   write-context --root DIR --state FILE --corrections FILE
  *   record-result --results FILE --op ID --status changed|skipped|failed [--path REL] [--remedy TEXT]
- *   summarize-results --results FILE
+ *   summarize-results --results FILE [--state FILE]
  *   cleanup --state FILE --corrections FILE --results FILE
  */
 import fs from "node:fs";
@@ -16,6 +17,7 @@ import { fileURLToPath } from "node:url";
 import { detectLinter, formatLintCell } from "./detect-linter.mjs";
 import { observeDocsLayout, parseDocsLayout } from "./discover-docs.mjs";
 import {
+  installFallowCommand,
   parsePkgManagerRow,
   readRootPackageJson,
   resolvePkgManager,
@@ -124,6 +126,7 @@ function usage() {
 
 Commands:
   collect --root DIR --out FILE [--skill-dir DIR]
+  permissions-projection --state FILE
   write-context --root DIR --state FILE --corrections FILE
   record-result --results FILE --op ID --status changed|skipped|failed [--path REL] [--remedy TEXT]
   summarize-results --results FILE
@@ -1176,6 +1179,7 @@ function collectAuditScope(root, packages, scanExtensions, failures) {
 
   for (const cap of caps) cleanupCapture(cap);
   const churn = fileCount === 0 ? 0 : touched90d / fileCount;
+  const modeDefault = fileCount >= 80 && churn < 0.3 ? "changed-since" : "all";
   return {
     noGit: false,
     commitCount,
@@ -1183,7 +1187,7 @@ function collectAuditScope(root, packages, scanExtensions, failures) {
     fileCount,
     touched90d,
     churn: Number(churn.toFixed(4)),
-    modeDefault: "all",
+    modeDefault,
   };
 }
 
@@ -1286,8 +1290,213 @@ function truncateList(items, limit) {
   };
 }
 
+/** Packages that participate in a bidirectional import edge. */
+export function packagesInCycles(importEdges = []) {
+  const edgeSet = new Set(
+    (importEdges || []).map((edge) => `${edge.from}->${edge.to}`),
+  );
+  const cyclic = new Set();
+  for (const edge of importEdges || []) {
+    if (edgeSet.has(`${edge.to}->${edge.from}`)) {
+      cyclic.add(edge.from);
+      cyclic.add(edge.to);
+    }
+  }
+  return cyclic;
+}
+
+/**
+ * Review order: unscannable / warning language, then cyclic, then alpha.
+ * Full state keeps its own sort; this only affects the projection slice.
+ */
+export function prioritizePackagesForReview(packages = [], importEdges = []) {
+  const cyclic = packagesInCycles(importEdges);
+  const rank = (pkg) => {
+    if (pkg.scannable === "no" || pkg.language) return 0;
+    if (cyclic.has(pkg.name)) return 1;
+    return 2;
+  };
+  return [...packages].sort((a, b) => {
+    const delta = rank(a) - rank(b);
+    if (delta !== 0) return delta;
+    return String(a.name).localeCompare(String(b.name), "en");
+  });
+}
+
+function gitignoreCoversFallowScratch(root) {
+  const full = path.join(root, ".gitignore");
+  if (!fs.existsSync(full)) return false;
+  let text;
+  try {
+    text = fs.readFileSync(full, "utf8");
+  } catch {
+    return false;
+  }
+  const lines = text.split(/\r?\n/).map((line) => line.trim());
+  const coversAudit = lines.some(
+    (line) =>
+      line === ".audit-*.json" ||
+      line === "**/.audit-*.json" ||
+      line === ".audit-*",
+  );
+  const coversFallow = lines.some(
+    (line) =>
+      line === ".fallow/" || line === ".fallow" || line === "**/.fallow/",
+  );
+  return coversAudit && coversFallow;
+}
+
+function readSiblingFallowToolVersion(skillDir) {
+  const contractPath = siblingPath(
+    skillDir,
+    "lodestar-audit",
+    "scripts",
+    "fallow-contract.json",
+  );
+  if (!fs.existsSync(contractPath)) return "3.15.0";
+  try {
+    const contract = JSON.parse(fs.readFileSync(contractPath, "utf8"));
+    return String(contract.tool_version || "3.15.0");
+  } catch {
+    return "3.15.0";
+  }
+}
+
+/** Pin-based add-dev command — never append a bare semver range. */
+export function composeFallowAddDev(status, pkgManager, toolVersion = "3.15.0") {
+  const manager =
+    status?.manager || pkgManager?.pkgManager || pkgManager?.name || null;
+  const addDevTemplate = status?.addDev || pkgManager?.addDev || null;
+  const pin = `^${String(toolVersion).replace(/^\^/, "")}`;
+  return installFallowCommand(pin, manager, addDevTemplate);
+}
+
+/**
+ * Consent rows only — no layout, commands, conventions, or scope recap.
+ * Never intentionally truncate the rows list for chat budget.
+ */
+export function projectPermissions(state) {
+  const root = state.root ? path.resolve(String(state.root)) : process.cwd();
+  const rows = [];
+  const fallowStatus = state.fallow?.status || null;
+  const skillDir = state.skillDir
+    ? path.resolve(String(state.skillDir))
+    : SETUP_SKILL_DIR;
+  const toolVersion = readSiblingFallowToolVersion(skillDir);
+
+  if (state.hasAudit) {
+    const statusFailed = Boolean(state.fallow?.attempted && !fallowStatus);
+    const alreadyOk = Boolean(
+      fallowStatus?.declared &&
+        fallowStatus?.bin &&
+        fallowStatus?.compatible,
+    );
+    if (!alreadyOk) {
+      const verb = fallowStatus?.needsUpgrade ? "upgrade" : "install";
+      const command = composeFallowAddDev(
+        fallowStatus,
+        {
+          pkgManager: fallowStatus?.manager || state.pkgManager?.pkgManager,
+          addDev: fallowStatus?.addDev || state.pkgManager?.addDev,
+        },
+        toolVersion,
+      );
+      rows.push({
+        id: "fallow-install",
+        defaultTicked: true,
+        verb,
+        path: "package.json",
+        command,
+        plainInstall:
+          fallowStatus?.needsInstall && !fallowStatus?.needsDeclare
+            ? state.commands?.install || null
+            : null,
+        version: fallowStatus?.version || null,
+        consequence: statusFailed || !fallowStatus
+          ? "Fallow status could not be read; install/declare a compatible pin before audit can run."
+          : "The audit will not run without fallow declared and present in node_modules/.bin.",
+      });
+    }
+
+    const fallowrcExists = existsFile(root, ".fallowrc.json");
+    rows.push({
+      id: "fallowrc",
+      defaultTicked: true,
+      verb: fallowrcExists ? "merge" : "write",
+      path: ".fallowrc.json",
+      alternative: fallowrcExists ? "replace" : null,
+      consequence:
+        "Describes which package may import which for Fallow zones (not Dependency Policy in context.md).",
+    });
+
+    if (!gitignoreCoversFallowScratch(root)) {
+      rows.push({
+        id: "gitignore-fallow",
+        defaultTicked: true,
+        verb: "add",
+        path: ".gitignore",
+        patterns: [".audit-*.json", ".fallow/"],
+        consequence:
+          "Scratch files from audit/fallow verify stay uncommitted after an interrupted run.",
+      });
+    }
+  }
+
+  rows.push({
+    id: "agents-lodestar",
+    defaultTicked: false,
+    verb: "add",
+    path: "AGENTS.md",
+    consequence:
+      "Any agent checks the principles before it finishes. Unticked leaves AGENTS.md alone (skills-only).",
+  });
+
+  if (state.hasAudit && state.linter?.tool) {
+    rows.push({
+      id: "linter-tighten",
+      defaultTicked: false,
+      verb: "tighten",
+      path: state.linter.tool,
+      consequence:
+        "Existing linter rules only — nothing new installed. Audit can report some findings as definite.",
+    });
+  }
+
+  const legacy = state.existing?.legacyAgentsSections || [];
+  if (legacy.length) {
+    rows.push({
+      id: "agents-cleanup",
+      defaultTicked: false,
+      verb: "remove",
+      path: "AGENTS.md",
+      sections: legacy,
+      consequence:
+        "Strip pre-0.3 lodestar sections whose values now live in context.md. Everything else stays.",
+    });
+  }
+
+  const projection = {
+    stateVersion: state.stateVersion,
+    hasAudit: Boolean(state.hasAudit),
+    rows,
+  };
+  const text = `${JSON.stringify(sortKeysDeep(projection), null, 2)}\n`;
+  // Consent rows must never be truncated or stripped of consequences.
+  if (Buffer.byteLength(text, "utf8") > MAX_STDOUT_BYTES) {
+    throw new Error(
+      `permissions projection is ${Buffer.byteLength(text, "utf8")} bytes (> ${MAX_STDOUT_BYTES}). ` +
+        `Consent rows cannot be truncated — shorten legacyAgentsSections or split the run.`,
+    );
+  }
+  return text;
+}
+
 export function projectReview(state) {
-  const packages = truncateList(state.layout?.packages, CAP_PACKAGES);
+  const orderedPackages = prioritizePackagesForReview(
+    state.layout?.packages,
+    state.importEdges,
+  );
+  const packages = truncateList(orderedPackages, CAP_PACKAGES);
   const docs = truncateList(state.docs?.rows, CAP_LIST);
   const exclusions = truncateList(state.exclusions, CAP_LIST);
   const rubric = truncateList(state.rubric?.paths, CAP_LIST);
@@ -1315,7 +1524,14 @@ export function projectReview(state) {
     },
     needsInput: state.needsInput || [],
     commands: state.commands,
-    linter: state.linter,
+    linter: {
+      tool: state.linter?.tool ?? null,
+      probe: state.linter?.probe ?? null,
+      needsProbe: Boolean(state.linter?.needsProbe),
+      signalCount: Array.isArray(state.linter?.signals)
+        ? state.linter.signals.length
+        : 0,
+    },
     layout: {
       source: state.layout?.source ?? null,
       packages: packages.items,
@@ -1329,7 +1545,18 @@ export function projectReview(state) {
       total: docs.total,
       truncated: docs.truncated,
     },
-    conventions: state.conventions,
+    conventions: {
+      suggested: state.conventions?.suggested ?? {},
+      recorded: state.conventions?.recorded ?? null,
+      evidenceHits: Object.fromEntries(
+        Object.entries(state.conventions?.evidence || {}).map(
+          ([key, value]) => [
+            key,
+            Boolean(value && typeof value === "object" ? value.found : value),
+          ],
+        ),
+      ),
+    },
     rubric: {
       paths: rubric.items,
       shown: rubric.shown,
@@ -1347,7 +1574,10 @@ export function projectReview(state) {
   };
 
   if (state.hasAudit) {
-    projection.frameworks = state.frameworks;
+    projection.frameworks = {
+      frameworks: state.frameworks?.frameworks ?? [],
+      scanExtensions: state.frameworks?.scanExtensions ?? [],
+    };
     projection.exclusions = {
       rows: exclusions.items,
       shown: exclusions.shown,
@@ -1364,7 +1594,14 @@ export function projectReview(state) {
           state.commitPolicy?.evidence?.recentSubjects?.count ?? 0,
       },
     };
-    projection.auditScope = state.auditScope;
+    projection.auditScope = state.auditScope
+      ? {
+          noGit: Boolean(state.auditScope.noGit),
+          fileCount: state.auditScope.fileCount ?? 0,
+          touched90d: state.auditScope.touched90d ?? 0,
+          modeDefault: state.auditScope.modeDefault ?? null,
+        }
+      : null;
     projection.fallow = state.fallow?.status
       ? {
           declared: state.fallow.status.declared,
@@ -1373,6 +1610,7 @@ export function projectReview(state) {
           needsInstall: state.fallow.status.needsInstall,
           needsUpgrade: state.fallow.status.needsUpgrade,
           version: state.fallow.status.version,
+          manager: state.fallow.status.manager ?? null,
         }
       : { attempted: Boolean(state.fallow?.attempted), status: null };
     projection.importEdges = {
@@ -1380,6 +1618,7 @@ export function projectReview(state) {
       shown: importEdges.shown,
       total: importEdges.total,
       truncated: importEdges.truncated,
+      cyclicPackages: [...packagesInCycles(state.importEdges)].sort(),
     };
   }
 
@@ -1547,6 +1786,13 @@ function cmdCollect(flags) {
   const state = collectState(root, { skillDir });
   writeJson(out, state);
   process.stdout.write(projectReview(state));
+  return 0;
+}
+
+function cmdPermissionsProjection(flags) {
+  const statePath = path.resolve(requireFlag(flags, "state"));
+  const state = readJson(statePath);
+  process.stdout.write(projectPermissions(state));
   return 0;
 }
 
@@ -2112,14 +2358,52 @@ function cmdSummarizeResults(flags) {
       });
     }
   }
+  let siblings = [];
+  if (flags.state && flags.state !== true) {
+    try {
+      const state = readJson(path.resolve(flags.state));
+      siblings = Array.isArray(state.siblings)
+        ? [...state.siblings].sort()
+        : [];
+    } catch {
+      siblings = [];
+    }
+  }
+  const next = suggestNextSkills(siblings);
   printJson(
     sortKeysDeep({
       changed: [...new Set(changed)].sort(),
       skipped,
       failed,
+      siblings,
+      next,
     }),
   );
   return 0;
+}
+
+function suggestNextSkills(siblings) {
+  const set = new Set(siblings || []);
+  const tips = [];
+  if (set.has("lodestar-audit") && set.has("lodestar-fix")) {
+    tips.push(
+      "Run lodestar-audit, then lodestar-fix for single-concern fixes.",
+    );
+  }
+  if (set.has("lodestar-architecture")) {
+    tips.push(
+      "Run lodestar-architecture for a second opinion on package layout.",
+    );
+  }
+  if (set.has("lodestar-plan") && set.has("lodestar-implement")) {
+    tips.push(
+      "Run lodestar-plan for multi-stage or cross-package redesign, then lodestar-implement.",
+    );
+  }
+  if (set.has("lodestar-docs")) {
+    tips.push("Run lodestar-docs when staging trees pile up.");
+  }
+  return tips;
 }
 
 function cmdCleanup(flags) {
@@ -2139,6 +2423,7 @@ function cmdCleanup(flags) {
 
 const COMMANDS = {
   collect: cmdCollect,
+  "permissions-projection": cmdPermissionsProjection,
   "write-context": cmdWriteContext,
   "record-result": cmdRecordResult,
   "summarize-results": cmdSummarizeResults,

@@ -67,3 +67,12 @@ Clean install/update/rollback, partial-install matrices, Fallow gating
 setup for cursor / claude-code / codex adapter shapes. Record full
 agent journeys on Cursor and at least one other host in
 `baseline.hostJourneys`; leave the rest `untested`.
+
+## Conversation cost (setup)
+
+Setup conversation cost is gated hermetically: `setup-state.mjs`
+stdout caps, golden `write-context` fixtures, and unit tests that prove
+large workspaces keep the same bounded projection while full state
+retains every package. Informal Cursor figures (~44.8K context /
+~21.7K conversation before the slimdown) are motivation only — do not
+require a new Cursor journey to accept this work.

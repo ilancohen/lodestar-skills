@@ -1,10 +1,10 @@
 {
   "version": 1,
   "capturedAt": "2026-09-08",
-  "notes": "Stage 08 milestones/integration: shared chat milestones, Fallow/probe liveness (stream + heartbeat + timeout), adaptive architecture sampling, slim evals checklist, migration notes. markdownWords rose slightly for milestone/liveness prose (observability quality). Host journeys stay untested until a full agent run is recorded — never mark unavailable hosts passed. Scenarios unchanged from stage 01; re-compare when agent captures land under results/.",
+  "notes": "Stage 02 setup slimdown (reduce-setup-conversation-cost): collector-driven setup refs; lodestar-setup markdownWords 8154 (was ~12358; +88 vs first slim draft restores Fallow entry-point review + summarize --state next tips). Informal Cursor context figures (~44.8K / ~21.7K conversation pre-slimdown) are motivation only — hostJourneys.cursor stays untested until a full recorded journey lands under results/. Hermetic acceptance: setup-state caps, write-context goldens, unit tests. Other hosts untested. Stage-01 scenario re-compares still deferred.",
   "markdownWords": {
     "lodestar-setup": {
-      "words": 12358,
+      "words": 8154,
       "files": 16
     },
     "lodestar-audit": {
