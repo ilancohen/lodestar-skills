@@ -11,9 +11,9 @@
 | test          | pnpm test          |
 | layout-source | pnpm-workspace.yaml |
 
-## Dependency Direction
+## Dependency Policy
 
-Basis: observed import graph, captured 2026-08-18.
+User-stated intended import order — not an observed graph.
 
 core → api
 

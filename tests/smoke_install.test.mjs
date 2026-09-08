@@ -6,9 +6,13 @@ import test from "node:test";
 import { SKILLS } from "../scripts/lib.mjs";
 import {
   assertInstalled,
+  assertInstalledSubset,
   installedSkills,
   parseSkillsList,
+  PARTIAL_INSTALL_MATRICES,
+  smokePartialInstalls,
 } from "../scripts/smoke_install.mjs";
+import { ROOT, readVersion } from "../scripts/lib.mjs";
 
 // The full smokeInstall() flow (git clone + `pnpm dlx skills add` x3) is
 // already exercised end-to-end by .github/workflows/release.yml's
@@ -108,6 +112,39 @@ test("assertInstalled dedupes a skill installed under two agent parents", () => 
     fs.rmSync(consumer, { recursive: true, force: true });
   }
 });
+
+test("assertInstalledSubset rejects extras beyond the expected matrix", () => {
+  const matrices = PARTIAL_INSTALL_MATRICES;
+  for (const subset of matrices) {
+    const consumer = makeConsumer();
+    try {
+      for (const skill of subset)
+        writeSkill(consumer, ".agents/skills", skill, "0.4.0");
+      const names = assertInstalledSubset(consumer, "0.4.0", subset);
+      assert.deepEqual(names, [...subset].sort());
+    } finally {
+      fs.rmSync(consumer, { recursive: true, force: true });
+    }
+  }
+});
+
+test(
+  "smokePartialInstalls installs each Done-when matrix via skills CLI",
+  { timeout: 120_000 },
+  () => {
+    // Real `skills add --skill …` into temp consumers (needs network for
+    // the skills CLI package on first resolve; uses this repo as source).
+    const version = readVersion(ROOT);
+    const results = smokePartialInstalls(ROOT, version);
+    assert.equal(results.length, PARTIAL_INSTALL_MATRICES.length);
+    for (let i = 0; i < results.length; i++) {
+      assert.deepEqual(
+        results[i].installed,
+        [...PARTIAL_INSTALL_MATRICES[i]].sort(),
+      );
+    }
+  },
+);
 
 test("parseSkillsList rejects extras via equality comparison", () => {
   const polluted = parseSkillsList(`

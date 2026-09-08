@@ -9,10 +9,6 @@
 | test        | pixi run test                        |
 | pkg-manager | pixi; pixi run; pixi add --dev <pkg> |
 
-## Dependency Direction
-
-Basis: observed import graph, captured 2026-08-18.
-
 ## Package Layout
 
 | Package | Path | Alias | Responsibility                     | Scannable | Entry points     |

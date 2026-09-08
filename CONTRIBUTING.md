@@ -31,10 +31,12 @@ Add a `CHANGELOG.md` section for the target version, then run
 
 ## Module sharing
 
-**The suite installs as a unit, and `lodestar-setup` is the base skill.**
-Partial installs are an unsupported configuration.
+**`lodestar-setup` is the base skill.** Partial installs are supported
+when the selection includes setup plus the chosen workflow skills.
+Recommended pairs: `audit` + `fix`, `plan` + `implement`. Architecture
+and docs may stand alone with setup.
 
-That one rule settles where shared code lives:
+That rule settles where shared code lives:
 
 - Shared modules live once, under `skills/lodestar-setup/scripts/` —
   `runtime.mjs`, `detect-linter.mjs`, `discover-docs.mjs`,
@@ -43,8 +45,9 @@ That one rule settles where shared code lives:
   `scripts/setup-modules.mjs`. Nothing else under `skills/` may contain a
   `../../` import.
 - That gateway imports dynamically and checks the file exists first, so an
-  absent base skill prints an actionable message instead of
-  `ERR_MODULE_NOT_FOUND` for a path the user never chose.
+  absent base skill prints an actionable message (reinstall setup
+  alongside the skill) instead of `ERR_MODULE_NOT_FOUND` for a path the
+  user never chose.
 - Each gateway re-exports only what its own skill uses.
   `tests/runtime.test.mjs` pins that set and asserts the missing-base-skill
   message; `scripts/check_package.mjs` enforces the import rule.

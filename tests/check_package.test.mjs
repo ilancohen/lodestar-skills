@@ -286,8 +286,10 @@ test("worst-case run cost counts references and ignores scripts", () => {
     file.startsWith("skills/lodestar-audit/categories/"),
   );
   assert.ok(categoryDocs.length >= 9, categoryDocs.join("\n"));
+  // Principles resolve from the installed setup skill at run time — not
+  // via a fixed `.agents/skills/…` link counted into audit's markdown load.
   assert.ok(
-    audit.files.includes("skills/lodestar-setup/principles.md"),
+    !audit.files.includes("skills/lodestar-setup/principles.md"),
     audit.files.join("\n"),
   );
 

@@ -12,11 +12,12 @@ declined, do not touch `AGENTS.md` at all.
 ```markdown
 ## Lodestar
 
-This repo enforces the principles in
-`.agents/skills/lodestar-setup/principles.md`. Before completing any task,
-check the pre-commit checklist there.
+This repo enforces the principles in the installed
+`lodestar-setup/principles.md` (beside that skill's `SKILL.md`). Before
+completing any task, check the pre-commit checklist there.
 
-Repo facts those principles refer to — package layout, dependency
-direction, and the build / typecheck / lint / test commands — live in
-`.agents/lodestar/context.md`, along with the lodestar skills index.
+Repo facts those principles refer to — package layout, optional
+dependency policy, and the build / typecheck / lint / test commands —
+live in `.agents/lodestar/context.md`, along with the lodestar skills
+index.
 ```

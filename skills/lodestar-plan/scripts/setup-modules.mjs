@@ -11,7 +11,7 @@ function baseModule(name) {
   if (fs.existsSync(fileURLToPath(url))) return import(url);
   process.stderr.write(
     `ERROR: lodestar-plan requires the lodestar-setup skill, which is not installed alongside it (looked for ${fileURLToPath(url)}).\n` +
-      "The Lodestar suite installs as a unit. Reinstall every skill with:\n" +
+      "Reinstall lodestar-setup (the base skill) alongside this skill with:\n" +
       "  npx skills add ilancohen/lodestar-skills --skill '*' -y\n",
   );
   process.exit(1);

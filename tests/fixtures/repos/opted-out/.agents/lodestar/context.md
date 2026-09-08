@@ -12,9 +12,9 @@ output root.
 | lint      | npm run lint; eslint; eslint --format json --max-warnings=999 <all_pkg_roots>      |
 | test      | npm test          |
 
-## Dependency Direction
+## Dependency Policy
 
-Basis: observed import graph, captured 2026-08-18.
+User-stated intended import order — not an observed graph.
 
 core → api
 
@@ -43,7 +43,7 @@ core → api
 
 ## Reference
 
-See `.agents/skills/lodestar-setup/principles.md`.
+Principles resolve from the installed lodestar-setup skill.
 
 ## Resolved Decisions
 

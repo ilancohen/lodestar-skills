@@ -98,7 +98,7 @@ function sha(filePath) {
 
 test("parseDirection acyclic chain preserves reachability", () => {
   const parsed = parseDirection(
-    "## Dependency Direction\n\ncore → api → shared\n\n## Package Layout",
+    "## Dependency Policy\n\ncore → api → shared\n\n## Package Layout",
   );
   assert.deepEqual(parsed.chain, ["core", "api", "shared"]);
   assert.equal(parsed.cyclic, false);
@@ -109,7 +109,7 @@ test("parseDirection acyclic chain preserves reachability", () => {
 
 test("parseDirection reads cyclic edge lists", () => {
   const parsed = parseDirection(
-    "## Dependency Direction\n\n- core → api (2 imports) [cycle]\n- api → core (1 import) [cycle]\n\nThe graph is cyclic.\n\n## Package Layout",
+    "## Dependency Policy\n\n- core → api (2 imports) [cycle]\n- api → core (1 import) [cycle]\n\nThe graph is cyclic.\n\n## Package Layout",
   );
   assert.equal(parsed.chain, null);
   assert.equal(parsed.cyclic, true);
@@ -120,7 +120,7 @@ test("parseDirection reads cyclic edge lists", () => {
 
 test("documented cycle edges are not wrong-direction imports", () => {
   const parsed = parseDirection(
-    "## Dependency Direction\n\n- core → api (2 imports) [cycle]\n- api → core (1 import) [cycle]\n\n## Package Layout",
+    "## Dependency Policy\n\n- core → api (2 imports) [cycle]\n- api → core (1 import) [cycle]\n\n## Package Layout",
   );
   assert.equal(isWrongDirectionImport("core", "api", parsed), false);
   assert.equal(isWrongDirectionImport("api", "core", parsed), false);
@@ -128,19 +128,51 @@ test("documented cycle edges are not wrong-direction imports", () => {
 
 test("acyclic upward imports are wrong-direction", () => {
   const parsed = parseDirection(
-    "## Dependency Direction\n\ncore → api\n\n## Package Layout",
+    "## Dependency Policy\n\ncore → api\n\n## Package Layout",
   );
   assert.equal(isWrongDirectionImport("api", "core", parsed), true);
   assert.equal(isWrongDirectionImport("core", "api", parsed), false);
 });
 
-test("validate-input returns directionGraph for cyclic fixture", () => {
+test("parseDirection ignores legacy Dependency Direction", () => {
+  const parsed = parseDirection(
+    "## Dependency Direction\n\ncore → api\n\n## Package Layout",
+  );
+  assert.deepEqual(parsed.edges, []);
+  assert.deepEqual(parsed.chain, []);
+});
+
+test("deriveResolvedDecisions: multi-package without policy gates #6 only", () => {
+  const { activeDetectors, blindSpots } = deriveResolvedDecisions({
+    conventions: { ...CONVENTION_DEFAULTS },
+    packages: [
+      { name: "core", scannable: "yes" },
+      { name: "api", scannable: "yes" },
+    ],
+    directionGraph: { edges: [], cyclic: false },
+    linter: null,
+  });
+  const imports = activeDetectors.find((d) => d.category === "imports");
+  assert.ok(!imports.subtypes.includes("#6"));
+  assert.ok(imports.subtypes.includes("#3"));
+  const boundaries = activeDetectors.find((d) => d.category === "boundaries");
+  assert.ok(boundaries.subtypes.includes("B"));
+  assert.ok(blindSpots.some((s) => s.includes("Dependency Policy")));
+});
+
+
+test("validate-input cyclic fixture has no policy graph; cycles still detect live", () => {
   const result = run(["validate-input", "--root", CYCLIC]);
   assert.equal(result.status, 0, result.stderr);
   const payload = JSON.parse(result.stdout);
   assert.equal(payload.direction.length, 0);
-  assert.equal(payload.directionGraph.cyclic, true);
-  assert.equal(payload.directionGraph.edges.length, 2);
+  assert.deepEqual(payload.directionGraph.edges, []);
+  const imports = payload.activeDetectors.find((d) => d.category === "imports");
+  assert.ok(!imports.subtypes.includes("#6"));
+  assert.ok(imports.subtypes.includes("#3"));
+  assert.ok(
+    payload.blindSpots.some((s) => s.includes("Dependency Policy")),
+  );
 });
 
 test("nextRunId skips taken dates", () => {
@@ -578,8 +610,8 @@ test("validate-input accepts one package with an empty dependency graph", () => 
     fs
       .readFileSync(contextPath, "utf8")
       .replace(
-        /## Dependency Direction[\s\S]*?(?=\n## Package Layout)/,
-        "## Dependency Direction\n\n",
+        /## Dependency Policy[\s\S]*?(?=\n## Package Layout)/,
+        "## Dependency Policy\n\n",
       ),
   );
   const result = run(["validate-input", "--root", tmp]);
@@ -1245,9 +1277,7 @@ test("parseGit rejects a subject-format with no slug placeholder", () => {
 test("parseGit rejects an over-long or control-character commit template", () => {
   assert.throws(
     () =>
-      parseGit(
-        gitMarkdown([["subject-format", `<slug> ${"x".repeat(200)}`]]),
-      ),
+      parseGit(gitMarkdown([["subject-format", `<slug> ${"x".repeat(200)}`]])),
     /invalid `subject-format`: it is 207 characters\. The limit is 200/,
   );
   assert.throws(
@@ -1722,7 +1752,7 @@ test("validate-input rejects lint without tool and probe", () => {
 | --- | --- |
 | lint | npm run lint |
 
-## Dependency Direction
+## Dependency Policy
 
 Basis: observed import graph, captured 2026-08-18.
 
@@ -1759,7 +1789,7 @@ test("validate-input returns linter metadata", () => {
 | --- | --- |
 | lint | npm run lint; eslint; eslint --format json --max-warnings=999 <all_pkg_roots> |
 
-## Dependency Direction
+## Dependency Policy
 
 Basis: observed import graph, captured 2026-08-18.
 
@@ -1796,7 +1826,7 @@ test("check-freshness reports stale linter tool", () => {
 
 | lint | npm run lint; biome; biome check --reporter=json <all_pkg_roots> |
 
-## Dependency Direction
+## Dependency Policy
 
 Basis: observed import graph, captured 2026-08-18.
 
@@ -2078,7 +2108,7 @@ test("derive-direction round-trips the cyclic fixture", () => {
   assert.equal(payload.chain, null);
   assert.equal(payload.edges.length, 2);
   const parsed = parseDirection(
-    `## Dependency Direction\n\n${payload.markdown}\n## Package Layout\n`,
+    `## Dependency Policy\n\n${payload.markdown}\n## Package Layout\n`,
   );
   assert.equal(parsed.cyclic, true);
   assert.equal(parsed.chain, null);
@@ -2114,7 +2144,7 @@ test("derive-direction round-trips an acyclic import graph", () => {
   assert.equal(derived.cyclic, false);
   assert.deepEqual(derived.chain, ["api", "core"]);
   const parsed = parseDirection(
-    `## Dependency Direction\n\n${derived.markdown}\n## Package Layout\n`,
+    `## Dependency Policy\n\n${derived.markdown}\n## Package Layout\n`,
   );
   assert.equal(parsed.cyclic, false);
   assert.deepEqual(parsed.chain, ["api", "core"]);
@@ -2162,7 +2192,9 @@ test("derive-direction honors Excluded Paths", () => {
 });
 
 test("validate-input ignores a stale ## Resolved Decisions section", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-stale-resolved-"));
+  const tmp = fs.mkdtempSync(
+    path.join(os.tmpdir(), "lodestar-stale-resolved-"),
+  );
   try {
     const contextDir = path.join(tmp, ".agents", "lodestar");
     fs.mkdirSync(contextDir, { recursive: true });
@@ -2195,7 +2227,10 @@ test("validate-input accepts a context.md without ## Resolved Decisions", () => 
     const base = fs.readFileSync(contextPath, "utf8");
     fs.writeFileSync(
       contextPath,
-      base.replace(/\n## Resolved Decisions[\s\S]*?(?=\n## Reference|\n## [A-Z]|$)/, "\n"),
+      base.replace(
+        /\n## Resolved Decisions[\s\S]*?(?=\n## Reference|\n## [A-Z]|$)/,
+        "\n",
+      ),
     );
     const result = run(["validate-input", "--root", tmp]);
     assert.equal(result.status, 0, result.stderr);
@@ -2247,7 +2282,10 @@ test("deriveResolvedDecisions: barrel-exports yes gates imports #4", () => {
 test("deriveResolvedDecisions: design-tokens no removes styling entirely", () => {
   const { activeDetectors, blindSpots } = deriveResolvedDecisions({
     conventions: { ...CONVENTION_DEFAULTS, "design-tokens": "no" },
-    packages: [{ name: "core", scannable: "yes" }, { name: "api", scannable: "yes" }],
+    packages: [
+      { name: "core", scannable: "yes" },
+      { name: "api", scannable: "yes" },
+    ],
     directionGraph: { edges: [{ from: "api", to: "core" }], cyclic: false },
     linter: null,
   });
@@ -2260,30 +2298,55 @@ test("validate-input opted-out fixture: activeDetectors excludes errors B and st
   const result = run(["validate-input", "--root", OPTED_OUT]);
   assert.equal(result.status, 0, result.stderr);
   const payload = JSON.parse(result.stdout);
-  const errorsEntry = payload.activeDetectors.find((d) => d.category === "errors");
+  const errorsEntry = payload.activeDetectors.find(
+    (d) => d.category === "errors",
+  );
   assert.ok(errorsEntry);
   assert.ok(!errorsEntry.subtypes.includes("B"));
   assert.ok(errorsEntry.subtypes.includes("A"));
   assert.ok(!payload.activeDetectors.find((d) => d.category === "styling"));
-  assert.ok(payload.blindSpots.some((s) => s.includes("errors") && s.includes("result-types")));
-  assert.ok(payload.blindSpots.some((s) => s.includes("styling") && s.includes("design-tokens")));
-  assert.equal(payload.probePlan, "eslint --format json --max-warnings=999 <all_pkg_roots>");
+  assert.ok(
+    payload.blindSpots.some(
+      (s) => s.includes("errors") && s.includes("result-types"),
+    ),
+  );
+  assert.ok(
+    payload.blindSpots.some(
+      (s) => s.includes("styling") && s.includes("design-tokens"),
+    ),
+  );
+  assert.equal(
+    payload.probePlan,
+    "eslint --format json --max-warnings=999 <all_pkg_roots>",
+  );
 });
 
 test("validate-input single-package fixture: activeDetectors excludes imports #6 and boundaries B", () => {
   const result = run(["validate-input", "--root", SINGLE]);
   assert.equal(result.status, 0, result.stderr);
   const payload = JSON.parse(result.stdout);
-  const importsEntry = payload.activeDetectors.find((d) => d.category === "imports");
+  const importsEntry = payload.activeDetectors.find(
+    (d) => d.category === "imports",
+  );
   assert.ok(importsEntry);
   assert.ok(!importsEntry.subtypes.includes("#6"));
   assert.ok(importsEntry.subtypes.includes("#1"));
-  const boundariesEntry = payload.activeDetectors.find((d) => d.category === "boundaries");
+  const boundariesEntry = payload.activeDetectors.find(
+    (d) => d.category === "boundaries",
+  );
   assert.ok(boundariesEntry);
   assert.ok(!boundariesEntry.subtypes.includes("B"));
   assert.ok(boundariesEntry.subtypes.includes("A"));
-  assert.ok(payload.blindSpots.some((s) => s.includes("imports") && s.includes("single-package")));
-  assert.ok(payload.blindSpots.some((s) => s.includes("boundaries") && s.includes("single-package")));
+  assert.ok(
+    payload.blindSpots.some(
+      (s) => s.includes("imports") && s.includes("single-package"),
+    ),
+  );
+  assert.ok(
+    payload.blindSpots.some(
+      (s) => s.includes("boundaries") && s.includes("single-package"),
+    ),
+  );
   assert.equal(payload.probePlan, "none");
 });
 
@@ -2291,14 +2354,31 @@ test("validate-input polyglot fixture: blindSpots includes Go package and single
   const result = run(["validate-input", "--root", POLYGLOT]);
   assert.equal(result.status, 0, result.stderr);
   const payload = JSON.parse(result.stdout);
-  assert.ok(payload.blindSpots.some((s) => s.includes("worker") && s.includes("not scanned")));
-  assert.ok(payload.blindSpots.some((s) => s.includes("imports") && s.includes("single-package")));
-  assert.ok(payload.blindSpots.some((s) => s.includes("boundaries") && s.includes("single-package")));
+  assert.ok(
+    payload.blindSpots.some(
+      (s) => s.includes("worker") && s.includes("not scanned"),
+    ),
+  );
+  assert.ok(
+    payload.blindSpots.some(
+      (s) => s.includes("imports") && s.includes("single-package"),
+    ),
+  );
+  assert.ok(
+    payload.blindSpots.some(
+      (s) => s.includes("boundaries") && s.includes("single-package"),
+    ),
+  );
   // worker (scannable-no) should come before single-package entries
   const workerIdx = payload.blindSpots.findIndex((s) => s.includes("worker"));
-  const importsIdx = payload.blindSpots.findIndex((s) => s.includes("imports") && s.includes("single-package"));
+  const importsIdx = payload.blindSpots.findIndex(
+    (s) => s.includes("imports") && s.includes("single-package"),
+  );
   assert.ok(workerIdx < importsIdx);
-  assert.equal(payload.probePlan, "eslint --format json --max-warnings=999 <all_pkg_roots>");
+  assert.equal(
+    payload.probePlan,
+    "eslint --format json --max-warnings=999 <all_pkg_roots>",
+  );
 });
 
 test("validateActionItem accepts fix-ready items and rejects nested scope", () => {
@@ -2308,7 +2388,10 @@ test("validateActionItem accepts fix-ready items and rejects nested scope", () =
   );
   assert.equal(good.ok, true, good.errors.join("\n"));
   const badText = fs.readFileSync(
-    path.join(ROOT, "tests/fixtures/audit-runs/malformed-action-item/001-types-bad.md"),
+    path.join(
+      ROOT,
+      "tests/fixtures/audit-runs/malformed-action-item/001-types-bad.md",
+    ),
     "utf8",
   );
   const bad = validateActionItem(badText, { repoRoot: ROOT });
@@ -2323,7 +2406,10 @@ test("validate-output rejects a malformed action item file", () => {
   const result = run([
     "validate-output",
     "--path",
-    path.join(ROOT, "tests/fixtures/audit-runs/malformed-action-item/001-types-bad.md"),
+    path.join(
+      ROOT,
+      "tests/fixtures/audit-runs/malformed-action-item/001-types-bad.md",
+    ),
     "--root",
     ROOT,
   ]);

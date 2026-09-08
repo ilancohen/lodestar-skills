@@ -65,15 +65,17 @@ export function installedSkills(consumer) {
   return found;
 }
 
-export function assertInstalled(consumer, version) {
+export function assertInstalled(consumer, version, expected = SKILLS) {
   const found = installedSkills(consumer);
   const names = [...new Set(found.map((item) => item.skill))].sort();
-  if (names.join(",") !== [...SKILLS].sort().join(",")) {
+  const want = [...expected].sort();
+  if (names.join(",") !== want.join(",")) {
     throw new Error(
-      `expected ${SKILLS.length} installed skills, found ${names.join(", ") || "none"}`,
+      `expected ${want.length} installed skills, found ${names.join(", ") || "none"}`,
     );
   }
   for (const item of found) {
+    if (!want.includes(item.skill)) continue;
     const text = fs.readFileSync(item.path, "utf8");
     if (!text.includes(`version: "${version}"`)) {
       throw new Error(
@@ -84,7 +86,11 @@ export function assertInstalled(consumer, version) {
   return names;
 }
 
-function addSkills(source, consumer) {
+export function assertInstalledSubset(consumer, version, expected) {
+  return assertInstalled(consumer, version, expected);
+}
+
+function addSkills(source, consumer, skills = SKILLS) {
   // Pin the agent explicitly: the upstream `skills` CLI's own auto-detection
   // is environment-dependent (it can pick different agent directories on a
   // CI runner than locally), which made this smoke test flaky. This test is
@@ -95,7 +101,7 @@ function addSkills(source, consumer) {
       "add",
       source,
       "--skill",
-      ...SKILLS,
+      ...skills,
       "--agent",
       "cursor",
       "-y",
@@ -108,6 +114,36 @@ function addSkills(source, consumer) {
     throw new Error(result.stderr || result.stdout || "skills add failed");
   }
   return result.stdout;
+}
+
+/** Done-when partial-install matrices from stage 05. */
+export const PARTIAL_INSTALL_MATRICES = [
+  ["lodestar-setup"],
+  ["lodestar-setup", "lodestar-architecture"],
+  ["lodestar-setup", "lodestar-plan", "lodestar-implement"],
+  ["lodestar-setup", "lodestar-audit", "lodestar-fix"],
+];
+
+/**
+ * Install each partial matrix into its own consumer and assert exact set.
+ * Used by unit tests (when CLI available) and optional smoke extension.
+ */
+export function smokePartialInstalls(source, version = readVersion(source)) {
+  const results = [];
+  for (const subset of PARTIAL_INSTALL_MATRICES) {
+    const consumer = fs.mkdtempSync(
+      path.join(os.tmpdir(), "lodestar-smoke-partial-"),
+    );
+    try {
+      fs.writeFileSync(path.join(consumer, "README.md"), "consumer\n");
+      addSkills(source, consumer, subset);
+      const installed = assertInstalledSubset(consumer, version, subset);
+      results.push({ subset, installed });
+    } finally {
+      fs.rmSync(consumer, { recursive: true, force: true });
+    }
+  }
+  return results;
 }
 
 export function smokeInstall(root = ROOT, options = {}) {
@@ -137,6 +173,9 @@ export function smokeInstall(root = ROOT, options = {}) {
     fs.writeFileSync(path.join(consumer, "README.md"), "consumer\n");
     addSkills(dest, consumer);
     const installed = assertInstalled(consumer, version);
+
+    // Partial-install Done-when matrices (separate consumers).
+    smokePartialInstalls(dest, version);
 
     fs.cpSync(dest, older, { recursive: true });
     setVersion("0.0.9", older);

@@ -120,7 +120,7 @@ the message describes one logical change.
   packages:
   - All sites in one package → extract to a private helper in that package.
   - Sites in multiple packages → extract to whichever package the call
-    sites can both reach per the dependency direction (typically the
+    sites can both reach per the Dependency Policy when present (typically the
     shared / types package nominated in `context.md` `## Package Layout`).
     Replace each site with a call. Run `<typecheck>` and `<test>`.
 
@@ -129,8 +129,8 @@ the message describes one logical change.
   2. The proposed location (which package, justified by call-site reach).
   3. How each existing site maps to the new abstraction.
   4. Anything that doesn't fit (so the reader can decide whether the fit
-     is actually clean enough — three sites _are_ what the Rule of Three
-     prescribes; one or two is too soon).
+     is actually clean enough — identify duplication at two sites; extract
+     at three unless immediate divergence risk has evidence).
      Mark `requires_decision: true` unless mapping #3 is 1-to-1 with no
      divergent paths.
 
@@ -142,9 +142,10 @@ the message describes one logical change.
 
 - **A** — extraction must preserve behaviour. Update every cited call site
   in the same commit. No public API changes.
-- **B** — if the proposed abstraction would have fewer than 2 confident
-  call sites after the work, do not extract; record the duplication and
-  wait for the third site (Rule of Three). Mark `requires_decision: true`.
+- **B** — if the proposed abstraction would have fewer than 3 confident
+  call sites after the work (and no evidence of immediate divergence
+  risk), do not extract; record the duplication at two and wait for the
+  third (Rule of Three / DRY). Mark `requires_decision: true`.
 - **C** — advisory only. No code changes prescribed by this action item.
 
 ## Acceptance check

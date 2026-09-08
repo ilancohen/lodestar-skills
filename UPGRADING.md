@@ -10,7 +10,10 @@ npx skills add ilancohen/lodestar-skills
 ```
 
 Enter accepts detected agents and all seven skills. That is the normal
-install path. Omit `lodestar-docs` if you do not want docs hygiene.
+install path. Partial installs are supported when they include
+`lodestar-setup` as the base. Omit `lodestar-docs` if you do not want
+docs hygiene. Fallow is prepared only when `lodestar-audit` is in the
+selection.
 
 Per-agent example:
 
@@ -24,12 +27,30 @@ Scripts that must not prompt:
 npx skills add ilancohen/lodestar-skills --skill '*' -y
 ```
 
+## Upgrading past 0.17.0 — Dependency Policy + portable principles
+
+`## Dependency Direction` (observed import graph) is retired as recorded
+policy. Setup writes optional `## Dependency Policy` only when the user
+states intended import order. Legacy `## Dependency Direction` is
+ignored by `parseDirection` (same treatment as a stale
+`## Resolved Decisions` section); the next setup re-run deletes it.
+Without policy, audit still detects cycles but gates wrong-direction
+(`imports` #6).
+
+Principles resolve from the installed `lodestar-setup` skill (beside
+`SKILL.md`), not a fixed `.agents/skills/lodestar-setup/principles.md`
+path. `## Review Rubric` lists repo-owned extras only.
+
+Partial installs that include setup are supported. Fallow install and
+configuration run only when audit is among the installed siblings.
+Setup no longer asks a post-write confirm question.
+
 ## Upgrading past 0.17.0 — Resolved Decisions retired
 
 0.17.0 briefly required a persisted `## Resolved Decisions` section.
 That requirement is retired: `validate-input` derives detector gates and
 blind spots in memory from Conventions, Package Layout, Dependency
-Direction, and the linter cell. An existing `## Resolved Decisions`
+Policy (when present), and the linter cell. An existing `## Resolved Decisions`
 section is ignored. The next `lodestar-setup` re-run deletes it. No
 forced repository migration.
 

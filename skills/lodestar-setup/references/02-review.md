@@ -1,8 +1,10 @@
 # Step 2 — Review what was observed
 
 Present **one message**. Do not split this across turns. Bold headings,
-in this order. Skip a heading only when it cannot apply (no cycles, not
-a git repo, or `mode` already recorded). Always show **Layout**.
+in this order. Skip a heading only when it cannot apply. Always show
+**Layout**. When `lodestar-audit` is not among the installed siblings,
+skip **Frameworks & scan extensions**, **Fallow entry points**,
+**Excluded paths**, **Audit scope**, and **Commit default**.
 
 **Commands** — the package manager you detected, where commands came
 from (`package.json` scripts, Makefile, …), and the commands you found
@@ -11,10 +13,16 @@ from (`package.json` scripts, Makefile, …), and the commands you found
 
 **Layout** — how the layout was found, and the table: name, path, alias,
 entry points, responsibility, Scannable. Name any package that cannot be
-scanned. Show which package imports which, using the repo's actual
-package names — no per-package import counts. A single-package repo has
-an empty import graph; still show the table. Do not ask whether the
-layout is "right" — that's `lodestar-architecture`'s job, not setup's.
+scanned. You may show which package imports which today as ephemeral
+evidence — not as recorded policy. A single-package repo has an empty
+import graph; still show the table. Do not ask whether the layout is
+"right" — that's `lodestar-architecture`'s job, not setup's. Do not
+offer to write the observed graph into `context.md`.
+
+**Dependency policy** — skip when the user has not stated an intended
+order. Otherwise show the chain or edges they confirmed. If they want a
+policy and have not given one, ask once in plain words what may import
+what — never propose today's topological sort as the answer.
 
 **Docs** — skip when Step 1 found no documentation trees. Otherwise list
 each path with what you will treat it as, in plain words — not the
@@ -28,29 +36,26 @@ file's Role key:
 One line of what it is for. Corrections at face value (move a path
 between those four, or drop it). Do not create folders to fill gaps.
 
-**Frameworks & scan extensions** — name the UI frameworks you believe are
-in use (or "none beyond TS/JS"), and the file extensions the audit will
-scan (for example `.ts`, `.tsx`, `.vue`). Say when an extension was
-added because of observed source files, not just a dependency. Skip this
-heading only when the repo is plain TS/JS with no extra extensions
-beyond the default list.
+**Frameworks & scan extensions** — only when audit is installed. Name
+the UI frameworks you believe are in use (or "none beyond TS/JS"), and
+the file extensions the audit will scan. Skip when the repo is plain
+TS/JS with no extra extensions beyond the default list.
 
-**Fallow entry points** — skip when the repo is a single app and you
-expect auto-discovery to suffice. Otherwise list each app surface Fallow
-should seed (for example `apps/a/index.html`, `apps/b/src/main.ts`) and
-say you will write them to `.fallowrc.json` `entry` and verify with
-`--minimum N`. When you recorded none, say auto-discovery only.
+**Fallow entry points** — only when audit is installed. Skip when the
+repo is a single app and you expect auto-discovery to suffice.
+Otherwise list each app surface and say you will write them to
+`.fallowrc.json` `entry` and verify with `--minimum N`.
 
-**Circular imports** — if two packages import each other, say so in
-plain words — "`a` imports `b`, and `b` imports `a` back" — and say you
-will record it as it is, and that the audit will report it as a circular
-dependency. Ask the user to correct this only if what you observed is
-wrong. Do not ask them what the imports _should_ look like. Skip this
-heading when there are no cycles.
+**Circular imports** — if two packages import each other today, say so
+in plain words — "`a` imports `b`, and `b` imports `a` back". The audit
+(when installed) will report that as a circular dependency from live
+evidence. Do not say you will record the observed cycle as Dependency
+Policy. Ask the user to correct only if what you observed is wrong. Skip
+when there are no cycles.
 
-**Excluded paths** — candidates with a one-line reason each. Empty is
-allowed. Write `### Excluded Paths` under `## Audit Configuration` from
-the confirmed list in both enforcement modes.
+**Excluded paths** — only when audit is installed. Candidates with a
+one-line reason each. Empty is allowed. Write `### Excluded Paths`
+under `## Audit Configuration` from the confirmed list.
 
 **Conventions** — one line each, no evidence paths. Frame as what the
 repo already does, not as what to enforce. Pre-check per row from the
@@ -81,15 +86,16 @@ The keys below go in the file; do not put them on screen:
   `yes` when not (re-export files are allowed)
 - coverage floor → the confirmed integer or `none`
 
-**Review rubric** — the extra files a later review should read, on top
-of the suite principles (always included; do not offer to drop it).
-List each discovered path in plain words, one bullet. Empty extras is
-allowed — then say "suite principles only". Corrections at face value
-(add a path, drop a path). Do not invent files.
+**Review rubric** — the **extra** repo files a later review should read
+on top of the suite principles (principles are implicit from the
+installed setup skill; do not list them here and do not offer to drop
+them). List each discovered path in plain words, one bullet. Empty
+extras is allowed — then say "suite principles only". Corrections at
+face value (add a path, drop a path). Do not invent files.
 
-**Audit scope** — skip this heading when the repo is not git (`mode:
-all`) or `## Audit Configuration` already has `mode` (leave it — the
-baseline does not move on a re-run).
+**Audit scope** — only when audit is installed. Skip when the repo is
+not git (`mode: all`) or `## Audit Configuration` already has `mode`
+(leave it — the baseline does not move on a re-run).
 
 Otherwise state the default, not a question. Give the two numbers that
 matter, then the default and the reason in one sentence. Do not use the
@@ -113,14 +119,14 @@ Record "only code you touch" as `changed-since`: capture
 sha, and that older-code problems are still counted, just not written up
 as fixes. Record "all of it" as `mode: all` with no baseline rows.
 
-**Commit default** — `lodestar-fix` will **ask each time** before it
-commits. Do not show commit-message format, trailer, protected branches,
-or hooks on this screen; still write those keys to `## Audit
-Configuration` from the Step 1 detection (defaults: `commits: ask`,
-trailer `Closes <item>.`, `require-clean: no`). Record a correction as
-`commits: ask` / `per-item` / `never`. `never` means no ask, no commit,
-edits stay unstaged. Write git keys in `## Audit Configuration` in both
-enforcement modes.
+**Commit default** — only when audit is installed. `lodestar-fix` will
+**ask each time** before it commits. Do not show commit-message format,
+trailer, protected branches, or hooks on this screen; still write those
+keys to `## Audit Configuration` from the Step 1 detection (defaults:
+`commits: ask`, trailer `Closes <item>.`, `require-clean: no`). Record a
+correction as `commits: ask` / `per-item` / `never`. `never` means no
+ask, no commit, edits stay unstaged. When audit is absent, skip this
+heading and do not write commit keys.
 
 Do not ask about enforcement here. Default `ENFORCEMENT_MODE` to
 `skills-only`. The `AGENTS.md` row on the permissions screen is what

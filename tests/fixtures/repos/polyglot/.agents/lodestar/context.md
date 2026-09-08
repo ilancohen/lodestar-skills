@@ -8,10 +8,6 @@
 | lint      | npm run lint; eslint; eslint --format json --max-warnings=999 <all_pkg_roots>      |
 | test      | npm test          |
 
-## Dependency Direction
-
-Basis: observed import graph, captured 2026-08-18.
-
 ## Package Layout
 
 | Package | Path              | Alias      | Responsibility                            | Scannable |

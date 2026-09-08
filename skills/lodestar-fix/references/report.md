@@ -41,26 +41,14 @@ Nothing left in this batch. Moved it to <output-root>/done/<RUN_ID>/.
 
 If action-item files remain, skip this step.
 
-### Step 4b — Refresh `## Dependency Direction` after a cycle fix
+### Step 4b — Do not overwrite Dependency Policy from observation
 
-If this session completed ≥1 `imports` #3 item (cycle in subtype,
-title, or problem), ask **once after the last item**, never per item,
-never silently:
+After cycle fixes (`imports` #3), do **not** refresh `context.md` from
+the live import graph. `## Dependency Policy` is user-stated intent
+only — never replace it with today's edges or a topological sort.
 
-> Two of your packages used to import each other, and this session broke
-> that loop. The setup notes still describe the old arrangement. Shall I
-> update them to match the code as it is now? (yes / no)
+If the user asks to change policy, point them at `lodestar-setup` (or
+edit the Policy section themselves). `#6` (wrong-direction) does not
+trigger any context rewrite either.
 
-On no, change nothing. On yes, run:
-
-```text
-node <lodestar-audit-skill>/scripts/audit-state.mjs derive-direction --root <repo>
-```
-
-If `cyclic` is still true, report and change nothing. If acyclic,
-replace **only** `## Dependency Direction`, with a fresh `Basis:` date.
-
-Own commit, `context.md` only — not an item's commit. Honor session
-commit policy: `never`, or `ask` when auto-commit was declined → write
-unstaged. `per-item` or `AUTO_COMMIT=yes` → commit. No #3 items → never
-ask. `#6` (wrong-direction) does not trigger this.
+Own commit of observed direction into context is retired.

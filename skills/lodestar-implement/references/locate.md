@@ -9,8 +9,9 @@ A missing `context.md` is not a stop. Do not send the user to
 [discover-context.md](discover-context.md).
 
 Read `## Review Rubric` when present. Absent means principles only —
-`.agents/skills/lodestar-setup/principles.md`. That list is the review
-rubric. Do not bake in repo-specific checklist items.
+resolve `principles.md` beside the installed `lodestar-setup` `SKILL.md`.
+That list (principles + extras) is the review rubric. Do not bake in
+repo-specific checklist items.
 
 If the invocation names a plan (path, slug, or folder), use it. Else list
 candidates from pick-up (every `.md` file and folder directly under the

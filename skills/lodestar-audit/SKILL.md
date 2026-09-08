@@ -55,14 +55,14 @@ This audit is **structure-agnostic**. It does not assume roles like
 1. `## Package Layout` — package names, paths, aliases, a one-sentence
    responsibility per package, and optional `Scannable` (`yes` / `no`;
    absent means `yes`). Rows marked `no` are not scanned.
-2. The declared dependency direction — allowed import direction.
+2. Optional `## Dependency Policy` — user-stated intended import order.
+   Absent means wrong-direction (#6) is gated; cycles still run.
 3. `## Conventions` — which style conventions the repo follows. Detectors
    skip at a row's skip value (see the Categories table). A missing
    section means every default.
-4. `## Review Rubric` — repo-relative paths to read as the audit
-   baseline. Absent means principles only
-   (`.agents/skills/lodestar-setup/principles.md`). Do not invent extra
-   checklist items beyond that list.
+4. `## Review Rubric` — repo-owned paths to read as extras on top of
+   the installed `lodestar-setup/principles.md`. Absent means principles
+   only. Do not invent extra checklist items beyond that list.
 5. `## Audit Configuration` — optional category subset, `output-root`
    (default `docs/audit`), and `fallow` (default `required`).
 
@@ -142,11 +142,13 @@ rather than asking mid-audit. If `<lint>` is `n/a` or `probePlan` is
 Otherwise use `validate-input` `probePlan` as the linter probe command
 (see [references/linter-probe.md](references/linter-probe.md)).
 
-Read `.agents/lodestar/context.md` for commands, direction, conventions,
-and the layout table. Read every path under `## Review Rubric` when that
-section is present — that list is the audit rubric. Absent means
-principles only: `.agents/skills/lodestar-setup/principles.md`. Do not
-bake in repo-specific checklist items beyond those paths.
+Read `.agents/lodestar/context.md` for commands, optional Dependency
+Policy, conventions, and the layout table. Read every path under
+`## Review Rubric` when that section is present — extras on top of the
+installed setup skill's `principles.md`. Absent means principles only
+(resolve `principles.md` beside the installed `lodestar-setup`
+`SKILL.md`). Do not bake in repo-specific checklist items beyond those
+paths.
 
 ---
 

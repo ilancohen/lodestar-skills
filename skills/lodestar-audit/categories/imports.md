@@ -23,8 +23,9 @@ entryPoints)` is true (`audit-state.mjs`): canonicalize by stripping
 2. **Missing re-export** — an external consumer needs something that isn't
    exported from the source package's `index.ts`.
 
-3. **Circular import** — `A` imports `B` and `B` imports `A`. Documented
-   cycle edges in `context.md` surface here, not as wrong-direction (#6).
+3. **Circular import** — `A` imports `B` and `B` imports `A`. Detected
+   from the live graph / Fallow seed. Documented cycle edges in
+   `## Dependency Policy` (rare) are also #3, not wrong-direction (#6).
 
 4. **`export *` barrel** — `index.ts` re-exports everything from a sub-module
    without naming what's exported.
@@ -33,15 +34,15 @@ entryPoints)` is true (`audit-state.mjs`): canonicalize by stripping
 5. **Over-broad API surface** — an `index.ts` export that has no external
    consumer (used only inside the package, or not used at all).
 
-6. **Wrong-direction dependency** — an import that opposes a documented edge
-   or documented path in `context.md` (e.g. with observed chain
-   `web → server → core → shared`, `server` importing `web` opposes the
-   documented `web → server` path). Includes intra-monorepo alias imports and
-   relative imports crossing package boundaries. Edges of a documented cycle
-   are documented in both directions, so they are **not** #6 findings — they
-   surface under #3 `circular-import` instead. New downward imports consistent
-   with the documented graph are not violations until `context.md` is updated.
-   **Gate:** skip when absent from `activeDetectors` (single-package repo).
+6. **Wrong-direction dependency** — an import that opposes a user-stated
+   edge or path in `context.md` `## Dependency Policy` (e.g. with policy
+   chain `web → server → core → shared`, `server` importing `web` opposes
+   the documented `web → server` path). Includes intra-monorepo alias
+   imports and relative imports crossing package boundaries. Edges of a
+   documented policy cycle are **not** #6 findings — they surface under
+   #3 `circular-import` instead. **Gate:** skip when absent from
+   `activeDetectors` (no Dependency Policy, or single-package repo).
+   Observed imports alone are never policy.
 
 7. **Unused file** — a source file that no entry point reaches transitively
    (`check.unused_files[]`). Risk: low.

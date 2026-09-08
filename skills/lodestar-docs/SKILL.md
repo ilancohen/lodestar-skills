@@ -10,7 +10,7 @@ description: >-
   invokes lodestar-docs by name.
 disable-model-invocation: true
 license: MIT
-compatibility: Requires git, Node.js, and .agents/lodestar/context.md from lodestar-setup. Does not require Fallow. npm, pnpm, yarn, and Bun are detected from lockfiles; any other manager works when recorded in context.md.
+compatibility: Requires git and Node.js. Works with or without .agents/lodestar/context.md — discovers docs trees when context is absent. Does not require Fallow. npm, pnpm, yarn, and Bun are detected from lockfiles; any other manager works when recorded in context.md.
 metadata:
   author: Ilan Cohen
   version: "0.17.0"
@@ -20,7 +20,8 @@ You are running `lodestar-docs`. The job is to **harvest**, then **delete**
 leftover writeups so the docs tree stays small. Historical record is not
 a goal. Git history is the archive.
 
-This skill is optional. The other four do not depend on it. It does not
+This skill is optional. The other skills do not depend on it (the other
+six can run without it). It does not
 modify application source — only markdown (and, if the user ticks it, an
 existing Docs map in `AGENTS.md`).
 
@@ -47,13 +48,15 @@ Anything you print or ask is read by a person who is skimming.
 
 ## Inputs
 
-Confirm `.agents/lodestar/context.md` exists. If it is missing, stop and
-tell the user to run `/lodestar-setup` first — unless they named a folder
-to sweep, in which case pass that folder as `--tree` after they confirm
-the path.
+If `.agents/lodestar/context.md` is missing, follow
+[references/discover-context.md](references/discover-context.md) and
+continue — observe docs trees the same way setup would. A named
+`--tree` or `--full` also proceeds without context. Do not invent
+`docs/audit` as a fallback when nothing is observed and the user named
+no folder.
 
-This is the only file read for repo facts. Do not read `AGENTS.md` for
-layout, output-root, or commit policy.
+When context exists, it is the primary file for repo facts. Do not read
+`AGENTS.md` for layout, output-root, or commit policy.
 
 Capture from the survey JSON:
 

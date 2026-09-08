@@ -1,9 +1,10 @@
 # Clean up a pre-0.3 install
 
 Older versions of this skill put the `## Build & Test`,
-`## Dependency Direction`, `## Package Layout`, `## Skills`, and
-`## Audit Output` sections in `AGENTS.md`. If you found any of them there
-in Step 1, their values now live in `context.md`.
+`## Dependency Direction` (now optional `## Dependency Policy`),
+`## Package Layout`, `## Skills`, and `## Audit Output` sections in
+`AGENTS.md`. If you found any of them there in Step 1, their values now
+live in `context.md`.
 
 Honor the permissions-screen tick. If the cleanup row was ticked, remove
 only those sections (plus the `## Lodestar` section if

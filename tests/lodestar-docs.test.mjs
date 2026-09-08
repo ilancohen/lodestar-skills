@@ -106,13 +106,22 @@ test("full survey lists the whole docs tree but protects live work", () => {
   assert.equal(orphan.protected, false);
 });
 
-test("survey without context.md fails unless the user names a tree", () => {
+test("survey without context.md discovers observed trees or accepts --tree", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-docs-"));
   try {
     fs.mkdirSync(path.join(tmp, "docs/plans/done"), { recursive: true });
     fs.writeFileSync(path.join(tmp, "docs/plans/done/x.md"), "done\n");
-    const blocked = survey(tmp);
-    assert.equal(blocked.ok, false);
+    // observeDocsLayout should find plans/done as staging
+    const observed = survey(tmp);
+    assert.equal(observed.ok, true, JSON.stringify(observed));
+    assert.ok(paths(observed).includes("docs/plans/done/x.md"));
+    const empty = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-docs-empty-"));
+    try {
+      const blocked = survey(empty);
+      assert.equal(blocked.ok, false);
+    } finally {
+      fs.rmSync(empty, { recursive: true, force: true });
+    }
     const named = survey(tmp, { trees: ["docs/plans/done"] });
     assert.equal(named.ok, true);
     assert.deepEqual(paths(named), ["docs/plans/done/x.md"]);

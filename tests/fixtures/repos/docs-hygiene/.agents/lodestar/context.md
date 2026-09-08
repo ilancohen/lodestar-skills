@@ -11,9 +11,9 @@ discovered homes.
 | lint      | n/a               |
 | test      | npm test          |
 
-## Dependency Direction
+## Dependency Policy
 
-Basis: observed import graph, captured 2026-08-18.
+User-stated intended import order — not an observed graph.
 
 core → api
 

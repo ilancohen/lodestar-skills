@@ -1,5 +1,19 @@
 # Step 1 — Collect the minimum required facts
 
+### Installed sibling skills
+
+Before anything else, list directories named `lodestar-*` that sit beside
+this skill's directory and contain `SKILL.md`. That set is the installed
+suite for this run. Do **not** ask which workflows the user plans to
+use, and do **not** infer intent from the prompt.
+
+Record at least: whether `lodestar-audit` is present (gates Fallow,
+Audit Configuration, audit-scope review, and framework
+`scan-extensions` written for audit). Also note `lodestar-fix`,
+`lodestar-architecture`, `lodestar-plan`, `lodestar-implement`, and
+`lodestar-docs` for the Reference skills table and Step 5 Next
+pointers.
+
 Read only what's needed to fill in the template placeholders:
 
 - **Package manager** — exactly one of pnpm / yarn / npm / Bun
@@ -27,26 +41,30 @@ Read only what's needed to fill in the template placeholders:
   valid. For each: name, path, alias (`name`/`paths`/`imports`/bundler; else `n/a`); entry
   points (`exports`/`typesVersions`/`main`; else `index.ts`);
   responsibility; `Scannable: no` + language if none.
-- **Fallow entry surfaces** — for each **application** row (especially
-  under `apps/*` or multiple front-end roots), record project-root-relative
-  globs Fallow should treat as graph roots when auto-discovery is not
-  enough: `index.html`, `src/main.ts`, `main.ts`, `server.ts`, framework
-  convention files (Next `app/**/page.tsx`, Vite `index.html`, …). Use
-  judgment — inspect `package.json` scripts, HTML shells, and bundler
-  config. **Single-app repos** usually need no explicit list (count `0`,
-  omit the `entry` key). **Multi-app repos** record one glob per distinct
+- **Fallow entry surfaces** — **only when `lodestar-audit` is installed.**
+  For each **application** row (especially under `apps/*` or multiple
+  front-end roots), record project-root-relative globs Fallow should
+  treat as graph roots when auto-discovery is not enough: `index.html`,
+  `src/main.ts`, `main.ts`, `server.ts`, framework convention files
+  (Next `app/**/page.tsx`, Vite `index.html`, …). Use judgment —
+  inspect `package.json` scripts, HTML shells, and bundler config.
+  **Single-app repos** usually need no explicit list (count `0`, omit
+  the `entry` key). **Multi-app repos** record one glob per distinct
   app surface and the total count `N` for the post-write `--minimum N`
-  check. Do not guess paths that do not exist on disk.
+  check. Do not guess paths that do not exist on disk. When audit is
+  absent, skip this entirely.
 - **Excluded paths** — gitignored paths inside layout globs; codegen
   (`prisma/schema.prisma`, `codegen.yml`/`ts`, `*.proto`,
   `openapi*.y?ml`) and output; dirs `generated`, `__generated__`,
   `dist`, `build`, `.next`, `.output`; `*.gen.ts`/`*.generated.ts`;
   `@generated` / "do not edit" banners. Tests: `*.test.*`, `*.spec.*`,
   `__tests__/`, `tests/`.
-- **Dependency direction** — package-level edge list (who imports whom,
-  rough count), then cycles. Acyclic → chain. Cyclic → record edges and
-  the cycle; do not order them. Ambiguous observation → ask once in
-  Step 2; do not guess a target layout.
+- **Dependency observation (ephemeral)** — optional package-level edge
+  list for the review screen and (when audit is installed) for
+  `.fallowrc.json` boundaries. Acyclic / cyclic notes are fine to show.
+  **Do not persist** the observed graph into `context.md`. Dependency
+  Policy is user-stated intent only — collect it on the review screen if
+  the user supplies one; never invent policy from observation.
 - **Existing files** — check whether `.agents/lodestar/context.md` already
   exists, and whether `AGENTS.md` exists and already has a `## Lodestar`
   section. If they do, read them briefly so you don't overwrite unrelated
@@ -54,7 +72,8 @@ Read only what's needed to fill in the template placeholders:
   `AGENTS.md` — if you find them there, reuse those values for
   `context.md` and then strip those sections from `AGENTS.md` (see
   cleanup). A value already in `## Conventions` is never overwritten by a
-  sweep that misses it.
+  sweep that misses it. A leftover `## Dependency Direction` section is
+  stale observed graph — drop it on rewrite; do not treat it as Policy.
 - **Conventions evidence** — a short, bounded sweep so the review screen
   can pre-check from evidence. Record paths (or "not found"), not a
   judgment. Stop at the first hit per signal; do not walk the whole
@@ -72,9 +91,13 @@ Read only what's needed to fill in the template placeholders:
   - `coverage-floor`: a coverage threshold in the test runner config the
     Build & Test `test` script already points at (vitest / jest / c8
     `coverage.thresholds` or equivalent).
-- **Commit policy** — detect per `context-md.md` `## Audit Configuration` (commitlint,
-  `git log`, hooks, current branch). Record paths, not a judgment.
-- **Framework signals** — infer which UI frameworks are in use so the
+- **Commit policy** — **only when `lodestar-audit` is installed** (git
+  keys live under `## Audit Configuration`). Detect per
+  `context-md.md` (commitlint, `git log`, hooks, current branch). Record
+  paths, not a judgment. When audit is absent, skip — do not collect for
+  fix-alone installs.
+- **Framework signals** — **only when `lodestar-audit` is installed**
+  (for `scan-extensions`). Infer which UI frameworks are in use so the
   audit scans the right file types. This is judgment, not a fixed rule
   list. Weigh several signals together:
   - `dependencies` / `devDependencies` in root and workspace
@@ -89,6 +112,7 @@ Read only what's needed to fill in the template placeholders:
   - Record the frameworks you believe are active (for the review screen)
     and the resulting extension list for `scan-extensions` (base TS/JS
     list plus any framework extensions you add).
+  When audit is absent, skip framework / scan-extensions collection.
 - **Docs layout** — run
   `node <lodestar-setup-skill>/scripts/discover-docs.mjs --root <repo>`
   (add `--output-root` from an existing `context.md` `output-root` row,
@@ -98,19 +122,20 @@ Read only what's needed to fill in the template placeholders:
   keeps its Role and Responsibility even if this run would guess
   differently; new paths get the script's guess; gone paths are dropped.
 - **Guideline sources** — bounded existence checks, not a tree walk.
-  Record paths that exist. Always include
-  `.agents/skills/lodestar-setup/principles.md` as the baseline, even
-  when nothing else is found. Check these well-known files at the repo
-  root: `CONTRIBUTING.md`, `AGENTS.md`, `CLAUDE.md`. Host-agent rules,
-  one level, only if the directory exists: `.cursor/rules/` (`*.md`,
+  Record **repo-owned** paths that exist for `## Review Rubric`. Do
+  **not** list the bundled `principles.md` — skills resolve it from the
+  installed setup skill. Check these well-known files at the repo root:
+  `CONTRIBUTING.md`, `AGENTS.md`, `CLAUDE.md`. Host-agent rules, one
+  level, only if the directory exists: `.cursor/rules/` (`*.md`,
   `*.mdc`), `.claude/rules/` (`*.md`), `.cursorrules`,
   `.github/copilot-instructions.md`. Under each observed docs-layout
   path, check for `CONTRIBUTING.md`, `STYLE.md`, `CONVENTIONS.md`, or a
   `*coding*standard*` file — stop at the first hit per docs path. Do
   not walk the rest of the tree. A path already in `## Review Rubric`
   stays unless the user drops it on the review screen.
-- **Audit-scope measurements** — no source reading. No `.git` → record
-  that and skip to `mode: all` with no question. Else four commands:
+- **Audit-scope measurements** — **only when `lodestar-audit` is
+  installed.** No source reading. No `.git` → record that and skip to
+  `mode: all` with no question. Else four commands:
   `git rev-list --count HEAD`; `git log --reverse --format=%ad
 --date=short | head -n 1` (first commit; do not use `-1`, git applies
   it before `--reverse`); `git ls-files` count matching a layout glob

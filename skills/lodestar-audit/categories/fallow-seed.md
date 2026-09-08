@@ -116,7 +116,7 @@ clone detectors alongside it.
 
 For `check.boundary_violations` to fire, the repo must have a `.fallowrc.json`
 whose zones match the `## Package Layout` table in `context.md`. The setup
-skill writes this file (Step 7 of `lodestar-setup`) using the repo's
+skill writes this file (Step 4 / `06-fallow` of `lodestar-setup`) using the repo's
 own package names as zone names — there is no canonical role mapping.
 Setup also writes `ignorePatterns` from `### Excluded Paths`. Fallow's
 schema excludes those files from analysis entirely, so `dupes` and

@@ -3,8 +3,13 @@
 Present **one tick list**. Do not split this across turns. One round of
 feedback. Later steps honor these ticks and ask nothing.
 
-Before the list, gather what the rows need — do not load another step
-reference:
+When `lodestar-audit` is **not** among the installed siblings: omit
+every Fallow row (install, `.fallowrc.json`, gitignore patterns that
+exist only for audit scratch). Do not run `resolve-bin`. Do not ask
+about Fallow. Continue with the non-Fallow rows below that still apply.
+
+When audit **is** installed, before the list, gather what the Fallow
+rows need — do not load another step reference:
 
 - Run `resolve-bin` (same command the fallow procedure will re-run):
   `node <lodestar-audit-skill>/scripts/fallow-contract.mjs resolve-bin --root <repo>`.
@@ -25,6 +30,9 @@ reference:
 - Check whether `.fallowrc.json` exists (changes the write-row verb).
 - Check whether `.gitignore` already covers `.audit-*.json` and
   `.fallow/` (omit that row when both are covered).
+
+Always (audit or not):
+
 - Detect the repo's linter from existing config and dependencies (omit
   the linter row when none is configured).
 - Pre-0.3 `AGENTS.md` sections come from Step 1 (omit that row when
@@ -33,12 +41,15 @@ reference:
 Omit a row that cannot apply: fallow already declared, installed in
 `node_modules/.bin`, and in range (never install over it); no linter
 configured; no pre-0.3 lodestar sections in
-`AGENTS.md`; `.gitignore` already covering both entries.
+`AGENTS.md`; `.gitignore` already covering both entries; audit absent
+(all Fallow rows).
 
 Pre-tick per the defaults below. Unticked means skip that write.
 
 > These writes go outside `.agents/`. Ticked ones run; untick anything
 > you don't want. One round.
+
+When audit is installed:
 
 - [x] **Install fallow** with `<command>`. Declares `fallow` in
       `package.json` devDependencies (or upgrades the pin), runs install
@@ -52,20 +63,26 @@ Pre-tick per the defaults below. Unticked means skip that write.
       the pin for everyone on the project. When declared but the binary
       is missing, also print `<install command>` (`pnpm install`, …).
 - [x] **Write `.fallowrc.json`** describing which package may import
-      which. If the file already exists, the verb is **merge the
-      import-boundary section into your existing `.fallowrc.json`**;
-      name **replace** as the alternative (user can say "replace"
-      instead of merge). Unticked leaves the existing file alone.
+      which (from the live import graph for Fallow zones — not written
+      as Dependency Policy in `context.md`). If the file already exists,
+      the verb is **merge the import-boundary section into your existing
+      `.fallowrc.json`**; name **replace** as the alternative (user can
+      say "replace" instead of merge). Unticked leaves the existing file
+      alone.
 - [x] **Add** `.audit-*.json` and `.fallow/` to `.gitignore`. The
       pattern covers every scratch file the audit and the fallow verify
       write to the repo root, so an interrupted run leaves nothing
       committable. Omit when both entries are already covered.
+
+Always eligible:
+
 - [ ] **Add a `## Lodestar` section to `AGENTS.md`** so any agent, on
       every task, checks the principles before it finishes. Unticked
       leaves `AGENTS.md` alone.
 - [ ] **Tighten** the existing `<linter>` rules so the audit can report
       certain problems as definite rather than probable. Nothing new
-      gets installed. Omit when no linter is configured.
+      gets installed. Omit when no linter is configured, or when audit
+      is not installed.
 - [ ] **Remove** these pre-0.3 lodestar sections from `AGENTS.md`:
       `<list them>`. Everything else in the file stays. Omit when none
       were found.
@@ -73,6 +90,7 @@ Pre-tick per the defaults below. Unticked means skip that write.
 Record the ticks. Default `ENFORCEMENT_MODE` stays `skills-only` unless
 the `AGENTS.md` row is ticked.
 
-If fallow install is declined or later fails, print the command, say
-the audit will not run without it, and carry on — that is not a setup
-failure. `.fallowrc.json` still follows its own tick.
+If fallow install is declined or later fails (audit installs only),
+print the command, say the audit will not run without it, and carry on
+— that is not a setup failure. `.fallowrc.json` still follows its own
+tick.

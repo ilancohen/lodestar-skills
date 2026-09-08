@@ -1,10 +1,10 @@
 <!--
 Canonical lodestar body. This file is the single source of truth for the
 principles content — never copy or inline it elsewhere.
-`.agents/lodestar/context.md` links here instead. Every install of this
-suite lands a real copy at the fixed path `.agents/skills/lodestar-setup/
-principles.md` regardless of which agent(s) it targets, so that link
-always resolves.
+`.agents/lodestar/context.md` points at the installed copy of this file
+beside the lodestar-setup skill (wherever that skill was installed —
+native, per-agent, or universal). Do not assume a fixed
+`.agents/skills/lodestar-setup/principles.md` path.
 
 This file stays untouched across installs (no placeholder substitution) —
 it references `.agents/lodestar/context.md`'s `## Build & Test`,
@@ -16,7 +16,7 @@ any particular package layout. The setup skill writes a Package Layout
 table in `.agents/lodestar/context.md` that documents whatever packages
 actually exist in the repo (with the repo's own names, paths, aliases, and
 one-sentence responsibilities). Agents reason about boundaries by reading that table
-plus the declared dependency direction, not by matching package names
+plus any declared Dependency Policy, not by matching package names
 against a fixed role list.
 -->
 
@@ -30,10 +30,15 @@ domain modules, isolated from I/O and framework wiring.
 
 ### DRY
 
-Extract on the second occurrence, not before. Shared logic goes in the
-package nominated for shared / domain code in
-`.agents/lodestar/context.md` (`## Package Layout`). If a change touches
-6+ unrelated files, find the missing abstraction first.
+Identify duplicated logic at the second occurrence. Extract at the third —
+unless immediate divergence risk already has evidence (then leave both and
+note why). Shared logic goes in the package nominated for shared / domain
+code in `.agents/lodestar/context.md` (`## Package Layout`). If a change
+touches 6+ unrelated files, find the missing abstraction first.
+
+DRY and Rule of Three agree: two copies are a signal; three is the usual
+threshold to abstract. YAGNI still forbids inventing a shared helper with
+only one caller.
 
 ### Single Source of Truth (SSOT)
 
@@ -74,8 +79,9 @@ deeper in.
 
 ### Rule of Three
 
-One use case: implement concretely. Two: wait. Three: now you know the real
-shape; abstract.
+One use case: implement concretely. Two: note the duplication (see DRY);
+do not extract yet unless divergence risk has evidence. Three: now you
+know the real shape; abstract.
 
 ### Prefer Proven Libraries (Avoid NIH)
 
@@ -176,7 +182,7 @@ needs an internal, the test belongs in the same package.
 | Mutable `let` at module scope                                                 | Testability / implicit state |
 | Empty or log-only `catch` block                                               | Error handling               |
 | `throw new Error('not found')` for expected failure                           | Error handling               |
-| Import that violates the declared dependency direction                        | Boundaries                   |
+| Import that violates the declared Dependency Policy                           | Boundaries                   |
 | Custom re-implementation of a solved problem with a healthy library available | Proven Libraries (NIH)       |
 | Same concept named differently across modules, layers, or docs                | Ubiquitous Language          |
 | One name used for two distinct concepts in the codebase                       | Ubiquitous Language          |
@@ -190,7 +196,7 @@ Before marking any task complete:
 - [ ] Each modified file has a single, nameable responsibility
 - [ ] No function both returns data and causes a side effect
 - [ ] No getter chains — behavior pushed toward the data
-- [ ] No logic duplicated from elsewhere in the codebase
+- [ ] No logic duplicated from elsewhere in the codebase at three sites without an abstraction (two sites noted)
 - [ ] No constant, schema, or config value redeclared — one canonical home, imported elsewhere
 - [ ] No abstraction, parameter, or option added without a current caller
 - [ ] New cross-package types live in the shared types package
@@ -198,7 +204,7 @@ Before marking any task complete:
 - [ ] New domain identifiers use branded types — unless `branded-types` is disabled in `.agents/lodestar/context.md`'s `## Conventions` table
 - [ ] All cross-package imports go through `index.ts`
 - [ ] Nothing exported from `index.ts` that no consumer needs
-- [ ] No import crosses the dependency direction declared in `.agents/lodestar/context.md`
+- [ ] No import crosses the Dependency Policy declared in `.agents/lodestar/context.md` (when present)
 - [ ] Domain modules depend on interfaces, not concrete infrastructure
 - [ ] No side effects at module load time
 - [ ] No new mutable module-level state introduced

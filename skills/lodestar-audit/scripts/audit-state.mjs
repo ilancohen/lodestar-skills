@@ -765,7 +765,9 @@ function parseFactsFlag(raw) {
     .map((part) => part.trim())
     .filter(Boolean);
   if (!parts.length) {
-    throw new Error("check-freshness --facts requires layout, commands, and/or docs");
+    throw new Error(
+      "check-freshness --facts requires layout, commands, and/or docs",
+    );
   }
   const facts = { layout: false, commands: false, docs: false };
   for (const part of parts) {
@@ -958,7 +960,9 @@ export function deriveDirection(root) {
 }
 
 export function parseDirection(contextText) {
-  const heading = contextText.search(/^## Dependency Direction\s*$/m);
+  // Explicit policy only. Legacy `## Dependency Direction` (observed graph)
+  // is ignored — same treatment as a stale `## Resolved Decisions` section.
+  const heading = contextText.search(/^## Dependency Policy\s*$/m);
   if (heading === -1) {
     return {
       chain: [],
@@ -1146,7 +1150,7 @@ export function deriveResolvedDecisions({
 
   // coverage-floor: none → omit coverage check; do NOT add a blind-spot line
 
-  // Structural: single scannable package + empty direction graph
+  // Structural: single scannable package + empty policy graph
   const scannablePackages = (packages || []).filter(
     (row) => row.scannable !== "no",
   );
@@ -1164,6 +1168,13 @@ export function deriveResolvedDecisions({
     );
     singlePackageBlindSpots.push(
       "`boundaries` B (cross-package misplaced logic) — not applicable: single-package repo",
+    );
+  } else if (hasNoEdges) {
+    // Multi-package without `## Dependency Policy`: skip wrong-direction
+    // only. Cycles (#3) still run. Do not gate boundaries:B.
+    gatedOut.add("imports:#6");
+    singlePackageBlindSpots.push(
+      "`imports` #6 (wrong-direction imports) — skipped; no `## Dependency Policy` in context.md",
     );
   }
 
@@ -2007,7 +2018,10 @@ export function validateActionItem(text, options = {}) {
   if (!ACTION_RISKS.has(fields.risk)) {
     errors.push("risk must be low | medium | high");
   }
-  if (fields.requires_decision !== "true" && fields.requires_decision !== "false") {
+  if (
+    fields.requires_decision !== "true" &&
+    fields.requires_decision !== "false"
+  ) {
     errors.push("requires_decision must be true or false");
   }
   if (!Array.isArray(fields.files) || fields.files.length === 0) {
@@ -2038,10 +2052,14 @@ export function validateActionItem(text, options = {}) {
   }
   // Nested indentation smell from the old template.
   if (/^files:\s*$/m.test(text) && /^\s+scope:/m.test(text)) {
-    errors.push("scope must be a top-level frontmatter field, not nested under files");
+    errors.push(
+      "scope must be a top-level frontmatter field, not nested under files",
+    );
   }
   if (/^\s+findings:/m.test(text) && !/^findings:/m.test(text)) {
-    errors.push("findings must be a top-level frontmatter field, not nested under files");
+    errors.push(
+      "findings must be a top-level frontmatter field, not nested under files",
+    );
   }
   for (const heading of ACTION_ITEM_SECTIONS) {
     const body = sectionBody(text, heading);
@@ -2049,13 +2067,20 @@ export function validateActionItem(text, options = {}) {
       errors.push(`missing ## ${heading}`);
       continue;
     }
-    if (!body || /[<>].*[<>]/.test(body) && /PLACEHOLDER|path\/to|e\.g\./i.test(body)) {
+    if (
+      !body ||
+      (/[<>].*[<>]/.test(body) && /PLACEHOLDER|path\/to|e\.g\./i.test(body))
+    ) {
       errors.push(`## ${heading} is empty or still a placeholder`);
     }
     if (heading === "Problem" && body.length < 20) {
       errors.push("## Problem must include concrete evidence");
     }
-    if (heading === "Suggested fix" && !/\d+\./.test(body) && body.length < 20) {
+    if (
+      heading === "Suggested fix" &&
+      !/\d+\./.test(body) &&
+      body.length < 20
+    ) {
       errors.push("## Suggested fix must be a concrete step list");
     }
     if (heading === "Acceptance check" && body.length < 5) {

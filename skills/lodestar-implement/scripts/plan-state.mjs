@@ -4,6 +4,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import {
   atomicWrite,
@@ -307,20 +308,52 @@ export function completeLedger(root, plansRoot, href, evidence) {
   );
 }
 
-export function parseReviewRubric(contextText) {
-  const heading = contextText.search(/^## Review Rubric\s*$/m);
-  const fallback = [".agents/skills/lodestar-setup/principles.md"];
-  if (heading === -1) return fallback;
-  const rest = contextText.slice(heading);
-  const next = rest.search(/\n## /);
-  const section = next === -1 ? rest : rest.slice(0, next);
-  const paths = [];
-  for (const line of section.split(/\r?\n/)) {
-    const bullet = line.match(/^\s*-\s+`?([^`\s]+)`?/);
-    if (!bullet) continue;
-    paths.push(bullet[1]);
+export function resolvePrinciplesCandidates() {
+  const candidates = [];
+  try {
+    const sibling = path.normalize(
+      path.join(
+        path.dirname(fileURLToPath(import.meta.url)),
+        "..",
+        "..",
+        "lodestar-setup",
+        "principles.md",
+      ),
+    );
+    if (fs.existsSync(sibling)) candidates.push(sibling);
+  } catch {
+    /* ignore */
   }
-  return paths.length ? paths : fallback;
+  candidates.push(
+    ".agents/skills/lodestar-setup/principles.md",
+    ".cursor/skills/lodestar-setup/principles.md",
+    ".claude/skills/lodestar-setup/principles.md",
+  );
+  return candidates;
+}
+
+function isPrinciplesPath(p) {
+  return /(?:^|\/)lodestar-setup\/principles\.md$/.test(
+    String(p).replace(/\\/g, "/"),
+  );
+}
+
+export function parseReviewRubric(contextText) {
+  const principles = resolvePrinciplesCandidates()[0];
+  const extras = [];
+  const heading = contextText.search(/^## Review Rubric\s*$/m);
+  if (heading !== -1) {
+    const rest = contextText.slice(heading);
+    const next = rest.search(/\n## /);
+    const section = next === -1 ? rest : rest.slice(0, next);
+    for (const line of section.split(/\r?\n/)) {
+      const bullet = line.match(/^\s*-\s+`?([^`\s]+)`?/);
+      if (!bullet) continue;
+      if (isPrinciplesPath(bullet[1])) continue;
+      extras.push(bullet[1]);
+    }
+  }
+  return [principles, ...extras];
 }
 
 function resolvePlanAbs(root, plansRoot, plan) {

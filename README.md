@@ -33,24 +33,25 @@ writeups those skills leave behind.
   what an agent would not miss. Never creates new docs homes. Never edits
   application source.
 
-Run them in that order. `lodestar-setup` first for the audit, fix,
-architecture, and docs skills — they stop without `context.md`.
-`lodestar-plan` and `lodestar-implement` don't need it: with no
-`context.md` they find the commands, packages, and rules in the repo
-themselves, name what they found, and let you correct it.
+Run them in that order when you want the full loop. `lodestar-setup` is
+the base skill — include it in every install. Recommended pairs:
+`audit`+`fix`, `plan`+`implement`. Architecture and docs can stand alone
+with setup. Architecture, docs, plan, and implement can discover what
+they need when `context.md` is absent; audit and fix need setup (and
+Fallow only when audit is installed).
 
 ## The rules it checks for
 
 Full definitions: [`skills/lodestar-setup/principles.md`](skills/lodestar-setup/principles.md).
 
 - [Separation of Concerns](skills/lodestar-setup/principles.md#separation-of-concerns-soc) — one reason to change per module
-- [DRY](skills/lodestar-setup/principles.md#dry) — extract on the second occurrence
+- [DRY](skills/lodestar-setup/principles.md#dry) — identify at two; extract at three
 - [Single Source of Truth](skills/lodestar-setup/principles.md#single-source-of-truth-ssot) — each fact has one home
 - [YAGNI](skills/lodestar-setup/principles.md#yagni) — only what the current task needs
 - [CQS](skills/lodestar-setup/principles.md#cqs-command-query-separation) — query or command, never both
 - [Tell Don't Ask](skills/lodestar-setup/principles.md#tell-dont-ask) — push behavior toward the data
 - [Parse Don't Validate](skills/lodestar-setup/principles.md#parse-dont-validate) — brand at the boundary, trust inside
-- [Rule of Three](skills/lodestar-setup/principles.md#rule-of-three) — abstract only at the third use
+- [Rule of Three](skills/lodestar-setup/principles.md#rule-of-three) — abstract at the third use (same threshold as DRY)
 - [Prefer Proven Libraries](skills/lodestar-setup/principles.md#prefer-proven-libraries-avoid-nih) — don't reimplement solved problems
 - [Ubiquitous Language](skills/lodestar-setup/principles.md#ubiquitous-language) — one term, one concept
 
@@ -98,9 +99,10 @@ npx skills add ilancohen/lodestar-skills
 ```
 
 That's the normal path — it detects your agent, pre-selects all seven skills,
-Enter to confirm. Install all seven: the skills share modules that live in
-`lodestar-setup`, so a partial install is unsupported and any skill missing
-its base will say so and stop. A few more ways to run it:
+Enter to confirm. Partial installs are supported when they include
+`lodestar-setup` as the base (recommended pairs: audit+fix,
+plan+implement; architecture and docs may stand alone with setup). A
+skill missing its base will say so and stop. A few more ways to run it:
 
 Adopting this in a large, long-lived repo does not have to open with a
 thousand action items. Setup can scope the audit to code changed since
@@ -118,13 +120,11 @@ Agent ids: `cursor`, `claude-code`, `codex`, `gemini-cli`, `github-copilot`,
 `kiro-cli` — see the [skills CLI's supported agents](https://github.com/vercel-labs/skills#supported-agents)
 for the full list.
 
-Every install via `npx skills add` always also requests the CLI's `universal`
-pseudo-agent, so a
-real copy of each skill — `principles.md` included — lands at the fixed path
-`.agents/skills/<skill-name>/`, no matter which client agent(s) you picked.
-`lodestar-setup` points `.agents/lodestar/context.md` at that fixed path. If
-you hand-craft an `-a` list yourself, add `-a universal` too, or
-`lodestar-setup`'s reference to `principles.md` may not resolve.
+Every install via `npx skills add` can also request the CLI's `universal`
+pseudo-agent. Principles resolve from the installed `lodestar-setup`
+skill directory (beside its `SKILL.md`) on native, per-agent, and
+universal paths alike — `context.md` does not hardcode
+`.agents/skills/lodestar-setup/principles.md`.
 
 Don't want the CLI? Each agent also has a native plugin:
 
@@ -141,27 +141,27 @@ Skills don't activate on their own — you have to invoke them by name
 (`/lodestar-setup`, `$lodestar-setup`, or however your agent's UI picks skills).
 
 1. Run `lodestar-setup` once, in the target repo. It writes
-   `.agents/lodestar/context.md` — your package layout, dependency
-   direction, build commands, exclusions, conventions, audit scope, and
-   commit policy — which is the only file the other skills read. Adding a
-   `## Lodestar` pointer to `AGENTS.md` (principles on every task) is
-   unticked on the permissions screen; skills-only is the default and
-   leaves `AGENTS.md` alone. Either way it documents your layout and
-   configures Fallow.
-2. Run `lodestar-audit`. It writes to `docs/audit/<run-id>/` unless
-   `## Audit Configuration` names a different `output-root`.
+   `.agents/lodestar/context.md` — package layout, optional dependency
+   policy, build commands, exclusions, conventions, and (when audit is
+   installed) audit scope and commit policy. Fallow is prepared only when
+   audit is among the installed siblings. Adding a `## Lodestar` pointer
+   to `AGENTS.md` is unticked on the permissions screen; skills-only is
+   the default. Setup asks one review correction and one write consent —
+   no post-write confirm question.
+2. Run `lodestar-audit` when installed. It writes to `docs/audit/<run-id>/`
+   unless `## Audit Configuration` names a different `output-root`.
 3. Read the index it produces and decide what to act on.
 4. Run `lodestar-fix` when you want it to actually change code.
 5. Run `lodestar-architecture` separately, only if the package layout itself
-   feels wrong.
+   feels wrong — works without full setup via discovery.
 6. Run `lodestar-plan` for larger work that needs a staged, implementable
-   plan (`rigor: light | standard | full`). Step 1 is optional for this
-   one.
+   plan (`rigor: light | standard | full`). Fine without setup.
 7. Run `lodestar-implement` to execute that plan one stage at a time.
-   Also fine without step 1.
+   Also fine without setup.
 8. Run `lodestar-docs` when staging folders under `docs/` have piled up.
    It proposes, waits for OK, then harvests and deletes. Default scope is
-   lodestar-owned trees, not the whole `docs/` tree.
+   lodestar-owned trees, not the whole `docs/` tree. Discovery works
+   without context.
 
 ## Contributing
 

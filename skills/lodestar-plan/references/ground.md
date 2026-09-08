@@ -15,10 +15,10 @@ Check, in this order:
    ([discover-context.md](discover-context.md) lists where to look). A
    command that is in none of those is not real.
 3. **Direction.** If the plan assumes package A may import package B,
-   that edge must match `context.md` `## Dependency Direction`. An empty
-   graph is valid for a single-package repo. With no `context.md`, there
-   is no recorded graph — check the assumed edge against the imports that
-   exist today instead, and treat only a new cycle as a contradiction.
+   that edge must match `context.md` `## Dependency Policy` when
+   present. Without policy, check the assumed edge against the imports
+   that exist today instead, and treat only a new cycle as a
+   contradiction. An empty policy is valid for a single-package repo.
 
 On a hit: **stop**. Name the missing file or command, or the direction
 contradiction. Do not write the plan. Trace callers only when this pass

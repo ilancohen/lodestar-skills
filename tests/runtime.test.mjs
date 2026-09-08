@@ -247,7 +247,7 @@ for (const [skill, relative, expectedExports] of GATEWAYS) {
       );
       assert.equal(result.status, 1);
       assert.match(result.stderr, /requires the lodestar-setup skill/);
-      assert.match(result.stderr, /installs as a unit/);
+      assert.match(result.stderr, /Reinstall lodestar-setup/);
       assert.match(result.stderr, /npx skills add/);
       assert.doesNotMatch(result.stderr, /ERR_MODULE_NOT_FOUND/);
     } finally {

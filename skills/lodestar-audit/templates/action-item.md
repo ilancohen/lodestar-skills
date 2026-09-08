@@ -24,8 +24,8 @@ findings: <comma-separated F-IDs this action item absorbs, e.g. F0007, F0008>
 
 <2–4 sentences. What's wrong, where, and the principle it violates. Cite the
 principle by name as it appears in the paths under `## Review Rubric` in
-`.agents/lodestar/context.md` (or, when that section is absent, in
-`.agents/skills/lodestar-setup/principles.md`)
+`.agents/lodestar/context.md` (or, when that section is absent, in the
+installed `lodestar-setup/principles.md`)
 (e.g. "Centralize types", "Parse Don't Validate", "CQS"). Include the exact
 file path(s) and, where useful, a short code excerpt.>
 

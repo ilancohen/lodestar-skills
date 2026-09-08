@@ -8,10 +8,6 @@
 | lint      | n/a      |
 | test      | bun test |
 
-## Dependency Direction
-
-Basis: observed import graph, captured 2026-08-18.
-
 ## Package Layout
 
 | Package | Path | Alias | Responsibility                     |

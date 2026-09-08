@@ -228,14 +228,8 @@ function classify(relative, liveRuns, inflight, stagingPaths) {
 
 export function survey(root, options = {}) {
   let context = readContext(root);
+  const contextWasMissing = context.missing;
   const widened = Boolean(options.full || options.trees?.length);
-  if (context.missing && !widened) {
-    return {
-      ok: false,
-      error:
-        ".agents/lodestar/context.md is missing. Run lodestar-setup first.",
-    };
-  }
   if (context.missing) {
     context = {
       contextPath: context.contextPath,
@@ -255,6 +249,13 @@ export function survey(root, options = {}) {
     trees = options.trees;
   } else {
     trees = defaultTrees(root, context);
+  }
+  if (contextWasMissing && !widened && trees.length === 0) {
+    return {
+      ok: false,
+      error:
+        "No docs staging trees found. Name a folder with --tree, pass --full, or run lodestar-setup to record Docs Layout.",
+    };
   }
   const seen = new Set();
   const files = [];

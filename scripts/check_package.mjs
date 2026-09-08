@@ -450,12 +450,12 @@ export function checkPackage(root = ROOT) {
     path.join(root, "skills/lodestar-setup/SKILL.md"),
     "utf8",
   );
-  // principles.md is deliberately exempt: every install guarantees a real
-  // copy at `.agents/skills/lodestar-setup/principles.md` (install always
-  // also requests the skills CLI's `universal` target), so the generated
-  // `.agents/lodestar/context.md` is meant to link to that fixed path. The
-  // other bundled templates are setup-internal only and must stay
-  // relative to this SKILL.md's own directory.
+  // principles.md resolves from the installed lodestar-setup skill
+  // (beside its SKILL.md) on every install path — native, per-agent, or
+  // universal. context.md must not hardcode a fixed
+  // `.agents/skills/lodestar-setup/principles.md` path as the only link.
+  // Bundled setup templates other than principles stay relative to
+  // this SKILL.md's own directory.
   if (
     /\.agents\/skills\/lodestar-setup\/(?:agents-md|context-md|skills-readme|fallowrc)\.md/.test(
       setupText,

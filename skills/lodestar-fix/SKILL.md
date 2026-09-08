@@ -122,7 +122,8 @@ If the run root has `in_progress` or `deferred`, load
 3. **Execute** — [references/execute.md](references/execute.md). One item
    at a time, serially. No mutating sub-agent fan-out.
 4. **Report** — [references/report.md](references/report.md). Session
-   summary, archive run (Step 4a), dependency direction (Step 4b).
+   summary, archive run (Step 4a); do not refresh Dependency Policy
+   (Step 4b).
 
 **Resuming** a previous run: [references/resume.md](references/resume.md).
 
@@ -142,9 +143,8 @@ If the run root has `in_progress` or `deferred`, load
   `<output-root>/<RUN_ID>/done/`; deferred stay in the run root.
 - **No `git add -A`.** Stage only the item's `files:`. Never stage a
   whole dirty file that already had unrelated edits.
-- **`## Dependency Direction` refresh is the one exception.** Step 4b may
-  rewrite that `context.md` section on consent after an `imports` #3 fix,
-  in its own commit — not scope-creep.
+- **Never rewrite Dependency Policy from observation.** Step 4b does not
+  refresh `context.md` from the live import graph after cycle fixes.
 - **Stop conditions:**
   - No `INDEX.md` or no action-item files in the run directory.
   - The item's acceptance method is empty or unusable (no command and no

@@ -1,19 +1,19 @@
 # Lodestar Context
 
 Written by `lodestar-setup` to `.agents/lodestar/context.md`. This is the
-only file the lodestar skills read for repo facts — `lodestar-audit`,
-`lodestar-fix`, `lodestar-architecture`, and `lodestar-docs` stop and ask
-for setup if it is missing (`lodestar-docs` may continue if you named a
-folder). Keep it accurate; nothing else needs to be kept in sync. To
-see whether this file still matches the repo, run `check-freshness`
-(do not re-run setup just to find out):
+primary file lodestar skills read for repo facts. `lodestar-audit` and
+`lodestar-fix` stop without it. `lodestar-architecture`, `lodestar-docs`,
+`lodestar-plan`, and `lodestar-implement` can discover what they need when
+it is missing. Keep it accurate; nothing else needs to be kept in sync.
+When `lodestar-audit` is installed, freshness is:
 
 ```text
 node <lodestar-audit-skill>/scripts/audit-state.mjs check-freshness --root <repo>
 ```
 
 Exit 0: still true. Exit 2: named facts have drifted — re-run
-`lodestar-setup` to rewrite them.
+`lodestar-setup` to rewrite them. Skip that check when audit is not
+installed.
 
 ## Project
 
@@ -57,38 +57,33 @@ A `layout-source` row records the file that declared the workspace
 **Absent means the missing-package freshness check skips** rather than
 walking the tree. Write it whenever setup observed a declaring file.
 
-## Dependency Direction
+## Dependency Policy
 
-Observed package import graph — not an intended or target layout. The audit
-derives allowed imports from this graph: imports that oppose a documented
-edge or path are wrong-direction findings; edges of a documented cycle are
-reported as circular dependencies instead. Any intended-but-not-yet-true
-layout belongs in `lodestar-architecture`'s advisory report, not here.
+Optional. User-stated intended import order — **not** today's observed
+import graph. Setup writes this section only when the user supplies an
+explicit policy on the review screen. Omit the whole section when there
+is none.
 
-Basis: observed import graph, captured [YYYY-MM-DD].
+Without this section, the audit still detects circular imports but skips
+wrong-direction findings and says why. Do not paste a live topological
+sort or edge list here.
 
-**Acyclic** — record the topological order as a chain (one observed
-ordering, not a rule):
-
-```
-[e.g. web → server → core → shared — use the actual package names from the
-table below, not generic role names]
-```
-
-**Cyclic** — no single order exists; list observed edges instead:
+**Acyclic policy** — intended chain (repo package names from the table
+below):
 
 ```
-- core → api (N imports) [cycle]
-- api → core (N imports) [cycle]
+[e.g. web → server → core → shared]
 ```
 
-The graph is cyclic — no single dependency order exists.
+**Cyclic policy** — rare; list intended edges both ways when the team
+accepts a documented cycle:
 
-New downward imports consistent with the documented ordering are not
-violations until this section is updated.
+```
+- core → api [cycle]
+- api → core [cycle]
+```
 
-A single-package repo has an empty graph (no chain, no edges). That is
-valid — do not invent a one-node chain.
+A single-package repo normally omits this section.
 
 ## Package Layout
 
@@ -100,8 +95,8 @@ of role names is assumed.
 For each row, provide a one-sentence responsibility describing what the
 package does **today** — not what it should do. Keep it concrete
 ("HTTP routes and request validation", "domain entities and use cases",
-"DB and queue adapters"). Agents use this column, plus the dependency
-graph above, to reason about boundaries.
+"DB and queue adapters"). Agents use this column, plus any Dependency
+Policy above, to reason about boundaries.
 
 `Scannable` is `yes` or `no`. `no` means the audit skips the package and
 reports it as not scanned — typically because it is not TypeScript or
@@ -114,12 +109,13 @@ behavior; every row is scanned.
 multi-entry `exports` map is a deliberate API surface — importing those
 subpaths is not `imports` #1.
 
-A single-package repo with **one** scannable row has an empty graph.
+A single-package repo with **one** scannable row has no policy edges.
 `imports` #6 and `boundaries` B cannot fire — list them in `INDEX.md` as
-not applicable, not as a silent pass. Directory-level rows (feature or
+not applicable, not as a silent pass. Multi-package without a Dependency
+Policy skips #6 only (cycles still run). Directory-level rows (feature or
 module dirs as separate rows) are legitimate and **do** give those
-categories something to check; do not mark them inert. The table has
-never required npm packages.
+categories something to check when policy exists. The table has never
+required npm packages.
 
 | Package         | Path glob(s)                 | Import alias          | Responsibility   | Scannable | Entry points       |
 | --------------- | ---------------------------- | --------------------- | ---------------- | --------- | ------------------ |
@@ -196,29 +192,31 @@ at their defaults.
 
 ## Review Rubric
 
-Repo-relative paths a later review or implement pass should read, on
-top of the installed principles. **Absent means principles only.** No
-version gate and no fail-closed parse — a file with no such section
-still audits. Setup always writes this section, even when the extras
-list is empty.
+Repo-owned paths a later review or implement pass should read, **in
+addition to** the principles that ship with the installed
+`lodestar-setup` skill. List only repository files here — never the
+bundled `principles.md` (skills resolve that from the setup skill
+directory). **Absent means principles only.** No version gate and no
+fail-closed parse — a file with no such section still audits. Setup
+writes this section even when the extras list is empty.
 
-The installed `principles.md` is always the first bullet. Other bullets
-are what setup found (`CONTRIBUTING.md`, `AGENTS.md`, `CLAUDE.md`,
-style docs under the observed docs tree, host-agent rules files) plus
-review-screen corrections.
+Bullets are what setup found (`CONTRIBUTING.md`, `AGENTS.md`,
+`CLAUDE.md`, style docs under the observed docs tree, host-agent rules
+files) plus review-screen corrections.
 
-- `.agents/skills/lodestar-setup/principles.md` — always; suite baseline
 - `[e.g. CONTRIBUTING.md]`
 - `[e.g. AGENTS.md]`
 
 ## Audit Configuration
 
-How the audit and `lodestar-fix` behave. **Absent means default:** every
-category, output under `docs/audit`, Fallow required, `mode: all`, ask
-each session before committing, no extra exclusions. Setup writes this
-section at those defaults and does not ask about categories, output-root,
-or fallow. `lodestar-audit` may offer to persist a category subset here
-after a run.
+How the audit and `lodestar-fix` behave. **Omit this whole section when
+`lodestar-audit` is not installed** — plan and implement discover commit
+policy themselves. When audit is installed, **absent means default:**
+every category, output under `docs/audit`, Fallow required, `mode: all`,
+ask each session before committing, no extra exclusions. Setup writes
+this section at those defaults and does not ask about categories,
+output-root, or fallow. `lodestar-audit` may offer to persist a category
+subset here after a run.
 
 Discovery still scans the whole repo; `mode` only decides which findings
 become action items.
@@ -233,7 +231,7 @@ become action items.
 | `baseline-ref`    | `[commit sha]`       | Required when `mode: changed-since`. Omit the row when `mode` is `all`.                                                                                                                                                         |
 | `baseline-date`   | `[YYYY-MM-DD]`       | Human-readable capture date. Informational; never parsed.                                                                                                                                                                       |
 | `commits`         | `ask`                | `ask` keeps today's question. `per-item` commits without asking. `never` never asks and never commits — edits stay unstaged.                                                                                                    |
-| `subject-format`  | `<category>: <slug>` | Must contain `<slug>`. Also substitutes `<category>`. Single line, at most 200 characters.                                                                                                                                       |
+| `subject-format`  | `<category>: <slug>` | Must contain `<slug>`. Also substitutes `<category>`. Single line, at most 200 characters.                                                                                                                                      |
 | `trailer`         | `Closes <item>.`     | Body line. `none` for no trailer. `<item>` is the action-item path. Single line, at most 200 characters.                                                                                                                        |
 | `protected`       | `none`               | Branches `lodestar-fix` refuses to commit on. Comma-separated names, or `none`.                                                                                                                                                 |
 | `require-clean`   | `no`                 | `yes` refuses to start with a dirty working tree.                                                                                                                                                                               |
@@ -283,25 +281,34 @@ built-in ignores (`**/dist/**`, `**/*.d.ts`, `node_modules`).
 
 ## Reference
 
-The principles, TypeScript rules, testability and error-handling rules,
-anti-pattern reference, and pre-commit checklist live in
-`.agents/skills/lodestar-setup/principles.md`. That file is the single
-source of truth — do not copy its content here.
+Principles (TypeScript rules, testability, error handling, anti-pattern
+reference, pre-commit checklist) live in `principles.md` beside the
+installed `lodestar-setup` `SKILL.md`. Resolve that path from the setup
+skill directory — do not hardcode `.agents/skills/…`. Do not copy its
+content here.
 
-The following skills are available. To use one, read its `SKILL.md` and follow it.
+The following skills are installed beside setup (fill from detected
+siblings; omit rows for skills that are not present). To use one, read
+its `SKILL.md` and follow it.
 
-| Skill               | File                                            | When to use                                                                                   |
-| ------------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Setup               | `.agents/skills/lodestar-setup/SKILL.md`        | Re-scaffold or refresh this file                                                              |
-| Audit               | `.agents/skills/lodestar-audit/SKILL.md`        | Scan the codebase and emit action-item files under the `output-root` in Audit Configuration   |
-| Fix audit items     | `.agents/skills/lodestar-fix/SKILL.md`          | Triage and apply fixes from an audit run                                                      |
-| Review architecture | `.agents/skills/lodestar-architecture/SKILL.md` | Get an advisory second opinion on the layout above; optionally have it propose an alternative |
-| Prune leftover docs | `.agents/skills/lodestar-docs/SKILL.md`         | Harvest then delete leftover audit, architecture, and plan writeups; optional                 |
+| Skill               | File                                                  | When to use                                                                                   |
+| ------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Setup               | `<setup-skill-parent>/lodestar-setup/SKILL.md`        | Re-scaffold or refresh this file                                                              |
+| Audit               | `<setup-skill-parent>/lodestar-audit/SKILL.md`        | Scan the codebase and emit action-item files under the `output-root` in Audit Configuration   |
+| Fix audit items     | `<setup-skill-parent>/lodestar-fix/SKILL.md`          | Triage and apply fixes from an audit run                                                      |
+| Review architecture | `<setup-skill-parent>/lodestar-architecture/SKILL.md` | Get an advisory second opinion on the layout above; optionally have it propose an alternative |
+| Write a plan        | `<setup-skill-parent>/lodestar-plan/SKILL.md`         | Multi-stage or cross-package work that needs an implementable plan                            |
+| Implement a plan    | `<setup-skill-parent>/lodestar-implement/SKILL.md`    | Execute a plan one stage at a time                                                            |
+| Prune leftover docs | `<setup-skill-parent>/lodestar-docs/SKILL.md`         | Harvest then delete leftover audit, architecture, and plan writeups; optional                 |
 
-The audit skill writes one self-contained `.md` file per violation into
-`<output-root>/<run-id>/` (see `output-root` above; default
-`docs/audit/<run-id>/`). Each file is independently fixable — hand it
-to an LLM with a prompt like:
+One outcome sentence: a **single-concern, fixable violation** → an
+audit action item; a **multi-stage or cross-package redesign** →
+`lodestar-plan`.
+
+When audit is installed: it writes one self-contained `.md` file per
+violation into `<output-root>/<run-id>/` (see `output-root` above;
+default `docs/audit/<run-id>/`). Each file is independently fixable —
+hand it to an LLM with a prompt like:
 
 > Read `<output-root>/<RUN_ID>/<filename>.md`. Implement the fix exactly as
 > specified. Do not modify files outside the `files:` list. Run

@@ -15,23 +15,32 @@ no application source was modified, and this report is not a list of
 action items. To act on its suggestions, discuss with the team and
 re-run `lodestar-setup` if the layout changes.
 
-## Current layout — as documented
+## Current layout — as documented or discovered
 
-(One line per package, copied from `context.md` `## Package Layout`, with
-a "matches contents?" verdict from Step 2.)
+(One line per package, from `context.md` `## Package Layout` or discovery,
+with a "matches contents?" verdict from Step 2.)
 
 | Package  | Path     | Alias     | Responsibility     | Matches contents?                          |
 | -------- | -------- | --------- | ------------------ | ------------------------------------------ |
 | `<name>` | `<path>` | `<alias>` | `<responsibility>` | `yes / partially / no — <one-line reason>` |
 
-## Dependency direction
+## Dependency relationships
+
+**Policy** (optional `## Dependency Policy` from context, or "none"):
 
 ```
-<direction copied from context.md>
+<policy chain/edges, or "none recorded">
 ```
 
-(One sentence: does this chain hold against the observed imports?
-"Holds." / "Holds except for N violations — see audit findings.")
+**Observed evidence** (live imports today):
+
+```
+<observed chain or edge list>
+```
+
+(One sentence: when policy exists, does evidence match it? "Holds." /
+"Differs in N places — discussion, not an audit item unless audit runs."
+When no policy, describe evidence only.)
 
 ## What this architecture looks like
 
@@ -55,10 +64,10 @@ whose script is gone. Then the usual architectural smells:
 
 - `shared/` exports 47 symbols, 12 of which are used by a single
   package — possible kitchen-sink shared package.
-- `infra/` imports from `core/` — the direction declared in context.md
-  doesn't allow this. (Note: the audit will also flag this as
-  `imports.wrong-direction`; mention it here as an architectural smell,
-  not a fix-this item.)
+- `infra/` imports from `core/` — when Dependency Policy forbids that,
+  name the mismatch as an architectural smell (audit may also flag
+  `imports.wrong-direction` when policy is recorded). Without policy,
+  treat it as observed evidence for discussion only.
 - Two packages both claim "domain logic" as their responsibility —
   unclear which owns what.
 - No package nominated as the shared types home — types are scattered

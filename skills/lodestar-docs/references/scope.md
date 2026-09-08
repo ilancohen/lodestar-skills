@@ -30,9 +30,10 @@ in the opening so the user knows you left live work alone.
 
 ## Missing context
 
-No `.agents/lodestar/context.md`: stop and point at `lodestar-setup`,
-unless the user already named a folder. Then survey only that `--tree`.
-Do not invent `docs/audit` as a fallback.
+No `.agents/lodestar/context.md`: observe docs trees (same discovery
+setup uses) and continue when staging paths exist. A named `--tree` or
+`--full` also proceeds. If nothing is observed and the user named no
+folder, say so and stop. Do not invent `docs/audit` as a fallback.
 
 ## Size the run
 

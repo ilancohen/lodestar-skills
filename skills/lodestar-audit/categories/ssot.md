@@ -145,7 +145,7 @@ output is separately consumed by `dry`.
 - Mark `requires_decision: true` and stop if:
   - The fix would touch more than 8 files for a single literal.
   - The cited sites span packages with no shared package they both
-    reach (per `context.md` `## Dependency Direction`). This is an
+    reach (per `context.md` `## Dependency Policy`, when present). This is an
     architectural smell; suggest `lodestar-architecture` in `notes:`.
   - Two sites that "look the same" turn out to encode different
     business rules at the same value.

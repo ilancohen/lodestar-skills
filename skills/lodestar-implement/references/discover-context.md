@@ -19,7 +19,7 @@ tree walk.
 | `<typecheck>`   | A `package.json` script named `typecheck` / `tsc` / `types`, or the equivalent task-file target.                                                              |
 | `<test>`        | A `package.json` script named `test`, or the equivalent task-file target.                                                                                     |
 | `<lint>`        | A `package.json` script named `lint`, or the equivalent task-file target.                                                                                     |
-| Review rubric   | The installed `.agents/skills/lodestar-setup/principles.md`, plus whichever of `CONTRIBUTING.md`, `AGENTS.md`, `CLAUDE.md`, and host-agent rules files exist. |
+| Review rubric   | The installed `lodestar-setup/principles.md` (beside that skill's `SKILL.md`), plus whichever of `CONTRIBUTING.md`, `AGENTS.md`, `CLAUDE.md`, and host-agent rules files exist. |
 
 Rules:
 

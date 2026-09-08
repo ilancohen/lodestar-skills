@@ -8,17 +8,6 @@
 | lint      | npm run lint; eslint; eslint --format json --max-warnings=999 <all_pkg_roots>      |
 | test      | npm test          |
 
-## Dependency Direction
-
-Observed package import graph — not an intended or target layout.
-
-Basis: observed import graph, captured 2026-08-18.
-
-- core → api (1 import) [cycle]
-- api → core (1 import) [cycle]
-
-The graph is cyclic — no single dependency order exists.
-
 ## Package Layout
 
 | Package | Path              | Alias      | Responsibility                            |

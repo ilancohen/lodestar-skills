@@ -1,12 +1,20 @@
 # Fallow and `.fallowrc.json` for the audit's fallow seed
 
+**Skip this entire file when `lodestar-audit` is not among the installed
+siblings.** No Fallow check, download, or target-repository write.
+
 The audit skill **requires** [fallow](https://docs.fallow.tools) as the
 primary graph-based detector for `imports`, `dry`, and `soc-yagni`
 unless `## Audit Configuration` records `fallow: optional`. Configured, it
-also supplies wrong-direction findings. Without `.fallowrc.json`,
-boundaries fall back to a heuristic grep.
+also supplies wrong-direction findings when Dependency Policy (or
+`.fallowrc.json` boundaries from the live graph) allows them. Without
+`.fallowrc.json`, boundaries fall back to a heuristic grep.
 
 Honor the permissions-screen ticks. Ask nothing here.
+
+Derive zone `allow` lists from the **live** package import graph for
+this run (and any user-stated Dependency Policy when present). Do **not**
+write that live graph into `context.md`.
 
 ### Resolve fallow, declare in package.json, and install only if ticked
 

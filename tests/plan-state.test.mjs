@@ -186,11 +186,11 @@ test("inferRigor reads risk wording in a folder stage file", () => {
 test("parseReviewRubric reads bullets and falls back to principles", () => {
   const withSection = fs.readFileSync(RUBRIC, "utf8");
   const paths = parseReviewRubric(withSection);
-  assert.ok(paths.includes(".agents/skills/lodestar-setup/principles.md"));
+  assert.ok(paths.some((p) => /lodestar-setup\/principles\.md$/.test(p)));
   assert.ok(paths.includes("CONTRIBUTING.md"));
-  assert.deepEqual(parseReviewRubric("# Fixture\n"), [
-    ".agents/skills/lodestar-setup/principles.md",
-  ]);
+  const fallback = parseReviewRubric("# Fixture\n");
+  assert.equal(fallback.length, 1);
+  assert.match(fallback[0], /lodestar-setup\/principles\.md$/);
 });
 
 test("CLI pick-up and move-done round-trip", () => {
