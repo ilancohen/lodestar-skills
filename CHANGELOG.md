@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented here.
 
+## [0.18.0] - 2026-09-08
+
+### Added
+
+- **Bounded `setup-state` collector.** One deterministic discovery pass writes complete state to an OS-temp JSON file and prints a capped review projection (16 KiB / list caps with shown·total). Mutations use `write-context`, `record-result`, `summarize-results`, and `cleanup` without loading full state into chat.
+- **Shared discovery primitives under setup.** Package-manager and workspace-layout modules live in `lodestar-setup`; audit reaches them only through `setup-modules.mjs`.
+- **Soft Fallow `status` CLI.** Pre-consent install rows use pin-based commands from the contract without throwing `resolve-bin`.
+- **Hermetic eval baseline gate.** `pnpm check` compares each skill's worst-case markdownWords to `tests/fixtures/evals/baseline.json`; package checks ignore local plans and installed skills copies.
+
+### Changed
+
+- **Setup is two interactions after collect.** Review shows the projection once; permissions list only outside-`.agents/` writes (never truncating consent consequences); completion is `summarize-results` only.
+- **Detector gates are derived again, not persisted.** Setup no longer writes `## Resolved Decisions`; audit derives gates in memory from Conventions, Package Layout, Dependency Policy, and the linter cell.
+- **Fallow is sibling-gated and required for audit.** Non-audit installs skip Fallow work; Dependency Policy stays user-stated; principles stay skill-relative.
+- **Audit leans on scope-first expansion.** Fallow-required discovery stays cheap until the run needs more.
+- **Plan/implement use the filesystem as the index.** No ledger; finished plans move to `done/`.
+- **`lodestar-fix` stays serial.** No mutating fan-out or autosquash; live audit trees stay protected.
+
+### Fixed
+
+- **Action-item validation and resume.** Cross-date resume and framework scan correctness land with the evaluation followups.
+
 ## [0.17.0]
 
 ### Changed
