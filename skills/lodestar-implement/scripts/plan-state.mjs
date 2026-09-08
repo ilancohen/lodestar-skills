@@ -13,8 +13,7 @@ import {
   parseArgs,
   printJson,
   resolvePlansRoot,
-  ledgerPath,
-  moveAwaitingToDone,
+  listPendingPlans,
 } from "./setup-modules.mjs";
 
 export const TIERS = ["light", "standard", "full"];
@@ -280,34 +279,6 @@ export function moveDone(root, plansRoot, srcAbs) {
   };
 }
 
-export function ledgerHrefs(plan) {
-  const raw = String(plan)
-    .trim()
-    .replace(/\\/g, "/")
-    .replace(/\/+$/, "");
-  const name = raw.split("/").pop() || raw;
-  const stem = name.replace(/\.md$/i, "");
-  return [`${stem}.md`, `${stem}/`, stem];
-}
-
-export function completeLedger(root, plansRoot, href, evidence) {
-  const abs = path.join(root, ledgerPath(plansRoot));
-  if (!fs.existsSync(abs)) {
-    throw new Error(`ledger missing: ${ledgerPath(plansRoot)}`);
-  }
-  const text = fs.readFileSync(abs, "utf8");
-  for (const candidate of ledgerHrefs(href)) {
-    const result = moveAwaitingToDone(text, candidate, evidence);
-    if (result.moved) {
-      atomicWrite(abs, result.text);
-      return { ledgerPath: ledgerPath(plansRoot), moved: true, href: candidate };
-    }
-  }
-  throw new Error(
-    `no Awaiting row matched ${href} (tried ${ledgerHrefs(href).join(", ")})`,
-  );
-}
-
 export function resolvePrinciplesCandidates() {
   const candidates = [];
   try {
@@ -395,6 +366,15 @@ export function pickUp(root, plan) {
   };
 }
 
+/** Pending plans at the root, excluding README.md and reserved dirs. */
+export function listCandidates(root) {
+  const plansRoot = resolvePlansRoot(root);
+  return {
+    plansRoot,
+    pending: listPendingPlans(root, plansRoot),
+  };
+}
+
 export function run(argv = process.argv.slice(2)) {
   const { flags, positionals } = parseArgs(argv);
   const command = positionals[0];
@@ -404,23 +384,15 @@ export function run(argv = process.argv.slice(2)) {
     printJson(pickUp(root, flags.plan));
     return 0;
   }
+  if (command === "list") {
+    printJson(listCandidates(root));
+    return 0;
+  }
   if (command === "move-done") {
     if (!flags.plan) fail("move-done requires --plan");
     const plansRoot = flags["plans-root"] || resolvePlansRoot(root);
     const abs = resolvePlanAbs(root, plansRoot, flags.plan);
     printJson(moveDone(root, plansRoot, abs));
-    return 0;
-  }
-  if (command === "complete-ledger") {
-    if (!flags.plan || !flags.evidence) {
-      fail("complete-ledger requires --plan and --evidence");
-    }
-    const plansRoot = flags["plans-root"] || resolvePlansRoot(root);
-    try {
-      printJson(completeLedger(root, plansRoot, flags.plan, flags.evidence));
-    } catch (error) {
-      fail(error.message);
-    }
     return 0;
   }
   if (command === "write-rigor") {

@@ -27,9 +27,14 @@ export const parseArgs = runtime.parseArgs;
 export const printJson = runtime.printJson;
 
 export const DEFAULT_PLANS_ROOT = discoverPlans.DEFAULT_PLANS_ROOT;
-export const addAwaitingRow = discoverPlans.addAwaitingRow;
+export const abandonedDir = discoverPlans.abandonedDir;
 export const bootstrapPlansRoot = discoverPlans.bootstrapPlansRoot;
-export const parseLedger = discoverPlans.parseLedger;
+export const discoverPlansState = discoverPlans.discoverPlans;
+export const doneDir = discoverPlans.doneDir;
+export const ensurePlansRoot = discoverPlans.ensurePlansRoot;
+export const listAbandonedPlans = discoverPlans.listAbandonedPlans;
+export const listDonePlans = discoverPlans.listDonePlans;
+export const listPendingPlans = discoverPlans.listPendingPlans;
 export const resolvePlansRoot = discoverPlans.resolvePlansRoot;
 export const run = discoverPlans.run;
 

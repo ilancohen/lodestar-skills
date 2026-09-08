@@ -22,12 +22,14 @@ writeups those skills leave behind.
   itself. Advisory only, never edits code.
 - **`lodestar-plan`** — writes an implementable plan under `docs/plans/`
   (or the plans root recorded at setup), with a `rigor:` tier, after
-  checking that named files and commands exist. Does not implement. Runs
-  without setup — it discovers what it needs.
+  checking that named files and commands exist. Creates the root only
+  when writing a valid plan. Does not implement. Runs without setup —
+  it discovers what it needs.
 - **`lodestar-implement`** — executes that plan one stage at a time at
-  the declared `rigor:` tier, then moves it to `done/` and updates the
-  ledger. Also runs without setup. The only other skill besides
-  `lodestar-fix` that edits application source.
+  the declared `rigor:` tier, then moves it to `done/`. The filesystem
+  is the index (pending / `done/` / `abandoned/`). Also runs without
+  setup. The only other skill besides `lodestar-fix` that edits
+  application source.
 - **`lodestar-docs`** — optional. Harvests leftover knowledge from
   `staging` docs trees into `home` trees recorded at setup, then deletes
   what an agent would not miss. Never creates new docs homes. Never edits

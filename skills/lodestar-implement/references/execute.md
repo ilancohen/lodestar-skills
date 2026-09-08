@@ -27,7 +27,7 @@ principles only). Do not invent extra checklist items.
 
 1. `<typecheck>`
 2. `<test>` scoped to packages this stage touched (`light`: one unscoped
-   run, no separate plan-end sweep)
+   run at end of the single stage — no plan-end sweep)
 3. `<lint>` if the stage touches lint-covered code
 
 A failure that is a by-product of the edits: fix and re-run. A failure
@@ -40,11 +40,16 @@ Then load **only** the review file for the effective tier:
 - `standard` → nothing until the last stage, then `review-standard.md`
 - `full` → `review-full.md` after every stage
 
-**Commit** only when `sessionCommits` allows it. One stage, one commit,
-except `light` which also folds complete into that commit. Stage only
-the files this stage changed, plus the done-mark. Never `git add -A`.
-When commits are disabled, leave everything unstaged and still write
+**Commit** only when `sessionCommits` allows it. Stage only the files
+this stage changed, plus the done-mark. Never `git add -A`. When
+commits are disabled, leave everything unstaged and still write
 done-mark frontmatter without a `commit:` field.
+
+- **Not the last unfinished stage:** commit now (one stage, one commit).
+- **Last unfinished stage** (every tier, including `light`): do **not**
+  commit yet. Mark the stage done in frontmatter, then go to
+  [complete.md](complete.md) so `move-done` can land in the same commit
+  as the final stage code.
 
 ```
 <plan-slug>: <stage id> — <one-line summary>
@@ -53,4 +58,5 @@ Plan: <plansRoot>/<plan>
 Stage: <stage id>
 ```
 
-After the last stage, go to [complete.md](complete.md).
+After the last stage's acceptance and review, go to
+[complete.md](complete.md) before any final commit.

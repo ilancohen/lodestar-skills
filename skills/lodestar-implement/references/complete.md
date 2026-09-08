@@ -1,47 +1,39 @@
 # Complete the plan
 
 Mark the stage done via frontmatter (`status: done`, `completed_at`) or
-a `Status: done — <date>` line under a single-file pass heading. Do
-**not** require a commit message or frontmatter field to contain its own
-SHA before the commit exists.
+a `Status: done — <date>` line under a single-file pass heading. Do not
+require a SHA in the mark before the commit exists.
 
-When commits are enabled: create the commit first, then write
-`commit: <short-sha>` (or append `, commit <sha>` on a Status line) as a
-working-tree edit of the stage file. When commits are disabled: omit
-`commit:` entirely.
+Commits on: commit first, then write `commit: <short-sha>` (or append
+`, commit <sha>` on a Status line). Commits off: omit `commit:`.
 
-When every stage is done, run — except `light`, which already ran
-acceptance once and must not run a second sweep:
+Plan-end acceptance — skip for `light` (already ran once):
 
-1. `<typecheck>` whole repo
-2. `<test>` whole repo
-3. `<lint>` whole repo if present
+- **`standard`:** only integration checks for packages this plan touched.
+- **`full`:** whole-repo typecheck / test / lint only when the plan
+  crosses integration boundaries; otherwise reuse the last stage's
+  scoped checks — no duplicate whole-repo sweep.
 
-A failure here is a new sub-stage: fix, re-run, and (only when
-`sessionCommits` allows) commit
-`<plan-slug>: housekeeping — fix cross-package regression` before the
-move.
+A failure here is a new sub-stage: fix, re-run, and (consent on) commit
+`<plan-slug>: fix — cross-package regression` before the move.
 
-Then **one** operation, not a copy:
+Then one move — not a copy:
 
 ```text
 node <this-skill>/scripts/plan-state.mjs move-done --root <repo> --plan <slug>
-node <this-skill>/scripts/plan-state.mjs complete-ledger --root <repo> --plan <slug-or-href> --evidence <text>
 ```
 
-`move-done` fails if source and destination both exist, or if the
-post-condition (source gone, destination present) is not true. Do not
-paper over that.
+Creates `done/` if needed. Fails if both copies exist or the
+post-condition fails. No ledger.
 
-`light` with commits on: these commands run before the single commit, so
-the commit contains the code, the done-mark, the move, and the ledger
-row. Write the SHA into frontmatter after that commit if desired.
+**Never** a docs-only housekeeping commit for the move.
 
-`standard` / `full` with commits on: a final housekeeping commit
-`<plan-slug>: housekeeping — move to done & update ledger`.
+With commits on, the last stage deferred its commit (see
+[execute.md](execute.md)). Run `move-done`, then make **one** commit that
+includes the final stage code, its done-mark, and the move. Write
+`commit: <short-sha>` into the stage frontmatter after that commit (as a
+working-tree edit if plans are gitignored).
 
-With commits off: run `move-done` and `complete-ledger` and leave the
-working tree unstaged — no housekeeping commit.
+With commits off: `move-done`, leave everything unstaged.
 
-Print the session summary: stages done / skipped, commits (or
-"unstaged"), new path.
+Print summary: stages done / skipped, commits (or "unstaged"), new path.

@@ -205,11 +205,12 @@ Near-miss: implementing a plan, auditing, architecture review, generic "write a 
 Expected outcomes (once explicitly invoked):
 
 - Resolves the plans root from `## Docs Layout` `inflight` (default `docs/plans/`). Missing `context.md` is not a stop and never a hand-off to `lodestar-setup` — it falls back to the default and discovers the rest ([`references/discover-context.md`](../skills/lodestar-plan/references/discover-context.md)): package manager from the single lockfile (zero or several → ask), commands from `package.json` `scripts` plus `Makefile` / `justfile` / `Taskfile` / `nx.json` / `turbo.json` (none → `n/a`, stated in the plan), layout from the workspace declaration else non-root `package.json` dirs else one source root, direction from the imports that exist today. It names what it found, where it came from, and invites corrections; `lodestar-setup` is offered once as optional, never required. It does not write `context.md`.
-- First use bootstraps the root, `done/`, and a ledger with empty Awaiting and Done tables. It does not overwrite an existing ledger.
-- Grounds before writing: every Scope / files path not marked `(new)` must exist; every named command must be a real script, Build & Test cell, or task-file target; assumed imports must match `## Dependency Policy` when present, or — with no policy / no `context.md` — must not create a cycle against today's imports. A miss stops the write.
+- Grounds before writing: every Scope / files path not marked `(new)` must exist; every named command must be a real script, Build & Test cell, or task-file target; assumed imports must match `## Dependency Policy` when present, or — with no policy / no `context.md` — must not create a cycle against today's imports. A miss stops the write and creates no scaffold.
+- Creates the plans root only when writing a valid plan (`ensure-root`). Does not create `done/` or a machine-parsed ledger. An optional human `README.md` is never parsed.
+- Routes oversized work: audit action items stay one concern / one change / one acceptance unit; multi-stage, cross-package, or unresolved product/architecture work belongs here.
 - Carries the discovered commands into the plan's `Accept` lines so `lodestar-implement` does not discover them again.
 - Writes `rigor: light | standard | full` from size, then risk. Risk (public API / schema, migration, auth / security / money / data-deletion, unresolved decision) forces `full`. `light` is always a single file with one stage; a folder plan is never `light`.
-- Adds one Awaiting ledger row via `setup-modules.mjs add-awaiting`. Does not implement. Does not edit application source. Does not commit unless asked.
+- Does not implement. Does not edit application source. Does not commit unless asked.
 
 ## lodestar-implement
 
@@ -228,10 +229,10 @@ Near-miss: writing a plan, auditing, applying audit items, generic "implement th
 
 Expected outcomes (once explicitly invoked):
 
-- pick-up resolves the plan; a slug in both the plans root and `done/` stops as a prior incomplete move.
+- pick-up resolves the plan; a slug in both the plans root and `done/` stops as a prior incomplete move. The filesystem is the index (pending / `done/` / `abandoned/`); there is no ledger.
 - One opening commit choice: commit each stage or leave all changes unstaged. Read a recorded policy when present. Never commit or rewrite history without that consent.
-- `rigor:` from frontmatter, or inferred and written back. `light` is one unscoped acceptance run and one commit (when consent allows) that includes move-done plus the ledger row. `standard` reviews once at plan end; review fixes fold into the current stage commit or a plain follow-up — never `--fixup` / `rebase --autosquash`. `full` reviews per stage. Escalation is stage-local, announced, not prompted.
+- `rigor:` from frontmatter, or inferred and written back. `light` is one unscoped acceptance run and one commit (when consent allows) that includes move-done. `standard` reviews once at plan end with scoped per-stage checks and only affected integration checks at completion. `full` reviews per stage and skips a duplicate whole-repo sweep unless the plan crosses integration boundaries. Escalation is stage-local, announced, not prompted.
 - Rubric is `## Review Rubric` or principles only. No branded-types / `any` / `manualEpoch` checklist.
 - Missing `context.md` is not a stop and never a hand-off to `lodestar-setup` ([`references/discover-context.md`](../skills/lodestar-implement/references/discover-context.md)): a plan `Accept` line wins, then `package.json` scripts (`typecheck` / `tsc` / `types`, `test`, `lint`) and task-file targets; no script means that check is skipped exactly as a recorded `n/a` would be, and several plausible scripts are asked about once before the first stage. Rubric falls back to `principles.md` plus whichever of `CONTRIBUTING.md`, `AGENTS.md`, `CLAUDE.md`, and host-agent rules files exist — read as rubric paths, not turned into a repo-specific checklist. The resolved commands are printed before the first edit. It does not write `context.md`.
-- `move-done` is a script with a verified post-condition: source gone, destination present. Never a copy that leaves the original behind.
+- `move-done` is a script with a verified post-condition: source gone, destination present. Creates `done/` only when completing. Never a copy that leaves the original behind. No docs-only housekeeping commit for the move — fold into the final code commit when safe, otherwise leave as a working-tree change.
 - One stage one commit when consent allows (`light` excepted as above). No `git add -A`. Plan bodies stay immutable. Completion `commit:` SHA is written after the commit exists, or omitted when commits are disabled.

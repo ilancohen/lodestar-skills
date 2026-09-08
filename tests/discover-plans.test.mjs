@@ -7,10 +7,9 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import {
   DEFAULT_PLANS_ROOT,
-  addAwaitingRow,
-  bootstrapPlansRoot,
-  emptyLedger,
-  parseLedger,
+  discoverPlans,
+  ensurePlansRoot,
+  listPendingPlans,
   resolvePlansRoot,
 } from "../skills/lodestar-setup/scripts/discover-plans.mjs";
 
@@ -25,6 +24,8 @@ const GATEWAY = path.join(
 );
 const DOCS_HYGIENE = path.join(ROOT, "tests/fixtures/repos/docs-hygiene");
 const VALID = path.join(ROOT, "tests/fixtures/repos/valid");
+const LIGHT = path.join(ROOT, "tests/fixtures/plans/light-repo");
+const ORPHAN = path.join(ROOT, "tests/fixtures/plans/orphan-repo");
 
 function tmpRoot() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-plans-"));
@@ -75,87 +76,45 @@ test("resolvePlansRoot honors a custom inflight path", () => {
   }
 });
 
-test("bootstrapPlansRoot creates the root, done/, and an empty ledger", () => {
+test("ensurePlansRoot creates only the plans root", () => {
   const tmp = tmpRoot();
   try {
-    const result = bootstrapPlansRoot(tmp);
+    const result = ensurePlansRoot(tmp);
     assert.equal(result.plansRoot, DEFAULT_PLANS_ROOT);
     assert.equal(result.createdRoot, true);
-    assert.equal(result.createdLedger, true);
     assert.equal(fs.existsSync(path.join(tmp, result.plansRoot)), true);
-    assert.equal(fs.existsSync(path.join(tmp, result.doneDir)), true);
-    const text = fs.readFileSync(path.join(tmp, result.ledgerPath), "utf8");
-    const parsed = parseLedger(text);
-    assert.deepEqual(parsed.awaiting, []);
-    assert.deepEqual(parsed.done, []);
+    assert.equal(fs.existsSync(path.join(tmp, result.doneDir)), false);
+    assert.equal(fs.existsSync(path.join(tmp, result.abandonedDir)), false);
+    assert.equal(
+      fs.existsSync(path.join(tmp, result.plansRoot, "README.md")),
+      false,
+    );
+    const again = ensurePlansRoot(tmp);
+    assert.equal(again.createdRoot, false);
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
 
-test("bootstrapPlansRoot does not overwrite an existing ledger", () => {
-  const tmp = tmpRoot();
-  try {
-    const first = bootstrapPlansRoot(tmp);
-    const ledgerAbs = path.join(tmp, first.ledgerPath);
-    fs.writeFileSync(ledgerAbs, `${emptyLedger()}\n<!-- keep -->\n`, "utf8");
-    const second = bootstrapPlansRoot(tmp);
-    assert.equal(second.createdRoot, false);
-    assert.equal(second.createdLedger, false);
-    assert.match(fs.readFileSync(ledgerAbs, "utf8"), /keep/);
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-test("addAwaitingRow appends a linked row and is idempotent", () => {
-  const added = addAwaitingRow(
-    emptyLedger(),
-    "demo.md",
-    "A short plan.",
-    "demo.md",
+test("listPendingPlans ignores README and reserved dirs", () => {
+  const pending = listPendingPlans(LIGHT);
+  assert.deepEqual(
+    pending.map((entry) => entry.slug),
+    ["tiny"],
   );
-  assert.equal(added.added, true);
-  const parsed = parseLedger(added.text);
-  assert.equal(parsed.awaiting.length, 1);
-  assert.equal(parsed.awaiting[0].href, "demo.md");
-  assert.equal(parsed.awaiting[0].summary, "A short plan.");
-  const again = addAwaitingRow(added.text, "demo.md", "ignored");
-  assert.equal(again.added, false);
-  assert.equal(parseLedger(again.text).awaiting.length, 1);
+  assert.equal(pending[0].kind, "file");
+  assert.equal(pending[0].href, "tiny.md");
 });
 
-test("addAwaitingRow keeps escaped pipes and does not rewrite Done", () => {
-  const ledger = `# Plans ledger
-
-## Awaiting Implementation
-
-| Plan | Summary |
-| ---- | ------- |
-| [old.md](old.md) | light \\| standard \\| full |
-
-## Done
-
-| Plan | Evidence |
-| ---- | -------- |
-| [shipped.md](done/shipped.md) | landed at \`abc1234\`. |
-`;
-  const doneSlice = ledger.slice(ledger.indexOf("## Done"));
-  const added = addAwaitingRow(ledger, "new.md", "uses a | in the summary");
-  assert.equal(added.added, true);
-  assert.equal(added.text.slice(added.text.indexOf("## Done")), doneSlice);
-  assert.match(added.text, /\| \[old\.md\]\(old\.md\) \| light \\\| standard \\\| full \|/);
-  assert.match(added.text, /\| \[new\.md\]\(new\.md\) \| uses a \\\| in the summary \|/);
-  const parsed = parseLedger(added.text);
-  assert.equal(parsed.awaiting.length, 2);
-  assert.equal(parsed.awaiting[0].summary, "light | standard | full");
-  assert.equal(parsed.awaiting[1].href, "new.md");
-  assert.equal(parsed.awaiting[1].summary, "uses a | in the summary");
-  assert.equal(parsed.done.length, 1);
-  assert.equal(parsed.done[0].href, "done/shipped.md");
+test("discoverPlans reports duplicate root/done copies", () => {
+  const found = discoverPlans(ORPHAN);
+  assert.equal(found.duplicates.length, 1);
+  assert.equal(found.duplicates[0].slug, "dup");
+  assert.equal(found.duplicates[0].pending, "docs/plans/dup.md");
+  assert.equal(found.duplicates[0].done, "docs/plans/done/dup.md");
 });
 
-test("CLI resolve and add-awaiting round-trip through the gateway", () => {
+test("CLI resolve and ensure-root round-trip through the gateway", () => {
   const tmp = tmpRoot();
   try {
     const resolved = spawnSync(
@@ -167,30 +126,36 @@ test("CLI resolve and add-awaiting round-trip through the gateway", () => {
     const payload = JSON.parse(resolved.stdout);
     assert.equal(payload.plansRoot, DEFAULT_PLANS_ROOT);
     assert.equal(payload.context, "absent");
+    assert.equal(payload.doneDir, "docs/plans/done");
+    assert.equal(payload.abandonedDir, "docs/plans/abandoned");
+    assert.equal(payload.ledgerPath, undefined);
 
-    const added = spawnSync(
+    const ensured = spawnSync(
       process.execPath,
-      [
-        GATEWAY,
-        "add-awaiting",
-        "--root",
-        tmp,
-        "--plan",
-        "one.md",
-        "--summary",
-        "First plan.",
-      ],
+      [GATEWAY, "ensure-root", "--root", tmp],
       { encoding: "utf8" },
     );
-    assert.equal(added.status, 0, added.stderr);
-    const result = JSON.parse(added.stdout);
-    assert.equal(result.added, true);
-    const ledger = fs.readFileSync(path.join(tmp, result.ledgerPath), "utf8");
-    assert.match(ledger, /\[one\.md\]\(one\.md\)/);
-    assert.match(ledger, /First plan\./);
+    assert.equal(ensured.status, 0, ensured.stderr);
+    const result = JSON.parse(ensured.stdout);
+    assert.equal(result.createdRoot, true);
+    assert.equal(fs.existsSync(path.join(tmp, result.plansRoot)), true);
+    assert.equal(fs.existsSync(path.join(tmp, result.doneDir)), false);
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
+});
+
+test("CLI list reports filesystem state", () => {
+  const listed = spawnSync(
+    process.execPath,
+    [GATEWAY, "list", "--root", LIGHT],
+    { encoding: "utf8" },
+  );
+  assert.equal(listed.status, 0, listed.stderr);
+  const payload = JSON.parse(listed.stdout);
+  assert.equal(payload.pending.length, 1);
+  assert.equal(payload.pending[0].slug, "tiny");
+  assert.equal(payload.duplicates.length, 0);
 });
 
 test("CLI discover-plans.mjs resolve matches the gateway", () => {
@@ -210,9 +175,17 @@ test("CLI discover-plans.mjs resolve matches the gateway", () => {
   assert.equal(JSON.parse(viaScript.stdout).plansRoot, "docs/plans");
 });
 
-test("CLI rejects an unknown command", () => {
+test("CLI rejects add-awaiting and unknown commands", () => {
   const tmp = tmpRoot();
   try {
+    const awaiting = spawnSync(
+      process.execPath,
+      [SCRIPT, "add-awaiting", "--root", tmp, "--plan", "x.md", "--summary", "y"],
+      { encoding: "utf8" },
+    );
+    assert.equal(awaiting.status, 1);
+    assert.match(awaiting.stderr, /unknown command: add-awaiting/);
+
     const result = spawnSync(process.execPath, [SCRIPT, "nope", "--root", tmp], {
       encoding: "utf8",
     });

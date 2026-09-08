@@ -1,6 +1,6 @@
 // The only place lodestar-implement may reach into the base skill. The imports
-// are dynamic so an absent lodestar-setup names itself here instead of
-// surfacing as ERR_MODULE_NOT_FOUND for a path the user never chose.
+// are dynamic so an absent lodestar-setup names itself here instead of surfacing
+// as ERR_MODULE_NOT_FOUND for a path the user never chose.
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 
@@ -27,7 +27,10 @@ export const parseArgs = runtime.parseArgs;
 export const printJson = runtime.printJson;
 
 export const DEFAULT_PLANS_ROOT = discoverPlans.DEFAULT_PLANS_ROOT;
-export const ledgerPath = discoverPlans.ledgerPath;
-export const moveAwaitingToDone = discoverPlans.moveAwaitingToDone;
-export const parseLedger = discoverPlans.parseLedger;
+export const abandonedDir = discoverPlans.abandonedDir;
+export const discoverPlansState = discoverPlans.discoverPlans;
+export const doneDir = discoverPlans.doneDir;
+export const listAbandonedPlans = discoverPlans.listAbandonedPlans;
+export const listDonePlans = discoverPlans.listDonePlans;
+export const listPendingPlans = discoverPlans.listPendingPlans;
 export const resolvePlansRoot = discoverPlans.resolvePlansRoot;

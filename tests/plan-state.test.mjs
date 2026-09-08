@@ -7,17 +7,16 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import {
   assertExclusiveLocation,
-  completeLedger,
   effectiveRigor,
   escalateStage,
   inferRigor,
+  listCandidates,
   listStages,
   moveDone,
   parseReviewRubric,
   pickUp,
   writeRigor,
 } from "../skills/lodestar-implement/scripts/plan-state.mjs";
-import { parseLedger } from "../skills/lodestar-setup/scripts/discover-plans.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SCRIPT = path.join(
@@ -148,26 +147,32 @@ test("move-done refuses when both copies already exist", () => {
   );
 });
 
-test("complete-ledger matches a slug and fails when no Awaiting row exists", () => {
-  const tmp = tmpCopy(LIGHT);
-  try {
-    const result = completeLedger(tmp, "docs/plans", "tiny", "one commit at `abc1234`.");
-    assert.equal(result.moved, true);
-    assert.equal(result.href, "tiny.md");
-    const parsed = parseLedger(
-      fs.readFileSync(path.join(tmp, "docs/plans/README.md"), "utf8"),
-    );
-    assert.equal(parsed.awaiting.length, 0);
-    assert.equal(parsed.done.length, 1);
-    assert.equal(parsed.done[0].href, "done/tiny.md");
-    assert.match(parsed.done[0].summary, /abc1234/);
-    assert.throws(
-      () => completeLedger(tmp, "docs/plans", "tiny", "again"),
-      /no Awaiting row matched/,
-    );
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
+test("listCandidates ignores README and reserved dirs", () => {
+  const listed = listCandidates(LIGHT);
+  assert.equal(listed.plansRoot, "docs/plans");
+  assert.deepEqual(
+    listed.pending.map((entry) => entry.slug),
+    ["tiny"],
+  );
+});
+
+test("complete-ledger command is removed", () => {
+  const result = spawnSync(
+    process.execPath,
+    [
+      SCRIPT,
+      "complete-ledger",
+      "--root",
+      LIGHT,
+      "--plan",
+      "tiny",
+      "--evidence",
+      "gone",
+    ],
+    { encoding: "utf8" },
+  );
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /unknown command: complete-ledger/);
 });
 
 test("inferRigor reads risk wording in a folder stage file", () => {

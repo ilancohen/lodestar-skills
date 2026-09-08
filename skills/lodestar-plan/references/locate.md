@@ -12,16 +12,9 @@ Run:
 node <this-skill>/scripts/setup-modules.mjs resolve --root <repo>
 ```
 
-The JSON names `<plansRoot>`, `<ledgerPath>`, and `<doneDir>`. Then:
+The JSON names `<plansRoot>`, `<doneDir>`, and `<abandonedDir>`. Do
+**not** create the root here. Grounding must finish first. A failed plan
+leaves no scaffold.
 
-```text
-node <this-skill>/scripts/setup-modules.mjs bootstrap --root <repo>
-```
-
-Bootstrap is lazy and idempotent. It creates `<plansRoot>`,
-`<plansRoot>/done/`, and a ledger at `<ledgerPath>` with empty Awaiting
-and Done tables when those are absent. It does not overwrite an existing
-ledger. A repo that never plans gets no empty scaffolding until this
-skill runs.
-
-If resolve and bootstrap disagree about the root, stop and ask.
+An optional human `README.md` under the plans root is never parsed and is
+never a plan.

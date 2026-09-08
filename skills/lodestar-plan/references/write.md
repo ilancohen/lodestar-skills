@@ -1,6 +1,15 @@
-# Write the plan and the ledger row
+# Write the plan
 
 Do not commit unless the user asked.
+
+Create the plans root only now — after grounding succeeded:
+
+```text
+node <this-skill>/scripts/setup-modules.mjs ensure-root --root <repo>
+```
+
+That creates `<plansRoot>` alone. It does not create `done/`,
+`abandoned/`, or a README. An optional human README is never parsed.
 
 ## Single-file
 
@@ -54,28 +63,12 @@ the same fields as a Pass. Optional frontmatter `status: pending`.
 - File lists you believe are accurate — implement may ask to amend them
   if reality diverged.
 
-## Ledger
+## State
 
-After the files exist, add an Awaiting row. Do not add or retire a row by
-hand; run:
-
-```text
-node <this-skill>/scripts/setup-modules.mjs add-awaiting --root <repo> --plan <href> --summary <one-line summary>
-```
-
-`<href>` is repo-relative to the plans root (`<slug>.md` or `<slug>/`).
-The command is idempotent: a slug already in Awaiting is left alone —
-including its summary, so re-running never corrects one.
-
-Three parts of the ledger are parsed and must not be hand-edited: the
-markdown link in a row's `Plan` cell, and the `## Awaiting Implementation`
-and `## Done` headings. Only exact link syntax and exact heading text are
-recognized. The link target is how a row is found again, so breaking any
-of the three makes `complete-ledger` fail with `no Awaiting row matched`
-when the plan finishes.
-
-Summary and Evidence prose is not parsed and may be edited by hand — the
-only rule is to escape any `|` inside a cell.
+The filesystem is the index. A pending plan is a `.md` file or folder
+directly under the plans root. Completed plans live under `done/`;
+abandoned under `abandoned/`. There is no machine-parsed ledger and no
+`add-awaiting` step.
 
 ## Output
 

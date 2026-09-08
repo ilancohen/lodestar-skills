@@ -1,8 +1,8 @@
 # Ground before writing
 
 A bounded verification pass, not research. Do this after the shape is
-clear enough to name files and commands, and before creating the plan
-file.
+clear enough to name files and commands, and **before** creating the
+plans root or any plan file.
 
 Check, in this order:
 
@@ -21,8 +21,9 @@ Check, in this order:
    contradiction. An empty policy is valid for a single-package repo.
 
 On a hit: **stop**. Name the missing file or command, or the direction
-contradiction. Do not write the plan. Trace callers only when this pass
-turns up a contradiction — not as a default survey.
+contradiction. Do not write the plan. Do not create the plans root,
+`done/`, or any bookkeeping. Trace callers only when this pass turns up
+a contradiction — not as a default survey.
 
 Unresolved decisions belong in the plan as `Requires decision` / `Rides
 D<N>`. They do not fail this pass; they force `rigor: full` in the next

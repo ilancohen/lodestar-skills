@@ -2,10 +2,10 @@
 name: lodestar-implement
 description: >-
   Executes a plan from the resolved plans root one stage at a time at the
-  declared rigor: light | standard | full tier, with typecheck and scoped
-  tests every stage, then moves the finished plan to done/ and updates the
-  ledger. Modifies application source code, commits, and rewrites the plans
-  ledger. Do not load unless the user explicitly invokes lodestar-implement
+  declared rigor: light | standard | full tier. Acceptance rises with risk
+  and integration surface. Moves finished plans to done/; filesystem is
+  the index — no ledger. Modifies application source and may commit with
+  consent. Do not load unless the user explicitly invokes lodestar-implement
   by name.
 disable-model-invocation: true
 license: MIT
@@ -16,8 +16,7 @@ metadata:
 ---
 
 You are running `lodestar-implement`. Execute a plan from the resolved
-plans root, one stage at a time, until it is in `done/` and the ledger
-row has moved.
+plans root, one stage at a time, until it is in `done/`.
 
 Companion: `lodestar-plan`. The plan is the contract. Do not implement
 from memory; re-read each stage before applying it.
@@ -27,9 +26,9 @@ Scripts live beside this `SKILL.md`. Reach shared plans code only through
 
 ```text
 node <this-skill>/scripts/plan-state.mjs pick-up --root <repo> --plan <slug>
+node <this-skill>/scripts/plan-state.mjs list --root <repo>
 node <this-skill>/scripts/plan-state.mjs write-rigor --root <repo> --plan <slug> --rigor <tier> --reason <text>
 node <this-skill>/scripts/plan-state.mjs move-done --root <repo> --plan <slug>
-node <this-skill>/scripts/plan-state.mjs complete-ledger --root <repo> --plan <href> --evidence <text>
 ```
 
 Load references one hop from this file. A `light` run loads
@@ -59,8 +58,8 @@ Anything you print or ask is read by a person who is skimming.
 4. **Execute** — [references/execute.md](references/execute.md). One
    stage, then the matching review file, until the plan is complete.
 5. **Complete** — [references/complete.md](references/complete.md).
-   `move-done` plus the ledger row. `light` folds this into the one
-   commit; `standard` and `full` use a housekeeping commit.
+   `move-done` only. Fold into the final code commit when safe; never a
+   docs-only housekeeping commit.
 
 ## Never
 

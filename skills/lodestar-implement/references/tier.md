@@ -2,36 +2,32 @@
 
 `rigor: light | standard | full` is the verification dial.
 
-| Tier       | Review                                      | Acceptance                                      | Commits (when consent is on)                 |
-| ---------- | ------------------------------------------- | ----------------------------------------------- | -------------------------------------------- |
-| `light`    | inline; load `review-light.md` only         | one unscoped run at the end of the single stage | one commit: code, done-mark, move, ledger    |
-| `standard` | once at plan end; load `review-standard.md` | scoped per stage; full sweep at plan end        | per stage, plus housekeeping                 |
-| `full`     | per stage; load `review-full.md`            | scoped per stage; full sweep at plan end        | per stage, plus housekeeping                 |
+| Tier       | Review                              | Acceptance                                                         | Commits (consent on)                                      |
+| ---------- | ----------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------- |
+| `light`    | inline; `review-light.md` only      | one unscoped run at end of the single stage                        | one commit: code, done-mark, move                         |
+| `standard` | once at end; `review-standard.md`   | scoped per stage; only affected integration checks at completion   | per earlier stage; final stage+move in one commit         |
+| `full`     | per stage; `review-full.md`         | scoped per stage; whole-repo sweep only if plan crosses packages   | per earlier stage; final stage+move in one commit         |
 
-When commit consent is off, every tier leaves changes unstaged and still
-runs the same acceptance and review. Never commit or rewrite history
-without that consent.
+Consent off: same acceptance and review; leave unstaged. Never a commit
+whose only purpose is moving the plan.
 
-`<typecheck>` and scoped `<test>` run in every tier.
+`<typecheck>` and scoped `<test>` every tier (`light`: one unscoped end
+run).
 
-If the plan has no `rigor:` key, infer it (pick-up JSON `rigor` /
-`rigorSource`), announce it in one line, and write it back:
+No `rigor:` → infer (pick-up `rigor` / `rigorSource`), announce, write
+back:
 
 ```text
 node <this-skill>/scripts/plan-state.mjs write-rigor --root <repo> --plan <slug> --rigor <tier> --reason <text>
 ```
 
-A folder plan is never `light`. If inference says `light` on a folder,
-write `standard`.
+Folder plans are never `light` — write `standard` if inferred `light`.
 
-**Escalate automatically** (one-line announcement, no prompt) when the
-real diff is bigger or riskier than the stage's tier: public API or
-schema, a migration, auth / security / money / data-deletion, or a
-stage that is no longer mechanical. Record it on that stage only:
+**Escalate automatically** (one line, no prompt) when the real diff is
+bigger or riskier than the stage tier: public API / schema, migration,
+auth / security / money / data-deletion, or non-mechanical work.
+`escalateStage` in `plan-state.mjs` writes `rigor:` and
+`escalated_from_trigger:` on that stage only.
 
-The script `escalateStage` in `plan-state.mjs` writes `rigor:` and
-`escalated_from_trigger:` on that stage file. Later stages keep the plan
-tier.
-
-Do **not** escalate — stop and ask — when a stage needs a file outside
-its scope list, or an unresolved decision surfaces.
+**Stop and ask** — do not escalate — for out-of-scope files or unresolved
+decisions.
