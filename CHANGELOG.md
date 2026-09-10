@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented here.
 
+## [0.18.1] - 2026-09-10
+
+### Fixed
+
+- **Skill discovery parsing.** `runSkillsCli` forces `NO_COLOR`, and the listing parser strips ANSI and accepts any box indent, so a colored or narrow terminal no longer reports zero skills.
+- **Test file discovery.** `pnpm test` quotes its glob because Node 24 treats `--test` path arguments as glob patterns rather than directories.
+
+### Added
+
+- **`pnpm test:coverage`.** Runs the suite with Node's built-in coverage reporter.
+
+### Changed
+
+- **`pnpm test` uses the dot reporter.** Compact output removes the temptation to pipe the run into `tail`, which would mask the exit code.
+
 ## [0.18.0] - 2026-09-08
 
 ### Added
