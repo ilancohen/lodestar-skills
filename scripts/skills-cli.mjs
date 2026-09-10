@@ -6,5 +6,7 @@ export function runSkillsCli(args, cwd) {
     cwd,
     encoding: "utf8",
     shell: process.platform === "win32",
+    // The CLI colors its listing even without a TTY, which breaks parsing.
+    env: { ...process.env, NO_COLOR: "1", FORCE_COLOR: "0" },
   });
 }

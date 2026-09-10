@@ -13,14 +13,21 @@ function run(command, args, cwd, env = process.env) {
   return spawnSync(command, args, { cwd, encoding: "utf8", env });
 }
 
+// The skills CLI colors its output whenever it thinks a terminal is
+// listening, which splits the box drawing away from the skill name.
+const ANSI = /\u001B\[[0-9;]*[A-Za-z]/g;
+
 /** Parse `skills add … --list` stdout/stderr into sorted skill names. */
 export function parseSkillsList(output) {
-  const text = String(output ?? "");
+  const text = String(output ?? "").replace(ANSI, "");
   const section = text.split(/Available Skills/i)[1] ?? "";
   const names = new Set();
   for (const line of section.split(/\r?\n/)) {
-    // Box line with a skill name: "│    lodestar-setup" (not the longer description indent).
-    const match = line.match(/^[│|]\s{4}([a-z][a-z0-9-]*)\s*$/i);
+    // A skill name sits alone on its box line ("│    lodestar-setup").
+    // Descriptions share the prefix but are always multi-word sentences,
+    // so requiring a lone token separates them without pinning the indent,
+    // which the CLI varies with terminal width.
+    const match = line.match(/^[│|]\s+([a-z][a-z0-9-]*)\s*$/i);
     if (match) names.add(match[1]);
   }
   return [...names].sort();
@@ -269,10 +276,9 @@ export function smokeInstall(root = ROOT, options = {}) {
     fs.writeFileSync(path.join(consumer, "README.md"), "consumer\n");
     addSkills(dest, consumer);
     const installed = assertInstalled(consumer, version);
-    assertPrinciplesBesideSetup(
-      consumer,
-      [...new Set(installedSkills(consumer).map((item) => item.parent))],
-    );
+    assertPrinciplesBesideSetup(consumer, [
+      ...new Set(installedSkills(consumer).map((item) => item.parent)),
+    ]);
 
     // Partial-install Done-when matrices (separate consumers).
     smokePartialInstalls(dest, version);
