@@ -23,7 +23,10 @@ Before committing suite changes:
    against a working copy that also has local `.agents/skills/*` or ignored
    plans; those inflate discovery and can break link checks.
 2. `pnpm test` — includes clean-tree discovery equality and adapter thinness
-   (`disable-model-invocation: true`; adapters never auto-load `lodestar-fix`)
+   (`disable-model-invocation: true`; adapters never auto-load `lodestar-fix`).
+   Output is the compact dot reporter, so run it bare and trust the exit
+   code. Never pipe it into `tail`, `head`, or `grep`: the pipeline reports
+   the exit status of the last command and hides the failure.
 3. After workflow behavior changes, re-run stage-01 eval scenarios
    (`docs/evals.md`) and update `tests/fixtures/evals/baseline.json` when
    `markdownWords` or accepted quality trade-offs move. Host journeys stay

@@ -34,31 +34,31 @@ the phrases below; ambient task language must not load them.
 
 ## Scenarios
 
-| Id | Skills | Assert |
-| --- | --- | --- |
-| `setup-architecture-no-fallow` | setup, architecture | No Fallow checks/writes on non-audit install |
-| `single-package-setup-audit-fix` | setup, audit, fix | Setup → audit → fix; compact items; consent commits |
-| `mixed-vue-scoped-audit-resume` | audit | Scoped/changed scan, interrupt, next-day resume |
-| `plan-implement-dirty-no-commit` | plan, implement | Dirty files stop; no-commit choice; filesystem index |
-| `architecture-docs-cleanup-safety` | architecture, docs | Advisory only; live audits protected |
+| Id                                 | Skills              | Assert                                               |
+| ---------------------------------- | ------------------- | ---------------------------------------------------- |
+| `setup-architecture-no-fallow`     | setup, architecture | No Fallow checks/writes on non-audit install         |
+| `single-package-setup-audit-fix`   | setup, audit, fix   | Setup → audit → fix; compact items; consent commits  |
+| `mixed-vue-scoped-audit-resume`    | audit               | Scoped/changed scan, interrupt, next-day resume      |
+| `plan-implement-dirty-no-commit`   | plan, implement     | Dirty files stop; no-commit choice; filesystem index |
+| `architecture-docs-cleanup-safety` | architecture, docs  | Advisory only; live audits protected                 |
 
 ## Triggering (exact name)
 
-| Skill | Should trigger | Near-miss (must not) |
-| --- | --- | --- |
-| setup | "Run lodestar-setup…", `/lodestar-setup` | "Document our packages…", "Is my lodestar context still accurate?" |
-| audit | "Run lodestar-audit…", "Is my lodestar context still accurate?", `/lodestar-audit` | "Find architecture violations…", "Produce the lodestar finding files…" |
-| fix | "Run lodestar-fix…", `/lodestar-fix` | "Apply all unstarted low-risk items…", "Land the lodestar action items…" |
-| architecture | "Run lodestar-architecture…", `/lodestar-architecture` | "Describe this repository's package architecture…", "Write the architecture-review report…" |
-| docs | "Run lodestar-docs…", `/lodestar-docs` | "Clean up the docs folder.", "Delete the done plans." |
-| plan | "Write a lodestar-plan…", `/lodestar-plan` | "Write a plan under docs/plans/…", "Create a plan for implement-plan." |
-| implement | "Run lodestar-implement…", `/lodestar-implement` | "Execute the plan under docs/plans/.", "Land the remaining stages…" |
+| Skill        | Should trigger                                                                     | Near-miss (must not)                                                                        |
+| ------------ | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| setup        | "Run lodestar-setup…", `/lodestar-setup`                                           | "Document our packages…", "Is my lodestar context still accurate?"                          |
+| audit        | "Run lodestar-audit…", "Is my lodestar context still accurate?", `/lodestar-audit` | "Find architecture violations…", "Produce the lodestar finding files…"                      |
+| fix          | "Run lodestar-fix…", `/lodestar-fix`                                               | "Apply all unstarted low-risk items…", "Land the lodestar action items…"                    |
+| architecture | "Run lodestar-architecture…", `/lodestar-architecture`                             | "Describe this repository's package architecture…", "Write the architecture-review report…" |
+| docs         | "Run lodestar-docs…", `/lodestar-docs`                                             | "Clean up the docs folder.", "Delete the done plans."                                       |
+| plan         | "Write a lodestar-plan…", `/lodestar-plan`                                         | "Write a plan under docs/plans/…", "Create a plan for implement-plan."                      |
+| implement    | "Run lodestar-implement…", `/lodestar-implement`                                   | "Execute the plan under docs/plans/.", "Land the remaining stages…"                         |
 
 ## Smoke / adapters
 
 ```bash
 node scripts/smoke_install.mjs
-pnpm test -- tests/smoke_install.test.mjs
+node --test tests/smoke_install.test.mjs
 pnpm dlx skills add . --list
 ```
 
