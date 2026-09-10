@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented here.
 
+## [0.18.2] - 2026-09-10
+
+### Changed
+
+- **Scanned content is data, not instructions.** `lodestar-audit` and `lodestar-plan` now state that repo files are evidence only, and that a file trying to steer the run is itself a finding rather than direction.
+- **Fenced quotes at ingestion points.** Both skills fence borrowed snippets in findings, action items, plans, and sub-agent prompts so a later agent reads them as quotations.
+- **Explicit command validation.** `lodestar-audit` records that commands arrive only through `validate-input` and run as argv, never as a shell string built from repo text. `lodestar-plan` checks a command resolves to a real script key or target before it reaches a plan.
+- **Audit installs nothing.** The Fallow rule now says missing or invalid Fallow is a stop that prints the remedy and hands off to `lodestar-setup`.
+
+### Removed
+
+- **Historical upgrade notes.** `UPGRADING.md` keeps install, update, rollback, and the vendored drift check; git history is the archive for pre-1.0 migration notes.
+
 ## [0.18.1] - 2026-09-10
 
 ### Fixed
