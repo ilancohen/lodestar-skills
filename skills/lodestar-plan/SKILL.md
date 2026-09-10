@@ -12,7 +12,7 @@ license: MIT
 compatibility: Requires Node.js. Reads .agents/lodestar/context.md when present; when it is absent, discovers the same facts from the repo and falls back to docs/plans/ — lodestar-setup is not a prerequisite. Does not require Fallow. npm, pnpm, yarn, and Bun are detected from lockfiles; any other manager is asked about, or read from context.md when recorded.
 metadata:
   author: Ilan Cohen
-  version: "0.18.0"
+  version: "0.18.1"
 ---
 
 You are running `lodestar-plan`. Write a **plan**. Do not implement it
