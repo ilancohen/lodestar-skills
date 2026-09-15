@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented here.
 
+## [0.18.3] - 2026-09-15
+
+### Fixed
+
+- **Windows Fallow spawn.** `fallow-contract` launches local bins with `shell` on Windows so `.cmd` shims run; fake-bin fixtures write a `.cmd` wrapper.
+- **Portable principles paths.** Review-rubric candidates and smoke-install checks report forward-slash paths so Windows CI matches the assertions.
+
 ## [0.18.2] - 2026-09-10
 
 ### Changed
