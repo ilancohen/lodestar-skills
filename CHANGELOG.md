@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented here.
 
+## [0.18.4] - 2026-09-15
+
+### Fixed
+
+- **Cursor smoke adapter path.** Skills CLI project installs for Cursor land in `.agents/skills` (not `.cursor/skills`); smoke asserts principles beside that parent.
+
 ## [0.18.3] - 2026-09-15
 
 ### Fixed
