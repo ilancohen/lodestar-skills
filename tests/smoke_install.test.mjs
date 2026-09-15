@@ -152,22 +152,24 @@ test("assertPrinciplesBesideSetup requires principles.md next to setup", () => {
       "# Principles\n\n## Separation of Concerns\n\nOne reason to change.\n",
     );
     const checked = assertPrinciplesBesideSetup(consumer, [".cursor/skills"]);
-    assert.deepEqual(checked, [
-      ".cursor/skills/lodestar-setup/principles.md",
-    ]);
+    assert.deepEqual(checked, [".cursor/skills/lodestar-setup/principles.md"]);
   } finally {
     fs.rmSync(consumer, { recursive: true, force: true });
   }
 });
 
 test("ADAPTER_SHAPES cover cursor, claude-code, and codex parents", () => {
-  assert.deepEqual(
-    ADAPTER_SHAPES.map((shape) => shape.agent).sort(),
-    ["claude-code", "codex", "cursor"],
+  assert.deepEqual(ADAPTER_SHAPES.map((shape) => shape.agent).sort(), [
+    "claude-code",
+    "codex",
+    "cursor",
+  ]);
+  const byAgent = Object.fromEntries(
+    ADAPTER_SHAPES.map((shape) => [shape.agent, shape.parent]),
   );
-  for (const shape of ADAPTER_SHAPES) {
-    assert.match(shape.parent, /^\.(agents|cursor|claude)\/skills$/);
-  }
+  assert.equal(byAgent.cursor, ".agents/skills");
+  assert.equal(byAgent.codex, ".agents/skills");
+  assert.equal(byAgent["claude-code"], ".claude/skills");
 });
 
 test(

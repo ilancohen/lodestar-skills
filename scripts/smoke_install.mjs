@@ -137,7 +137,9 @@ export const PARTIAL_INSTALL_MATRICES = [
  * Unavailable hosts stay `untested` in eval baseline — never recorded as passed.
  */
 export const ADAPTER_SHAPES = [
-  { agent: "cursor", parent: ".cursor/skills" },
+  // Cursor project installs share the universal `.agents/skills` dir
+  // (skills CLI); `.cursor/skills` is global-only now.
+  { agent: "cursor", parent: ".agents/skills" },
   { agent: "claude-code", parent: ".claude/skills" },
   { agent: "codex", parent: ".agents/skills" },
 ];
@@ -205,8 +207,16 @@ export function smokeAdapterPrinciples(source, version = readVersion(source)) {
         );
       }
       assertInstalledSubset(consumer, version, ["lodestar-setup"]);
-      const principles = assertPrinciplesBesideSetup(consumer, [shape.parent]);
-      results.push({ ...shape, principles });
+      const parents = [
+        ...new Set(installedSkills(consumer).map((item) => item.parent)),
+      ];
+      if (!parents.includes(shape.parent)) {
+        throw new Error(
+          `--agent ${shape.agent} installed under ${JSON.stringify(parents)}, expected ${shape.parent}`,
+        );
+      }
+      const principles = assertPrinciplesBesideSetup(consumer, parents);
+      results.push({ ...shape, principles, parents });
     } finally {
       fs.rmSync(consumer, { recursive: true, force: true });
     }
