@@ -110,11 +110,18 @@ test("resolve-bin fails when fallow is not declared in package.json", () => {
 });
 
 function writeFakeFallow(tmp, script) {
-  fs.mkdirSync(path.join(tmp, "node_modules", ".bin"), { recursive: true });
-  const bin = path.join(tmp, "node_modules", ".bin", "fallow");
-  fs.writeFileSync(bin, `#!/bin/sh\n${script}\n`);
-  fs.chmodSync(bin, 0o755);
-  return bin;
+  const binDir = path.join(tmp, "node_modules", ".bin");
+  fs.mkdirSync(binDir, { recursive: true });
+  const shim = path.join(binDir, "fallow");
+  fs.writeFileSync(shim, `#!/bin/sh\n${script}\n`);
+  fs.chmodSync(shim, 0o755);
+  // Windows localBin prefers .cmd; shell scripts are not spawnable without it.
+  if (process.platform === "win32") {
+    const cmd = path.join(binDir, "fallow.cmd");
+    fs.writeFileSync(cmd, `@echo off\r\nbash "%~dp0fallow" %*\r\n`);
+    return cmd;
+  }
+  return shim;
 }
 
 test("resolveFallow fails when declared but node_modules/.bin/fallow is missing", () => {
@@ -168,8 +175,9 @@ test("resolveFallow succeeds when declared, installed, and compatible", () => {
     writeFakeFallow(tmp, "echo '3.15.0'");
     const resolved = resolveFallow(tmp, CONTRACT);
     assert.equal(resolved.version, "3.15.0");
-    assert.ok(
-      resolved.bin.endsWith(path.join("node_modules", ".bin", "fallow")),
+    assert.match(
+      resolved.bin.replace(/\\/g, "/"),
+      /node_modules\/\.bin\/fallow(\.cmd)?$/,
     );
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
@@ -457,10 +465,7 @@ test("remediation names installed version, range, schema/kind, and install comma
   assert.match(message, /Supported version: \^3\.15\.0 \(schema 10 or newer\)/);
   assert.match(message, /Received schema\/kind: 9\/combined/);
   assert.match(message, /npm install --save-dev fallow@\^3\.15\.0/);
-  assert.match(
-    message,
-    /re-run lodestar-setup with lodestar-audit installed/i,
-  );
+  assert.match(message, /re-run lodestar-setup with lodestar-audit installed/i);
   assert.doesNotMatch(message, /ask which package manager/);
 });
 
@@ -571,25 +576,13 @@ test("compat write failure warns on stderr without failing the audit", () => {
 });
 
 test("run rejects a valueless placeholder flag before reaching fallow", () => {
-  const result = run([
-    "run",
-    "--id",
-    "dead-code-trace",
-    "--trace",
-    "--format",
-  ]);
+  const result = run(["run", "--id", "dead-code-trace", "--trace", "--format"]);
   assert.equal(result.status, 2);
   assert.match(result.stderr, /--trace requires a single non-empty value/);
 });
 
 test("run rejects a flag-shaped placeholder value", () => {
-  const result = run([
-    "run",
-    "--id",
-    "dead-code-trace-file",
-    "--file",
-    "-rf",
-  ]);
+  const result = run(["run", "--id", "dead-code-trace-file", "--file", "-rf"]);
   assert.equal(result.status, 2);
   assert.match(result.stderr, /--file value must not start with "-"/);
 });

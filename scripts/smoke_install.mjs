@@ -167,7 +167,7 @@ export function assertPrinciplesBesideSetup(consumer, parents) {
         `principles.md at ${parent}/lodestar-setup looks empty or truncated`,
       );
     }
-    checked.push(path.join(parent, "lodestar-setup", "principles.md"));
+    checked.push(path.posix.join(parent, "lodestar-setup", "principles.md"));
   }
   return checked;
 }

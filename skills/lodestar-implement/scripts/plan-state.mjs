@@ -39,7 +39,10 @@ export function setField(text, name, value) {
   const nextYaml = new RegExp(`^${name}:\\s*.*$`, "m").test(yaml)
     ? yaml.replace(new RegExp(`^${name}:\\s*.*$`, "m"), line)
     : `${yaml.trimEnd()}\n${line}`;
-  return text.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, `---\n${nextYaml}\n---\n`);
+  return text.replace(
+    /^---\r?\n[\s\S]*?\r?\n---\r?\n/,
+    `---\n${nextYaml}\n---\n`,
+  );
 }
 
 export function planKind(absPath) {
@@ -168,9 +171,7 @@ export function inferRigor(absPath) {
 
 export function declaredRigor(absPath) {
   const file =
-    planKind(absPath) === "folder"
-      ? path.join(absPath, "README.md")
-      : absPath;
+    planKind(absPath) === "folder" ? path.join(absPath, "README.md") : absPath;
   const yaml = frontmatter(fs.readFileSync(file, "utf8"));
   const raw = field(yaml, "rigor");
   if (TIERS.includes(raw)) return raw;
@@ -188,9 +189,7 @@ export function effectiveRigor(absPath) {
 export function writeRigor(absPath, rigor, reason = "") {
   if (!TIERS.includes(rigor)) throw new Error(`invalid rigor: ${rigor}`);
   const file =
-    planKind(absPath) === "folder"
-      ? path.join(absPath, "README.md")
-      : absPath;
+    planKind(absPath) === "folder" ? path.join(absPath, "README.md") : absPath;
   let text = setField(fs.readFileSync(file, "utf8"), "rigor", rigor);
   if (reason) text = setField(text, "rigor_reason", reason);
   atomicWrite(file, text);
@@ -217,10 +216,7 @@ export function markStageDone(stage, { date, commit }) {
       );
       text = already.test(text)
         ? text.replace(
-            new RegExp(
-              `^(${escapeRe(stage.heading)}\\s*\\n)Status:.*$`,
-              "m",
-            ),
+            new RegExp(`^(${escapeRe(stage.heading)}\\s*\\n)Status:.*$`, "m"),
             `$1${line}`,
           )
         : text.replace(
@@ -291,7 +287,9 @@ export function resolvePrinciplesCandidates() {
         "principles.md",
       ),
     );
-    if (fs.existsSync(sibling)) candidates.push(sibling);
+    if (fs.existsSync(sibling)) {
+      candidates.push(sibling.split(path.sep).join("/"));
+    }
   } catch {
     /* ignore */
   }
@@ -396,7 +394,8 @@ export function run(argv = process.argv.slice(2)) {
     return 0;
   }
   if (command === "write-rigor") {
-    if (!flags.plan || !flags.rigor) fail("write-rigor requires --plan and --rigor");
+    if (!flags.plan || !flags.rigor)
+      fail("write-rigor requires --plan and --rigor");
     const plansRoot = resolvePlansRoot(root);
     const abs = resolvePlanAbs(root, plansRoot, flags.plan);
     printJson(writeRigor(abs, flags.rigor, flags.reason || ""));

@@ -337,8 +337,20 @@ export function validateEnvelope(envelope, spec, contract, options = {}) {
   return envelope;
 }
 
+/** Windows needs shell to launch `.cmd`/`.bat` shims from node_modules/.bin. */
+function binSpawnOpts(extra = {}) {
+  return {
+    ...extra,
+    shell: process.platform === "win32",
+  };
+}
+
 export function detectVersion(bin) {
-  const result = spawnSync(bin, ["--version"], { encoding: "utf8" });
+  const result = spawnSync(
+    bin,
+    ["--version"],
+    binSpawnOpts({ encoding: "utf8" }),
+  );
   if (result.status !== 0) {
     throw new Error(`could not read Fallow version from ${bin}`);
   }
@@ -464,11 +476,15 @@ export function runWithLiveness(bin, argv, options = {}) {
     let lastOutputAt = started;
     let timedOut = false;
 
-    const child = spawn(bin, argv, {
-      cwd,
-      env,
-      stdio: ["ignore", "pipe", "pipe"],
-    });
+    const child = spawn(
+      bin,
+      argv,
+      binSpawnOpts({
+        cwd,
+        env,
+        stdio: ["ignore", "pipe", "pipe"],
+      }),
+    );
 
     const finish = (fn, value) => {
       if (settled) return;
@@ -478,16 +494,19 @@ export function runWithLiveness(bin, argv, options = {}) {
       fn(value);
     };
 
-    const heartbeat = setInterval(() => {
-      const silentFor = Date.now() - lastOutputAt;
-      if (silentFor < heartbeatMs) return;
-      if (stream) {
-        process.stderr.write(
-          `[${label}] still running (${Math.round((Date.now() - started) / 1000)}s)…\n`,
-        );
-      }
-      lastOutputAt = Date.now();
-    }, Math.min(heartbeatMs, 5_000));
+    const heartbeat = setInterval(
+      () => {
+        const silentFor = Date.now() - lastOutputAt;
+        if (silentFor < heartbeatMs) return;
+        if (stream) {
+          process.stderr.write(
+            `[${label}] still running (${Math.round((Date.now() - started) / 1000)}s)…\n`,
+          );
+        }
+        lastOutputAt = Date.now();
+      },
+      Math.min(heartbeatMs, 5_000),
+    );
 
     const timer = setTimeout(() => {
       timedOut = true;
@@ -545,12 +564,16 @@ export function runWithLiveness(bin, argv, options = {}) {
 export function runFallow(bin, argv, options = {}) {
   const { cwd, timeoutMs = LIVENESS_TIMEOUT_MS } = options;
   const started = Date.now();
-  const result = spawnSync(bin, argv, {
-    cwd,
-    encoding: "utf8",
-    maxBuffer: 32 * 1024 * 1024,
-    timeout: timeoutMs,
-  });
+  const result = spawnSync(
+    bin,
+    argv,
+    binSpawnOpts({
+      cwd,
+      encoding: "utf8",
+      maxBuffer: 32 * 1024 * 1024,
+      timeout: timeoutMs,
+    }),
+  );
   const durationMs = Date.now() - started;
   const stdout = result.stdout || "";
   if (result.error?.code === "ETIMEDOUT" || result.signal === "SIGTERM") {
@@ -821,9 +844,7 @@ async function cmdRunLiveness(flags, _contract, restArgv = []) {
     const result = await runWithLiveness(bin, argv, {
       cwd: root,
       label: typeof flags.label === "string" ? flags.label : "probe",
-      timeoutMs: flags.timeout
-        ? Number(flags.timeout)
-        : LIVENESS_TIMEOUT_MS,
+      timeoutMs: flags.timeout ? Number(flags.timeout) : LIVENESS_TIMEOUT_MS,
       heartbeatMs: flags.heartbeat
         ? Number(flags.heartbeat)
         : LIVENESS_HEARTBEAT_MS,
