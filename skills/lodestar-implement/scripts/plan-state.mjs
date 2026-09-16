@@ -205,38 +205,6 @@ export function escalateStage(file, to, trigger) {
   return { file, rigor: to, trigger };
 }
 
-export function markStageDone(stage, { date, commit }) {
-  let text = fs.readFileSync(stage.file, "utf8");
-  if (stage.kind === "file-pass" && stage.heading) {
-    const line = `Status: done — ${date}, commit ${commit}`;
-    if (new RegExp(`^${escapeRe(stage.heading)}\\s*$`, "m").test(text)) {
-      const already = new RegExp(
-        `^${escapeRe(stage.heading)}\\s*\\nStatus:`,
-        "m",
-      );
-      text = already.test(text)
-        ? text.replace(
-            new RegExp(`^(${escapeRe(stage.heading)}\\s*\\n)Status:.*$`, "m"),
-            `$1${line}`,
-          )
-        : text.replace(
-            new RegExp(`^(${escapeRe(stage.heading)}\\s*)$`, "m"),
-            `$1\n${line}`,
-          );
-    }
-  } else {
-    text = setField(text, "status", "done");
-    if (date) text = setField(text, "completed_at", date);
-    if (commit) text = setField(text, "commit", commit);
-  }
-  atomicWrite(stage.file, text);
-  return { file: stage.file, status: "done", commit };
-}
-
-function escapeRe(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 function gitMv(root, fromAbs, toAbs) {
   fs.mkdirSync(path.dirname(toAbs), { recursive: true });
   const fromRel = path.relative(root, fromAbs);

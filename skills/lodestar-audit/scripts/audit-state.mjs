@@ -44,18 +44,6 @@ export const CATEGORIES = [
   "styling",
 ];
 
-/** Fields allowed on `.checkpoint.json` — restart-required state only. */
-export const CHECKPOINT_RESTART_KEYS = [
-  "status",
-  "category",
-  "package",
-  "count",
-  "completedCategories",
-  "scannedFiles",
-  "drift",
-  "updated_at",
-];
-
 export const CATEGORY_SUBTYPES = {
   imports: ["#1", "#2", "#3", "#4", "#5", "#6", "#7", "#8", "#9"],
   types: ["#1", "#2", "#3", "#4"],
@@ -70,8 +58,6 @@ export const CATEGORY_SUBTYPES = {
 
 export const PLACEHOLDER_RE =
   /<(typecheck|lint|test|pkg_root|pkg_alias|pkg_responsibility|all_pkg_roots|alias_prefix|pkg_manager|run|RUN_ID|output-root)>/;
-
-export const FINDING_RE = /^### (F\d{4})\s*$/m;
 
 function usage() {
   process.stderr.write(`Usage: audit-state <command> [options]
@@ -1610,7 +1596,11 @@ export function findingInScope(finding, changedSet) {
  * Limit detector roots to files that fall under a package path.
  * Used for changed-since / widen: discover only these paths.
  */
-export function filterPathsUnderRoots(filePaths, pkgRoots, cwd = process.cwd()) {
+export function filterPathsUnderRoots(
+  filePaths,
+  pkgRoots,
+  cwd = process.cwd(),
+) {
   const roots = (pkgRoots || []).map((root) =>
     path.resolve(cwd, root).replace(/\\/g, "/"),
   );
@@ -1618,9 +1608,7 @@ export function filterPathsUnderRoots(filePaths, pkgRoots, cwd = process.cwd()) 
     .map((filePath) => String(filePath).replace(/\\/g, "/"))
     .filter((filePath) => {
       const abs = path.resolve(cwd, filePath).replace(/\\/g, "/");
-      return roots.some(
-        (root) => abs === root || abs.startsWith(`${root}/`),
-      );
+      return roots.some((root) => abs === root || abs.startsWith(`${root}/`));
     });
 }
 
@@ -2017,9 +2005,7 @@ export function validateActionItem(text, options = {}) {
     );
   }
   if (sectionBody(text, "Why this matters") !== null) {
-    errors.push(
-      "## Why this matters is removed — keep evidence in ## Problem",
-    );
+    errors.push("## Why this matters is removed — keep evidence in ## Problem");
   }
   for (const heading of ACTION_ITEM_SECTIONS) {
     const body = sectionBody(text, heading);
@@ -2060,9 +2046,7 @@ export function validateActionItem(text, options = {}) {
   if (fields.requires_decision === "true") {
     const decision = sectionBody(text, "Decision");
     if (decision === null || !decision) {
-      errors.push(
-        "## Decision is required when requires_decision is true",
-      );
+      errors.push("## Decision is required when requires_decision is true");
     }
   }
   return { ok: errors.length === 0, errors, fields };

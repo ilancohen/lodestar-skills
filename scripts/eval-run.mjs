@@ -19,14 +19,6 @@ export const USAGE_FIELDS = [
   "resume",
 ];
 
-export const QUALITY_FIELDS = [
-  "seededFound",
-  "seededMissed",
-  "falsePositives",
-  "usefulness",
-  "evidence",
-];
-
 export const HOST_JOURNEY_STATUSES = new Set([
   "passed",
   "failed",

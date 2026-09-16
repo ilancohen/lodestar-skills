@@ -5,7 +5,6 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const here = path.dirname(fileURLToPath(import.meta.url));
 
 export const ROOT = path.resolve(here, "..");
-export const VERSION_PATH = path.join(ROOT, "VERSION");
 export const SKILLS = [
   "lodestar-setup",
   "lodestar-audit",
