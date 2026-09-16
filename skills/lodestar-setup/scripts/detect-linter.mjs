@@ -110,28 +110,38 @@ function lintScripts(pkg) {
     .filter((value) => typeof value === "string" && value.trim());
 }
 
+const RUNNER_PREFIXES = [
+  /^(?:npm|pnpm|yarn|bun)\s+(?:run|exec|dlx)\s+/i,
+  /^(?:npx|bunx|pnpx)\s+(?:--yes\s+|-y\s+)?/i,
+  /^(?:pnpm|yarn|bun)\s+(?=\S)/i,
+];
+
 function firstExecutableToken(script) {
-  const token = String(script).trim().split(/\s+/)[0];
-  return (
-    token?.replace(/^pnpm\s+run\s+/, "").replace(/^npm\s+run\s+/, "") ?? ""
-  );
+  let rest = String(script).trim();
+  let stripped = true;
+  while (stripped) {
+    stripped = false;
+    for (const prefix of RUNNER_PREFIXES) {
+      const next = rest.replace(prefix, "");
+      if (next !== rest) {
+        rest = next.trim();
+        stripped = true;
+        break;
+      }
+    }
+  }
+  return rest.split(/\s+/)[0] ?? "";
 }
 
 export function inferProbeFromLintScript(root, tool) {
   const scripts = lintScripts(readRootPackageJson(root));
   for (const script of scripts) {
-    const head = firstExecutableToken(script).toLowerCase();
+    const head = firstExecutableToken(script)
+      .toLowerCase()
+      .replace(/\\/g, "/")
+      .replace(/\.(?:cmd|exe|bat|ps1)$/, "");
     if (head === tool || head.endsWith(`/${tool}`)) {
       return LINTER_PROBE_DEFAULTS[tool] ?? null;
-    }
-    if (tool === "eslint" && /^eslint(\.cmd)?$/i.test(head)) {
-      return LINTER_PROBE_DEFAULTS.eslint;
-    }
-    if (tool === "biome" && /^biome(\.cmd)?$/i.test(head)) {
-      return LINTER_PROBE_DEFAULTS.biome;
-    }
-    if (tool === "oxlint" && /^oxlint(\.cmd)?$/i.test(head)) {
-      return LINTER_PROBE_DEFAULTS.oxlint;
     }
   }
   return null;

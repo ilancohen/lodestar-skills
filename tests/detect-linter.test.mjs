@@ -46,6 +46,30 @@ test("inferProbeFromLintScript reads the lint script executable", () => {
   fs.rmSync(tmp, { recursive: true, force: true });
 });
 
+test("inferProbeFromLintScript looks past package runner prefixes", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lodestar-detect-linter-"));
+  const scripts = [
+    "pnpm run eslint",
+    "npm run eslint --",
+    "npx --yes eslint .",
+    "pnpm exec eslint .",
+    "pnpm eslint .",
+    "./node_modules/.bin/eslint .",
+  ];
+  for (const lint of scripts) {
+    fs.writeFileSync(
+      path.join(tmp, "package.json"),
+      JSON.stringify({ scripts: { lint } }),
+    );
+    assert.match(
+      inferProbeFromLintScript(tmp, "eslint") ?? "",
+      /--format json/,
+      `failed for: ${lint}`,
+    );
+  }
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
 test("formatLintCell combines dev command, tool, and probe", () => {
   assert.equal(formatLintCell("n/a", { tool: null, probe: null }), "n/a");
   assert.equal(
