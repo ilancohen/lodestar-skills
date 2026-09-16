@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented here.
 
+## [0.18.5] - 2026-09-16
+
+### Fixed
+
+- **Linter detection through package runners.** `detect-linter` now strips `npm run` / `pnpm exec` / `npx` style prefixes before reading the lint script's executable, so scripts like `pnpm run eslint` infer the tool instead of seeing the runner. Windows shim suffixes and backslash paths resolve too.
+
+### Removed
+
+- **Dead code.** Dropped the unreachable per-tool branches in `inferProbeFromLintScript`, the uncalled `markStageDone` helper in `plan-state`, unused `VERSION_PATH`, `QUALITY_FIELDS`, `CHECKPOINT_RESTART_KEYS`, and `FINDING_RE` constants, and an unused test import.
+
 ## [0.18.4] - 2026-09-15
 
 ### Fixed
