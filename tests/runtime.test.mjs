@@ -21,6 +21,7 @@ const EXPECTED_EXPORTS = [
   "parseArgs",
   "localBin",
   "atomicWrite",
+  "renameWithRetry",
   "tempDir",
   "utcDate",
   "printJson",
@@ -174,6 +175,47 @@ test("runtime: atomicWrite creates parent dirs, replaces existing content, and l
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
+});
+
+function lockedRename(failures, code = "EPERM") {
+  const calls = [];
+  const rename = (from, to) => {
+    calls.push([from, to]);
+    if (calls.length <= failures) {
+      throw Object.assign(new Error(code), { code });
+    }
+  };
+  return { calls, rename };
+}
+
+test("runtime: renameWithRetry waits out a transient Windows lock", () => {
+  const { calls, rename } = lockedRename(2);
+  runtime.renameWithRetry("a", "b", { platform: "win32", delayMs: 1, rename });
+  assert.equal(calls.length, 3);
+});
+
+test("runtime: renameWithRetry gives up after the attempt limit", () => {
+  const { calls, rename } = lockedRename(99, "EBUSY");
+  assert.throws(
+    () =>
+      runtime.renameWithRetry("a", "b", {
+        platform: "win32",
+        attempts: 3,
+        delayMs: 1,
+        rename,
+      }),
+    /EBUSY/,
+  );
+  assert.equal(calls.length, 3);
+});
+
+test("runtime: renameWithRetry does not retry off Windows", () => {
+  const { calls, rename } = lockedRename(1);
+  assert.throws(
+    () => runtime.renameWithRetry("a", "b", { platform: "linux", rename }),
+    /EPERM/,
+  );
+  assert.equal(calls.length, 1);
 });
 
 test("runtime: localBin finds a pinned node_modules/.bin entry and returns null otherwise", () => {

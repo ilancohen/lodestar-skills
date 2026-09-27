@@ -175,6 +175,51 @@ test("CLI discover-plans.mjs resolve matches the gateway", () => {
   assert.equal(JSON.parse(viaScript.stdout).plansRoot, "docs/plans");
 });
 
+test("ensurePlansRoot rejects plans roots outside the repository", () => {
+  const tmp = tmpRoot();
+  try {
+    for (const bad of ["../outside", "docs/../../outside", "/tmp/x", "C:\\x"]) {
+      assert.throws(() => ensurePlansRoot(tmp, bad), /inside the repository/);
+    }
+    assert.equal(fs.existsSync(path.join(tmp, "..", "outside")), false);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("resolvePlansRoot rejects a context row that escapes the repository", () => {
+  const tmp = tmpRoot();
+  try {
+    writeContext(
+      tmp,
+      `## Docs Layout
+
+| Path | Role | Responsibility |
+| ---- | ---- | -------------- |
+| ../plans | inflight | In-flight plans. |
+`,
+    );
+    assert.throws(() => resolvePlansRoot(tmp), /inside the repository/);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("CLI ensure-root reports an escaping --plans-root without a stack trace", () => {
+  const tmp = tmpRoot();
+  try {
+    const result = spawnSync(
+      process.execPath,
+      [GATEWAY, "ensure-root", "--root", tmp, "--plans-root", "../escape"],
+      { encoding: "utf8" },
+    );
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /^ERROR: plans root must be a path inside/);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test("CLI rejects add-awaiting and unknown commands", () => {
   const tmp = tmpRoot();
   try {

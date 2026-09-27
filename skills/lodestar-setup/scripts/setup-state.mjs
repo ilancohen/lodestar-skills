@@ -1679,6 +1679,13 @@ export function collectState(root, options = {}) {
   const pkg = readRootPackageJson(root);
   let commands = collectCommands(root, pkg, pkgManager);
   const linter = detectLinter(root);
+  if (linter.needsProbe && commands.lint) {
+    needsInput.push({
+      id: "linter-probe",
+      reason: "no known JSON probe command for this linter",
+      tool: linter.tool,
+    });
+  }
   let layout = collectPackages(root, commands.layoutSource);
   // Preserve recorded package responsibilities when present.
   if (existing.packageLayout?.length) {
@@ -1854,11 +1861,15 @@ function renderBuildTest(state, corrections) {
       };
     }
   }
+  const linter = corrections.linter
+    ? { ...state.linter, ...corrections.linter }
+    : state.linter;
   let lintCell = "n/a";
   try {
-    lintCell = formatLintCell(commands.lint, state.linter);
+    lintCell = formatLintCell(commands.lint, linter);
   } catch {
-    lintCell = commands.lint || "n/a";
+    // Audit rejects a lint row without tool and probe; n/a keeps it runnable.
+    lintCell = "n/a";
   }
   const rows = [
     ["install", commands.install || "n/a"],

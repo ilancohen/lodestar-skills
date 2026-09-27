@@ -15,9 +15,18 @@ function posixJoin(...parts) {
 }
 
 function normalizePlansRoot(relative) {
-  return String(relative || DEFAULT_PLANS_ROOT)
+  const value = String(relative || DEFAULT_PLANS_ROOT)
     .replace(/\\/g, "/")
     .replace(/\/+$/, "");
+  if (
+    /^(\/|[a-z]:)/i.test(value) ||
+    value.split("/").some((segment) => segment === "..")
+  ) {
+    throw new Error(
+      `plans root must be a path inside the repository, got: ${value}`,
+    );
+  }
+  return value;
 }
 
 export function loadContext(root) {
@@ -189,4 +198,10 @@ export function run(argv = process.argv.slice(2)) {
   return 1;
 }
 
-if (isMain(import.meta.url)) process.exit(run());
+if (isMain(import.meta.url)) {
+  try {
+    process.exit(run());
+  } catch (error) {
+    fail(error.message || String(error));
+  }
+}

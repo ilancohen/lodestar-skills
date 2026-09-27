@@ -655,6 +655,35 @@ test("paths with spaces / CRLF / backslash normalize to /", () => {
   }
 });
 
+test("unknown linter asks for a probe and never writes a partial lint row", () => {
+  const repo = makeRepo("lodestar-setup-foolint-", {
+    "package.json": JSON.stringify({
+      name: "foolint-app",
+      scripts: { lint: "foolint src" },
+      devDependencies: { foolint: "1.0.0" },
+    }),
+    "pnpm-lock.yaml": "lockfileVersion: 9\n",
+    "src/index.ts": "export {};\n",
+  });
+  try {
+    const state = collectState(repo, { skillDir: SETUP_SKILL });
+    const ask = state.needsInput.find((item) => item.id === "linter-probe");
+    assert.equal(ask?.tool, "foolint");
+
+    const lintRow = (text) => text.split("\n").find((line) => /^\|\s*`?lint`?\s*\|/.test(line));
+    const base = { projectDescription: "Fixture." };
+    assert.match(lintRow(renderContext(state, base)), /\|\s*`?n\/a`?\s*\|/);
+
+    const corrected = renderContext(state, {
+      ...base,
+      linter: { probe: "foolint --json src" },
+    });
+    assert.match(lintRow(corrected), /foolint; foolint --json src/);
+  } finally {
+    fs.rmSync(repo, { recursive: true, force: true });
+  }
+});
+
 test("renderContext/mergeContext helpers are deterministic", () => {
   const repo = makeRepo("lodestar-setup-det-", {
     "package.json": JSON.stringify({ name: "det", scripts: { test: "true" } }),

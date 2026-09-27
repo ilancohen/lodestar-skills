@@ -26,6 +26,12 @@ when none of those lockfiles exist.
 
 An unambiguous lockfile is not a question.
 
+### Linter probe needs input
+
+If `needsInput` includes `linter-probe`: ask **once** for a command
+that prints that linter's findings as JSON. Record it as corrections
+`linter: { probe: "<command>" }`; none → lint is written `n/a`.
+
 ### Stop conditions
 
 - `scannable.total === 0` → stop (see `00-confirm-scannable.md`).

@@ -38,4 +38,10 @@ export const listPendingPlans = discoverPlans.listPendingPlans;
 export const resolvePlansRoot = discoverPlans.resolvePlansRoot;
 export const run = discoverPlans.run;
 
-if (isMain(import.meta.url)) process.exit(run(process.argv.slice(2)));
+if (isMain(import.meta.url)) {
+  try {
+    process.exit(run(process.argv.slice(2)));
+  } catch (error) {
+    fail(error.message || String(error));
+  }
+}

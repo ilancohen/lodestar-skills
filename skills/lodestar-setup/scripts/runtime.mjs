@@ -60,14 +60,34 @@ export function atomicWrite(filePath, contents) {
   );
   fs.writeFileSync(temp, contents, { encoding: "utf8" });
   try {
-    fs.renameSync(temp, filePath);
+    renameWithRetry(temp, filePath);
   } catch (error) {
-    if (process.platform === "win32" && fs.existsSync(filePath)) {
-      fs.rmSync(filePath);
-      fs.renameSync(temp, filePath);
-    } else {
-      fs.rmSync(temp, { force: true });
-      throw error;
+    fs.rmSync(temp, { force: true });
+    throw error;
+  }
+}
+
+const TRANSIENT_RENAME_CODES = new Set(["EPERM", "EACCES", "EBUSY"]);
+
+// Windows rename already replaces the target; it fails only while another
+// process (indexer, antivirus, editor) holds the file open, so wait it out
+// rather than deleting the target first.
+export function renameWithRetry(
+  from,
+  to,
+  { platform = process.platform, attempts = 10, delayMs = 50, rename = fs.renameSync } = {},
+) {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      rename(from, to);
+      return;
+    } catch (error) {
+      const retry =
+        platform === "win32" &&
+        attempt < attempts &&
+        TRANSIENT_RENAME_CODES.has(error?.code);
+      if (!retry) throw error;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, delayMs * attempt);
     }
   }
 }

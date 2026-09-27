@@ -42,6 +42,11 @@ the phrases below; ambient task language must not load them.
 | `plan-implement-dirty-no-commit`   | plan, implement     | Dirty files stop; no-commit choice; filesystem index |
 | `architecture-docs-cleanup-safety` | architecture, docs  | Advisory only; live audits protected                 |
 
+Setup asks one extra question only when `needsInput` has `linter-probe`
+(a linter with no known JSON probe); the lint row is then the supplied
+probe or `n/a`, never a bare dev command. Other question counts stay at
+baseline.
+
 ## Triggering (exact name)
 
 | Skill        | Should trigger                                                                     | Near-miss (must not)                                                                        |

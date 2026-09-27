@@ -85,8 +85,8 @@ and [references/01-collect-facts.md](references/01-collect-facts.md).
 
 One discovery invocation only. Read **stdout projection** only. If
 `scannable.total === 0` → **stop**, write nothing. If `needsInput`
-includes pkg-manager → ask once; write answers into corrections JSON
-(do not re-run full agent discovery).
+includes pkg-manager or linter-probe → ask once; write answers into
+corrections JSON (do not re-run full agent discovery).
 
 ## Step 1 — Review (interaction 1)
 

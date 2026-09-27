@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import {
   atomicWrite,
+  doneDir,
   fail,
   isMain,
   parseArgs,
@@ -225,7 +226,7 @@ function gitMv(root, fromAbs, toAbs) {
 
 export function moveDone(root, plansRoot, srcAbs) {
   const slugName = path.basename(srcAbs);
-  const destAbs = path.join(root, plansRoot, "done", slugName);
+  const destAbs = path.join(root, doneDir(plansRoot), slugName);
   if (exists(srcAbs) && exists(destAbs)) {
     throw new Error(
       `move-done refused: both \`${path.relative(root, srcAbs)}\` and \`${path.relative(root, destAbs)}\` exist`,
@@ -373,4 +374,10 @@ export function run(argv = process.argv.slice(2)) {
   return 1;
 }
 
-if (isMain(import.meta.url)) process.exit(run());
+if (isMain(import.meta.url)) {
+  try {
+    process.exit(run());
+  } catch (error) {
+    fail(error.message || String(error));
+  }
+}
