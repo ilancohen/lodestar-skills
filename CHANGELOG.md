@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented here.
 
+## [0.18.6] - 2026-09-27
+
+### Fixed
+
+- **Plans root stays inside the repo.** `discover-plans` and `plan-state move-done` reject absolute paths and `..` segments from `context.md` or `--plans-root` instead of writing outside the repository.
+- **Safe Windows replace in `atomicWrite`.** A locked target is retried briefly instead of deleted first, so a failed rename can no longer lose the file being updated.
+- **Unknown linters no longer break audit.** Setup asks once for a JSON probe (`needsInput: linter-probe`, `corrections.linter`) and writes `n/a` rather than a lint row audit would reject.
+
+### Changed
+
+- **Plan and implement prerequisites.** Compatibility text now says the `lodestar-setup` skill must be installed alongside them, though running setup first is still optional.
+
 ## [0.18.5] - 2026-09-16
 
 ### Fixed
