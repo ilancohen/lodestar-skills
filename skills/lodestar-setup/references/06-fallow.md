@@ -11,7 +11,8 @@ state / permissions projection — do not re-narrate discovery.
    `node <lodestar-audit-skill>/scripts/fallow-contract.mjs resolve-bin --root <repo>`
 2. In-range + declared + binary present → never install over it.
 3. Else run the permissions-row add-dev / upgrade / plain install
-   command, then re-run `resolve-bin`.
+   command with network access (sandboxes can fake a registry 403),
+   then re-run `resolve-bin`. Never override the configured registry.
 4. Unticked or failed → print commands; say audit will not run without
    fallow in `package.json` and `node_modules/.bin`; continue (not a
    setup failure).

@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented here.
 
+## [0.18.7] - 2026-09-27
+
+### Fixed
+
+- **Fallow install under agent sandboxes.** Setup now runs the Fallow install with network access, because sandboxes can return a fake registry 403, and never switches to a different registry on its own.
+
 ## [0.18.6] - 2026-09-27
 
 ### Fixed
