@@ -18,7 +18,7 @@ compatibility: >-
   via context.md. No Deno or Bazel.
 metadata:
   author: Ilan Cohen
-  version: "0.18.5"
+  version: "0.18.6"
 ---
 
 You are running a lodestar audit. **Discover** and
