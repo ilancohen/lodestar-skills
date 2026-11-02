@@ -3,6 +3,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import process from "node:process";
 import { pathToFileURL } from "node:url";
 
 export const DEFAULT_OUTPUT_ROOT = "docs/audit";
@@ -28,11 +29,6 @@ function exists(root, relative) {
 function isDir(root, relative) {
   const full = path.join(root, relative);
   return fs.existsSync(full) && fs.statSync(full).isDirectory();
-}
-
-function isFile(root, relative) {
-  const full = path.join(root, relative);
-  return fs.existsSync(full) && fs.statSync(full).isFile();
 }
 
 function underPrefix(relative, prefix) {
@@ -64,7 +60,7 @@ export function parseDocsLayout(contextText) {
     const role = stripTicks(cells[1]).toLowerCase();
     if (!DOCS_ROLES.includes(role)) {
       throw new Error(
-        `Docs Layout has an invalid Role \`${stripTicks(cells[1])}\`. Expected home, staging, inflight, or unknown. Re-run lodestar-setup.`,
+        `Docs Layout has an invalid Role \`${stripTicks(cells[1])}\`. Expected home, staging, inflight, or unknown. Re-run lodestar-setup.`
       );
     }
     const docPath = stripTicks(cells[0]);
@@ -125,10 +121,7 @@ function suggestRole(relative, outputRoot, architectureRoot, linked) {
   ) {
     return "home";
   }
-  if (
-    /(^|\/)(adr|adrs|rfcs?)$/.test(relative) &&
-    relative !== architectureRoot
-  ) {
+  if (/(^|\/)(adr|adrs|rfcs?)$/.test(relative) && relative !== architectureRoot) {
     return "home";
   }
   return "unknown";
@@ -184,8 +177,7 @@ export function listDocsAnchors(root, outputRoot, architectureRoot) {
 
 export function observeDocsLayout(root, options = {}) {
   const outputRoot = options.outputRoot || DEFAULT_OUTPUT_ROOT;
-  const architectureRoot =
-    options.architectureRoot || architectureOutputRoot(outputRoot);
+  const architectureRoot = options.architectureRoot || architectureOutputRoot(outputRoot);
   const linked = linkedDocsPaths(root);
   const anchors = listDocsAnchors(root, outputRoot, architectureRoot);
   const skipNested = new Set();
@@ -200,12 +192,7 @@ export function observeDocsLayout(root, options = {}) {
     rows.push({
       path: relative,
       role,
-      responsibility: responsibilityFor(
-        relative,
-        role,
-        outputRoot,
-        architectureRoot,
-      ),
+      responsibility: responsibilityFor(relative, role, outputRoot, architectureRoot),
     });
   }
   return {
@@ -233,8 +220,7 @@ export function checkDocsLayoutDrift(root, contextText, options = {}) {
     };
   }
   const outputRoot = options.outputRoot || DEFAULT_OUTPUT_ROOT;
-  const architectureRoot =
-    options.architectureRoot || architectureOutputRoot(outputRoot);
+  const architectureRoot = options.architectureRoot || architectureOutputRoot(outputRoot);
   const drift = [];
   for (const row of rows) {
     if (!exists(root, row.path)) {

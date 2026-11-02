@@ -11,9 +11,12 @@
  *   summarize-results --results FILE [--state FILE]
  *   cleanup --state FILE --corrections FILE --results FILE
  */
+import { Buffer } from "node:buffer";
 import fs from "node:fs";
 import path from "node:path";
+import process from "node:process";
 import { fileURLToPath } from "node:url";
+
 import { detectLinter, formatLintCell } from "./detect-linter.mjs";
 import { observeDocsLayout, parseDocsLayout } from "./discover-docs.mjs";
 import {
@@ -31,8 +34,8 @@ import {
   parseArgs,
   posixPath,
   printJson,
-  sortKeysDeep,
   sortedJson,
+  sortKeysDeep,
   spawnCaptureToTemp,
 } from "./runtime.mjs";
 import { listDeclaredMembers } from "./workspace-layout.mjs";
@@ -46,16 +49,7 @@ export const MAX_FAILURE_BYTES = 1024;
 export const CAP_PACKAGES = 20;
 export const CAP_LIST = 10;
 
-const BASE_EXTS = [
-  ".ts",
-  ".tsx",
-  ".js",
-  ".jsx",
-  ".mjs",
-  ".cjs",
-  ".mts",
-  ".cts",
-];
+const BASE_EXTS = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".cts"];
 const FRAMEWORK_EXTS = [".vue", ".svelte"];
 const SKIP_DIRS = new Set([
   "node_modules",
@@ -114,11 +108,9 @@ const SKILL_WHEN = {
   "lodestar-fix": "Triage and apply fixes from an audit run",
   "lodestar-architecture":
     "Get an advisory second opinion on the layout above; optionally have it propose an alternative",
-  "lodestar-plan":
-    "Multi-stage or cross-package work that needs an implementable plan",
+  "lodestar-plan": "Multi-stage or cross-package work that needs an implementable plan",
   "lodestar-implement": "Execute a plan one stage at a time",
-  "lodestar-docs":
-    "Harvest then delete leftover audit, architecture, and plan writeups; optional",
+  "lodestar-docs": "Harvest then delete leftover audit, architecture, and plan writeups; optional",
 };
 
 function usage() {
@@ -163,9 +155,7 @@ function discoverSiblings(skillDir) {
   if (!fs.existsSync(parent)) return [];
   return fs
     .readdirSync(parent, { withFileTypes: true })
-    .filter(
-      (entry) => entry.isDirectory() && entry.name.startsWith("lodestar-"),
-    )
+    .filter((entry) => entry.isDirectory() && entry.name.startsWith("lodestar-"))
     .filter((entry) => fs.existsSync(path.join(parent, entry.name, "SKILL.md")))
     .map((entry) => entry.name)
     .sort();
@@ -203,11 +193,7 @@ function countScannable(root, extraExts = []) {
       if (include.has(ext)) {
         counts[ext] = (counts[ext] || 0) + 1;
         total += 1;
-      } else if (
-        [".py", ".go", ".rs", ".java", ".kt", ".rb", ".php", ".cs"].includes(
-          ext,
-        )
-      ) {
+      } else if ([".py", ".go", ".rs", ".java", ".kt", ".rb", ".php", ".cs"].includes(ext)) {
         other[ext] = (other[ext] || 0) + 1;
       }
     }
@@ -229,8 +215,7 @@ function pickScript(scripts, names) {
 }
 
 function collectCommands(root, pkg, pkgManager) {
-  const scripts =
-    pkg?.scripts && typeof pkg.scripts === "object" ? pkg.scripts : {};
+  const scripts = pkg?.scripts && typeof pkg.scripts === "object" ? pkg.scripts : {};
   const manager = pkgManager?.pkgManager || pkgManager?.name || null;
   // Prefer conventional script names; store what a developer types.
   // Unresolved manager → n/a (never guess npm).
@@ -247,12 +232,7 @@ function collectCommands(root, pkg, pkgManager) {
               ? `${manager} install`
               : "n/a";
   const build = pickScript(scripts, ["build"]);
-  const typecheck = pickScript(scripts, [
-    "typecheck",
-    "type-check",
-    "tsc",
-    "check:types",
-  ]);
+  const typecheck = pickScript(scripts, ["typecheck", "type-check", "tsc", "check:types"]);
   const lint = pickScript(scripts, ["lint", "eslint", "lint:check", "lint:ci"]);
   const test = pickScript(scripts, ["test", "test:ci", "check"]);
   const fmt = (hit) => {
@@ -275,8 +255,7 @@ function collectCommands(root, pkg, pkgManager) {
     if (!existsFile(root, candidate)) continue;
     if (candidate === "package.json") {
       const workspaces = pkg?.workspaces;
-      const has =
-        Array.isArray(workspaces) || Array.isArray(workspaces?.packages);
+      const has = Array.isArray(workspaces) || Array.isArray(workspaces?.packages);
       if (!has) continue;
     }
     if (candidate === "turbo.json") {
@@ -286,8 +265,7 @@ function collectCommands(root, pkg, pkgManager) {
     layoutSource = candidate;
     break;
   }
-  if (!layoutSource && existsFile(root, "turbo.json"))
-    layoutSource = "turbo.json";
+  if (!layoutSource && existsFile(root, "turbo.json")) layoutSource = "turbo.json";
   return {
     install,
     build: fmt(build),
@@ -362,13 +340,9 @@ export function tsPathAliases(root) {
   const aliases = [];
   for (const [key, targets] of Object.entries(found.paths)) {
     if (!key.endsWith("/*") || !Array.isArray(targets)) continue;
-    const target = targets.find(
-      (entry) => typeof entry === "string" && entry.endsWith("/*"),
-    );
+    const target = targets.find((entry) => typeof entry === "string" && entry.endsWith("/*"));
     if (!target) continue;
-    const dir = posixPath(
-      path.relative(root, path.resolve(found.base, target.slice(0, -2))),
-    );
+    const dir = posixPath(path.relative(root, path.resolve(found.base, target.slice(0, -2))));
     if (dir.startsWith("..")) continue;
     aliases.push({ alias: key.slice(0, -2), dir });
   }
@@ -380,13 +354,8 @@ export function applyTsPathAliases(packages, aliases) {
     if (row.alias && row.alias !== "n/a") return row;
     const pkgPath = posixPath(row.path);
     const match = aliases
-      .filter(
-        ({ dir }) =>
-          pkgPath === "." || dir === pkgPath || dir.startsWith(`${pkgPath}/`),
-      )
-      .sort(
-        (a, b) => a.dir.length - b.dir.length || a.alias.localeCompare(b.alias),
-      )[0];
+      .filter(({ dir }) => pkgPath === "." || dir === pkgPath || dir.startsWith(`${pkgPath}/`))
+      .sort((a, b) => a.dir.length - b.dir.length || a.alias.localeCompare(b.alias))[0];
     return match ? { ...row, alias: match.alias } : row;
   });
 }
@@ -398,9 +367,7 @@ function packageEntryPoints(pkgJson) {
     for (const [key, value] of Object.entries(pkgJson.exports)) {
       if (key === "." || key === "./") {
         const target =
-          typeof value === "string"
-            ? value
-            : value?.import || value?.require || value?.default;
+          typeof value === "string" ? value : value?.import || value?.require || value?.default;
         if (typeof target === "string") entries.add(posixPath(target));
       }
     }
@@ -455,9 +422,7 @@ function collectPackages(root, layoutSource) {
           typeof pkgJson.name === "string"
             ? pkgJson.name.replace(/^@[^/]+\//, "")
             : path.basename(member);
-        const srcRel = existsDir(root, `${member}/src`)
-          ? `${member}/src`
-          : member;
+        const srcRel = existsDir(root, `${member}/src`) ? `${member}/src` : member;
         const scan = pathLooksScannable(root, srcRel);
         packages.push({
           name,
@@ -503,9 +468,7 @@ function collectPackages(root, layoutSource) {
         typeof pkgJson.name === "string"
           ? pkgJson.name.replace(/^@[^/]+\//, "")
           : path.basename(member);
-      const srcRel = existsDir(root, `${member}/src`)
-        ? `${member}/src`
-        : member;
+      const srcRel = existsDir(root, `${member}/src`) ? `${member}/src` : member;
       const scan = pathLooksScannable(root, srcRel);
       packages.push({
         name,
@@ -523,9 +486,7 @@ function collectPackages(root, layoutSource) {
   // Single-package heuristics.
   const rootPkg = readRootPackageJson(root) || {};
   const name =
-    typeof rootPkg.name === "string"
-      ? rootPkg.name.replace(/^@[^/]+\//, "")
-      : path.basename(root);
+    typeof rootPkg.name === "string" ? rootPkg.name.replace(/^@[^/]+\//, "") : path.basename(root);
   if (existsDir(root, "src")) {
     const features = fs
       .readdirSync(path.join(root, "src"), { withFileTypes: true })
@@ -624,7 +585,7 @@ function grepFirst(root, globs, pattern, maxFiles = 40) {
 function collectConventionEvidence(root, packages) {
   const evidence = {};
   const pkgRoots = packages.map((row) =>
-    row.path.endsWith("/src") ? row.path.slice(0, -4) : row.path,
+    row.path.endsWith("/src") ? row.path.slice(0, -4) : row.path
   );
 
   // result-types
@@ -640,10 +601,7 @@ function collectConventionEvidence(root, packages) {
     ]) {
       if (!existsFile(root, candidate)) continue;
       const text = fs.readFileSync(path.join(root, candidate), "utf8");
-      if (
-        /\b(Result|Either)\b/.test(text) ||
-        /\bok:\s*(true|false)/.test(text)
-      ) {
+      if (/\b(Result|Either)\b/.test(text) || /\bok:\s*(true|false)/.test(text)) {
         hit = posixPath(candidate);
         break;
       }
@@ -652,19 +610,12 @@ function collectConventionEvidence(root, packages) {
   }
   evidence["result-types"] = { path: hit, found: Boolean(hit) };
 
-  hit = grepFirst(
-    root,
-    pkgRoots.length ? pkgRoots : ["src"],
-    /readonly\s+__brand/,
-  );
+  hit = grepFirst(root, pkgRoots.length ? pkgRoots : ["src"], /readonly\s+__brand/);
   evidence["branded-types"] = { path: hit, found: Boolean(hit) };
 
   hit = null;
   for (const pkgRoot of pkgRoots) {
-    for (const candidate of [
-      `${pkgRoot}/src/index.ts`,
-      `${pkgRoot}/index.ts`,
-    ]) {
+    for (const candidate of [`${pkgRoot}/src/index.ts`, `${pkgRoot}/index.ts`]) {
       if (!existsFile(root, candidate)) continue;
       const text = fs.readFileSync(path.join(root, candidate), "utf8");
       if (/export\s+\*/.test(text)) {
@@ -720,16 +671,12 @@ function collectRubricPaths(root, docsRows) {
   };
   for (const name of ["CONTRIBUTING.md", "AGENTS.md", "CLAUDE.md"]) add(name);
   if (existsDir(root, ".cursor/rules")) {
-    for (const name of fs
-      .readdirSync(path.join(root, ".cursor/rules"))
-      .sort()) {
+    for (const name of fs.readdirSync(path.join(root, ".cursor/rules")).sort()) {
       if (/\.(md|mdc)$/i.test(name)) add(`.cursor/rules/${name}`);
     }
   }
   if (existsDir(root, ".claude/rules")) {
-    for (const name of fs
-      .readdirSync(path.join(root, ".claude/rules"))
-      .sort()) {
+    for (const name of fs.readdirSync(path.join(root, ".claude/rules")).sort()) {
       if (/\.md$/i.test(name)) add(`.claude/rules/${name}`);
     }
   }
@@ -779,12 +726,7 @@ function parseExistingContext(root) {
   if (result.agentsExists) {
     const text = fs.readFileSync(agentsFull, "utf8");
     result.agentsHasLodestar = /^## Lodestar\s*$/m.test(text);
-    for (const name of [
-      "Package Layout",
-      "Build & Test",
-      "Commands",
-      "Skills",
-    ]) {
+    for (const name of ["Package Layout", "Build & Test", "Commands", "Skills"]) {
       if (new RegExp(`^## ${name}\\s*$`, "m").test(text)) {
         result.legacyAgentsSections.push(name);
       }
@@ -793,7 +735,7 @@ function parseExistingContext(root) {
   if (!result.contextExists) return result;
   const text = fs.readFileSync(full, "utf8");
   result.contextIsLegacy = PRE09_HEADINGS.some((name) =>
-    new RegExp(`^## ${name}\\s*$`, "m").test(text),
+    new RegExp(`^## ${name}\\s*$`, "m").test(text)
   );
   result.conventions = parseConventionsTable(text);
   try {
@@ -963,9 +905,7 @@ function collectFrameworkSignals(root, packages) {
     ["next.config", "react"],
   ];
   for (const [stem, framework] of configs) {
-    const hit = fs
-      .readdirSync(root)
-      .some((name) => name === stem || name.startsWith(`${stem}.`));
+    const hit = fs.readdirSync(root).some((name) => name === stem || name.startsWith(`${stem}.`));
     if (!hit) continue;
     frameworks.add(framework);
     signals.push(`config ${stem}`);
@@ -1009,14 +949,7 @@ function collectExclusions(root) {
   for (const [marker, glob, reason] of markers) {
     if (existsFile(root, marker)) add(glob, reason);
   }
-  for (const dir of [
-    "generated",
-    "__generated__",
-    "dist",
-    "build",
-    ".next",
-    ".output",
-  ]) {
+  for (const dir of ["generated", "__generated__", "dist", "build", ".next", ".output"]) {
     if (existsDir(root, dir)) add(`**/${dir}/**`, `${dir} output`);
   }
   add("**/*.test.*", "tests", "tests");
@@ -1051,8 +984,7 @@ function collectCommitPolicy(root) {
     }
   }
   const pkg = readRootPackageJson(root);
-  if (!evidence.commitlint && pkg?.commitlint)
-    evidence.commitlint = "package.json";
+  if (!evidence.commitlint && pkg?.commitlint) evidence.commitlint = "package.json";
   if (existsDir(root, ".husky")) evidence.hooks.push(".husky/");
   for (const name of ["lefthook.yml", "lefthook.yaml"]) {
     if (existsFile(root, name)) evidence.hooks.push(name);
@@ -1063,8 +995,7 @@ function collectCommitPolicy(root) {
         .readdirSync(path.join(root, ".git/hooks"))
         .filter((name) => !name.endsWith(".sample"))
         .sort();
-      if (hooks.length)
-        evidence.hooks.push(...hooks.map((h) => `.git/hooks/${h}`));
+      if (hooks.length) evidence.hooks.push(...hooks.map((h) => `.git/hooks/${h}`));
     } catch {
       // ignore
     }
@@ -1072,11 +1003,10 @@ function collectCommitPolicy(root) {
   evidence.hooks = [...new Set(evidence.hooks)].sort();
 
   const captures = [];
-  const branchCap = spawnCaptureToTemp(
-    "git",
-    ["rev-parse", "--abbrev-ref", "HEAD"],
-    { cwd: root, prefix: "lodestar-git-branch" },
-  );
+  const branchCap = spawnCaptureToTemp("git", ["rev-parse", "--abbrev-ref", "HEAD"], {
+    cwd: root,
+    prefix: "lodestar-git-branch",
+  });
   captures.push(branchCap);
   if (branchCap.status === 0) {
     evidence.branch = fs.readFileSync(branchCap.outPath, "utf8").trim() || null;
@@ -1108,9 +1038,7 @@ function collectCommitPolicy(root) {
     evidence,
     suggested: {
       commits: "ask",
-      subjectFormat: evidence.commitlint
-        ? "fix(<category>): <slug>"
-        : "<category>: <slug>",
+      subjectFormat: evidence.commitlint ? "fix(<category>): <slug>" : "<category>: <slug>",
       trailer: "Closes <item>.",
       protected: protectedBranches.length ? protectedBranches : ["none"],
       requireClean: "no",
@@ -1151,17 +1079,16 @@ function collectAuditScope(root, packages, scanExtensions, failures) {
     failCmd(
       "git rev-list --count HEAD",
       "Ensure the repo has at least one commit, or set mode: all.",
-      countCap.stderr || countCap.error,
+      countCap.stderr || countCap.error
     );
   }
 
   // Bound history: root commits only, then format the oldest. Do not dump
   // `git log --reverse` (git applies `-n` before `--reverse`).
-  const rootsCap = spawnCaptureToTemp(
-    "git",
-    ["rev-list", "--max-parents=0", "HEAD"],
-    { cwd: root, prefix: "lodestar-git-roots" },
-  );
+  const rootsCap = spawnCaptureToTemp("git", ["rev-list", "--max-parents=0", "HEAD"], {
+    cwd: root,
+    prefix: "lodestar-git-roots",
+  });
   caps.push(rootsCap);
   let firstCommit = null;
   if (rootsCap.status === 0) {
@@ -1175,18 +1102,16 @@ function collectAuditScope(root, packages, scanExtensions, failures) {
       const dateCap = spawnCaptureToTemp(
         "git",
         ["log", "-1", "--format=%ad", "--date=short", oldest],
-        { cwd: root, prefix: "lodestar-git-first" },
+        { cwd: root, prefix: "lodestar-git-first" }
       );
       caps.push(dateCap);
       if (dateCap.status === 0) {
-        firstCommit =
-          fs.readFileSync(dateCap.outPath, "utf8").trim().split(/\r?\n/)[0] ||
-          null;
+        firstCommit = fs.readFileSync(dateCap.outPath, "utf8").trim().split(/\r?\n/)[0] || null;
       } else {
         failCmd(
           `git log -1 --format=%ad --date=short ${oldest}`,
           "Check git history is readable.",
-          dateCap.stderr || dateCap.error,
+          dateCap.stderr || dateCap.error
         );
       }
     }
@@ -1194,7 +1119,7 @@ function collectAuditScope(root, packages, scanExtensions, failures) {
     failCmd(
       "git rev-list --max-parents=0 HEAD",
       "Check git history is readable.",
-      rootsCap.stderr || rootsCap.error,
+      rootsCap.stderr || rootsCap.error
     );
   }
 
@@ -1217,22 +1142,17 @@ function collectAuditScope(root, packages, scanExtensions, failures) {
       if (!extSet.has(ext)) return false;
       if (!layoutPrefixes.length) return true;
       return layoutPrefixes.some(
-        (prefix) =>
-          prefix === "." || rel === prefix || rel.startsWith(`${prefix}/`),
+        (prefix) => prefix === "." || rel === prefix || rel.startsWith(`${prefix}/`)
       );
     }).length;
   } else {
-    failCmd(
-      "git ls-files",
-      "Ensure git index is readable.",
-      lsCap.stderr || lsCap.error,
-    );
+    failCmd("git ls-files", "Ensure git index is readable.", lsCap.stderr || lsCap.error);
   }
 
   const churnCap = spawnCaptureToTemp(
     "git",
     ["log", "--since=90.days", "--name-only", "--pretty=format:"],
-    { cwd: root, prefix: "lodestar-git-churn" },
+    { cwd: root, prefix: "lodestar-git-churn" }
   );
   caps.push(churnCap);
   let touched90d = 0;
@@ -1248,17 +1168,16 @@ function collectAuditScope(root, packages, scanExtensions, failures) {
           if (!extSet.has(ext)) return false;
           if (!layoutPrefixes.length) return true;
           return layoutPrefixes.some(
-            (prefix) =>
-              prefix === "." || rel === prefix || rel.startsWith(`${prefix}/`),
+            (prefix) => prefix === "." || rel === prefix || rel.startsWith(`${prefix}/`)
           );
-        }),
+        })
     );
     touched90d = touched.size;
   } else {
     failCmd(
       "git log --since=90.days --name-only --pretty=format:",
       "Ensure git history is readable for churn measurement.",
-      churnCap.stderr || churnCap.error,
+      churnCap.stderr || churnCap.error
     );
   }
 
@@ -1285,7 +1204,7 @@ function collectImportEdges(root, packages) {
       root,
       posixPath(row.path).replace(/\/src$/, "") === "."
         ? "."
-        : posixPath(row.path).replace(/\/src$/, ""),
+        : posixPath(row.path).replace(/\/src$/, "")
     );
     const pkg = readRootPackageJson(memberRoot);
     if (typeof pkg?.name === "string") byName.set(pkg.name, row);
@@ -1297,7 +1216,7 @@ function collectImportEdges(root, packages) {
       root,
       posixPath(row.path).replace(/\/src$/, "") === "."
         ? "."
-        : posixPath(row.path).replace(/\/src$/, ""),
+        : posixPath(row.path).replace(/\/src$/, "")
     );
     const pkg = readRootPackageJson(memberRoot);
     if (!pkg) continue;
@@ -1315,37 +1234,25 @@ function collectImportEdges(root, packages) {
       edges.push({ from: row.name, to: target.name, via: dep });
     }
   }
-  return edges.sort((a, b) =>
-    `${a.from}->${a.to}`.localeCompare(`${b.from}->${b.to}`),
-  );
+  return edges.sort((a, b) => `${a.from}->${a.to}`.localeCompare(`${b.from}->${b.to}`));
 }
 
 function collectFallowStatus(skillDir, root, hasAudit, failures) {
   if (!hasAudit) return { attempted: false, status: null };
-  const script = siblingPath(
-    skillDir,
-    "lodestar-audit",
-    "scripts",
-    "fallow-contract.mjs",
-  );
+  const script = siblingPath(skillDir, "lodestar-audit", "scripts", "fallow-contract.mjs");
   if (!fs.existsSync(script)) {
     return { attempted: false, status: null, missingScript: true };
   }
-  const cap = spawnCaptureToTemp(
-    process.execPath,
-    [script, "status", "--root", root],
-    { cwd: root, prefix: "lodestar-fallow-status" },
-  );
+  const cap = spawnCaptureToTemp(process.execPath, [script, "status", "--root", root], {
+    cwd: root,
+    prefix: "lodestar-fallow-status",
+  });
   try {
     if (cap.status !== 0) {
       failures.push({
         command: "fallow-contract status",
-        remedy:
-          "Re-run with lodestar-audit installed, or install a compatible local fallow.",
-        detail: capText(
-          cap.stderr || cap.error || `exit ${cap.status}`,
-          MAX_FAILURE_BYTES,
-        ),
+        remedy: "Re-run with lodestar-audit installed, or install a compatible local fallow.",
+        detail: capText(cap.stderr || cap.error || `exit ${cap.status}`, MAX_FAILURE_BYTES),
       });
       return { attempted: true, status: null };
     }
@@ -1377,9 +1284,7 @@ function truncateList(items, limit) {
 
 /** Packages that participate in a bidirectional import edge. */
 export function packagesInCycles(importEdges = []) {
-  const edgeSet = new Set(
-    (importEdges || []).map((edge) => `${edge.from}->${edge.to}`),
-  );
+  const edgeSet = new Set((importEdges || []).map((edge) => `${edge.from}->${edge.to}`));
   const cyclic = new Set();
   for (const edge of importEdges || []) {
     if (edgeSet.has(`${edge.to}->${edge.from}`)) {
@@ -1419,25 +1324,16 @@ function gitignoreCoversFallowScratch(root) {
   }
   const lines = text.split(/\r?\n/).map((line) => line.trim());
   const coversAudit = lines.some(
-    (line) =>
-      line === ".audit-*.json" ||
-      line === "**/.audit-*.json" ||
-      line === ".audit-*",
+    (line) => line === ".audit-*.json" || line === "**/.audit-*.json" || line === ".audit-*"
   );
   const coversFallow = lines.some(
-    (line) =>
-      line === ".fallow/" || line === ".fallow" || line === "**/.fallow/",
+    (line) => line === ".fallow/" || line === ".fallow" || line === "**/.fallow/"
   );
   return coversAudit && coversFallow;
 }
 
 function readSiblingFallowToolVersion(skillDir) {
-  const contractPath = siblingPath(
-    skillDir,
-    "lodestar-audit",
-    "scripts",
-    "fallow-contract.json",
-  );
+  const contractPath = siblingPath(skillDir, "lodestar-audit", "scripts", "fallow-contract.json");
   if (!fs.existsSync(contractPath)) return "3.15.0";
   try {
     const contract = JSON.parse(fs.readFileSync(contractPath, "utf8"));
@@ -1449,8 +1345,7 @@ function readSiblingFallowToolVersion(skillDir) {
 
 /** Pin-based add-dev command — never append a bare semver range. */
 export function composeFallowAddDev(status, pkgManager, toolVersion = "3.15.0") {
-  const manager =
-    status?.manager || pkgManager?.pkgManager || pkgManager?.name || null;
+  const manager = status?.manager || pkgManager?.pkgManager || pkgManager?.name || null;
   const addDevTemplate = status?.addDev || pkgManager?.addDev || null;
   const pin = `^${String(toolVersion).replace(/^\^/, "")}`;
   return installFallowCommand(pin, manager, addDevTemplate);
@@ -1464,17 +1359,13 @@ export function projectPermissions(state) {
   const root = state.root ? path.resolve(String(state.root)) : process.cwd();
   const rows = [];
   const fallowStatus = state.fallow?.status || null;
-  const skillDir = state.skillDir
-    ? path.resolve(String(state.skillDir))
-    : SETUP_SKILL_DIR;
+  const skillDir = state.skillDir ? path.resolve(String(state.skillDir)) : SETUP_SKILL_DIR;
   const toolVersion = readSiblingFallowToolVersion(skillDir);
 
   if (state.hasAudit) {
     const statusFailed = Boolean(state.fallow?.attempted && !fallowStatus);
     const alreadyOk = Boolean(
-      fallowStatus?.declared &&
-        fallowStatus?.bin &&
-        fallowStatus?.compatible,
+      fallowStatus?.declared && fallowStatus?.bin && fallowStatus?.compatible
     );
     if (!alreadyOk) {
       const verb = fallowStatus?.needsUpgrade ? "upgrade" : "install";
@@ -1484,7 +1375,7 @@ export function projectPermissions(state) {
           pkgManager: fallowStatus?.manager || state.pkgManager?.pkgManager,
           addDev: fallowStatus?.addDev || state.pkgManager?.addDev,
         },
-        toolVersion,
+        toolVersion
       );
       rows.push({
         id: "fallow-install",
@@ -1497,9 +1388,10 @@ export function projectPermissions(state) {
             ? state.commands?.install || null
             : null,
         version: fallowStatus?.version || null,
-        consequence: statusFailed || !fallowStatus
-          ? "Fallow status could not be read; install/declare a compatible pin before audit can run."
-          : "The audit will not run without fallow declared and present in node_modules/.bin.",
+        consequence:
+          statusFailed || !fallowStatus
+            ? "Fallow status could not be read; install/declare a compatible pin before audit can run."
+            : "The audit will not run without fallow declared and present in node_modules/.bin.",
       });
     }
 
@@ -1570,17 +1462,14 @@ export function projectPermissions(state) {
   if (Buffer.byteLength(text, "utf8") > MAX_STDOUT_BYTES) {
     throw new Error(
       `permissions projection is ${Buffer.byteLength(text, "utf8")} bytes (> ${MAX_STDOUT_BYTES}). ` +
-        `Consent rows cannot be truncated — shorten legacyAgentsSections or split the run.`,
+        `Consent rows cannot be truncated — shorten legacyAgentsSections or split the run.`
     );
   }
   return text;
 }
 
 export function projectReview(state) {
-  const orderedPackages = prioritizePackagesForReview(
-    state.layout?.packages,
-    state.importEdges,
-  );
+  const orderedPackages = prioritizePackagesForReview(state.layout?.packages, state.importEdges);
   const packages = truncateList(orderedPackages, CAP_PACKAGES);
   const docs = truncateList(state.docs?.rows, CAP_LIST);
   const exclusions = truncateList(state.exclusions, CAP_LIST);
@@ -1613,9 +1502,7 @@ export function projectReview(state) {
       tool: state.linter?.tool ?? null,
       probe: state.linter?.probe ?? null,
       needsProbe: Boolean(state.linter?.needsProbe),
-      signalCount: Array.isArray(state.linter?.signals)
-        ? state.linter.signals.length
-        : 0,
+      signalCount: Array.isArray(state.linter?.signals) ? state.linter.signals.length : 0,
     },
     layout: {
       source: state.layout?.source ?? null,
@@ -1634,12 +1521,10 @@ export function projectReview(state) {
       suggested: state.conventions?.suggested ?? {},
       recorded: state.conventions?.recorded ?? null,
       evidenceHits: Object.fromEntries(
-        Object.entries(state.conventions?.evidence || {}).map(
-          ([key, value]) => [
-            key,
-            Boolean(value && typeof value === "object" ? value.found : value),
-          ],
-        ),
+        Object.entries(state.conventions?.evidence || {}).map(([key, value]) => [
+          key,
+          Boolean(value && typeof value === "object" ? value.found : value),
+        ])
       ),
     },
     rubric: {
@@ -1675,8 +1560,7 @@ export function projectReview(state) {
         commitlint: state.commitPolicy?.evidence?.commitlint ?? null,
         hooks: state.commitPolicy?.evidence?.hooks ?? [],
         branch: state.commitPolicy?.evidence?.branch ?? null,
-        recentSubjectCount:
-          state.commitPolicy?.evidence?.recentSubjects?.count ?? 0,
+        recentSubjectCount: state.commitPolicy?.evidence?.recentSubjects?.count ?? 0,
       },
     };
     projection.auditScope = state.auditScope
@@ -1708,8 +1592,7 @@ export function projectReview(state) {
   }
 
   let text = `${JSON.stringify(sortKeysDeep(projection), null, 2)}\n`;
-  const within = (value) =>
-    Buffer.byteLength(value, "utf8") <= MAX_STDOUT_BYTES;
+  const within = (value) => Buffer.byteLength(value, "utf8") <= MAX_STDOUT_BYTES;
   if (!within(text)) {
     delete projection.commitPolicy?.evidence;
     delete projection.frameworks?.signals;
@@ -1744,19 +1627,14 @@ export function collectState(root, options = {}) {
   const hasAudit = siblings.includes("lodestar-audit");
   const existing = parseExistingContext(root);
   const recorded = existing.contextExists
-    ? parsePkgManagerRow(
-        fs.readFileSync(path.join(root, existing.contextPath), "utf8"),
-      )
+    ? parsePkgManagerRow(fs.readFileSync(path.join(root, existing.contextPath), "utf8"))
     : null;
   const pkgManager = resolvePkgManager(root, recorded);
   const needsInput = [];
   if (pkgManager.ambiguous || !pkgManager.pkgManager) {
     needsInput.push({
       id: "pkg-manager",
-      reason:
-        pkgManager.lockfiles?.length > 1
-          ? "multiple lockfiles"
-          : "no recognized lockfile",
+      reason: pkgManager.lockfiles?.length > 1 ? "multiple lockfiles" : "no recognized lockfile",
       lockfiles: pkgManager.lockfiles || [],
     });
   }
@@ -1778,12 +1656,8 @@ export function collectState(root, options = {}) {
   };
   // Preserve recorded package responsibilities and hand-set aliases.
   if (existing.packageLayout?.length) {
-    const byName = new Map(
-      existing.packageLayout.map((row) => [row.name, row]),
-    );
-    const byPath = new Map(
-      existing.packageLayout.map((row) => [posixPath(row.path), row]),
-    );
+    const byName = new Map(existing.packageLayout.map((row) => [row.name, row]));
+    const byPath = new Map(existing.packageLayout.map((row) => [posixPath(row.path), row]));
     layout = {
       ...layout,
       packages: layout.packages.map((row) => {
@@ -1826,10 +1700,7 @@ export function collectState(root, options = {}) {
     },
   };
   const rubricPaths = [
-    ...new Set([
-      ...(existing.rubricPaths || []),
-      ...collectRubricPaths(root, docsRows),
-    ]),
+    ...new Set([...(existing.rubricPaths || []), ...collectRubricPaths(root, docsRows)]),
   ].sort();
 
   const scannable = countScannable(root);
@@ -1865,7 +1736,7 @@ export function collectState(root, options = {}) {
       root,
       layout.packages,
       state.frameworks.scanExtensions,
-      failures,
+      failures
     );
     state.fallow = collectFallowStatus(skillDir, root, hasAudit, failures);
     state.importEdges = collectImportEdges(root, layout.packages);
@@ -1877,9 +1748,7 @@ export function collectState(root, options = {}) {
 function cmdCollect(flags) {
   const root = path.resolve(requireFlag(flags, "root"));
   const out = path.resolve(requireFlag(flags, "out"));
-  const skillDir = flags["skill-dir"]
-    ? path.resolve(flags["skill-dir"])
-    : SETUP_SKILL_DIR;
+  const skillDir = flags["skill-dir"] ? path.resolve(flags["skill-dir"]) : SETUP_SKILL_DIR;
   if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) {
     fail(`root is not a directory: ${root}`, 2);
   }
@@ -1934,17 +1803,12 @@ function renderBuildTest(state, corrections) {
   let commands = { ...state.commands, ...(corrections.commands || {}) };
   if (corrections.pkgManager && !corrections.commands) {
     const mgr = {
-      pkgManager:
-        corrections.pkgManager.pkgManager ||
-        corrections.pkgManager.name ||
-        null,
+      pkgManager: corrections.pkgManager.pkgManager || corrections.pkgManager.name || null,
       run: corrections.pkgManager.run || null,
       addDev: corrections.pkgManager.addDev || null,
     };
     if (mgr.pkgManager) {
-      const root = state.root
-        ? path.resolve(String(state.root))
-        : process.cwd();
+      const root = state.root ? path.resolve(String(state.root)) : process.cwd();
       const pkg = readRootPackageJson(root);
       const rebuilt = collectCommands(root, pkg, mgr);
       commands = {
@@ -1954,9 +1818,7 @@ function renderBuildTest(state, corrections) {
       };
     }
   }
-  const linter = corrections.linter
-    ? { ...state.linter, ...corrections.linter }
-    : state.linter;
+  const linter = corrections.linter ? { ...state.linter, ...corrections.linter } : state.linter;
   let lintCell = "n/a";
   try {
     lintCell = formatLintCell(commands.lint, linter);
@@ -1973,9 +1835,7 @@ function renderBuildTest(state, corrections) {
   ];
   if (state.pkgManager?.provenance === "context.md" || corrections.pkgManager) {
     const pm = corrections.pkgManager || state.pkgManager;
-    const cell = [pm.pkgManager || pm.name, pm.run, pm.addDev]
-      .filter(Boolean)
-      .join("; ");
+    const cell = [pm.pkgManager || pm.name, pm.run, pm.addDev].filter(Boolean).join("; ");
     if (cell) rows.push(["pkg-manager", cell]);
   } else if (state.needsInput?.length) {
     // leave detection to lockfile; no guessed row
@@ -1989,8 +1849,7 @@ function renderBuildTest(state, corrections) {
     "| Command       | What it runs                                    |",
     "| ------------- | ----------------------------------------------- |",
     ...rows.map(
-      ([cmd, value]) =>
-        `| \`${cmd}\`${" ".repeat(Math.max(0, 11 - cmd.length))}| ${value} |`,
+      ([cmd, value]) => `| \`${cmd}\`${" ".repeat(Math.max(0, 11 - cmd.length))}| ${value} |`
     ),
   ];
   return lines.join("\n");
@@ -1998,19 +1857,15 @@ function renderBuildTest(state, corrections) {
 
 function renderPackageLayout(state, corrections) {
   const responsibilities = corrections.packageResponsibilities || {};
-  const recorded = new Map(
-    (state.existing?.packageLayout || []).map((row) => [row.name, row]),
-  );
-  const packages = (corrections.packages || state.layout?.packages || []).map(
-    (row) => ({
-      ...row,
-      responsibility:
-        responsibilities[row.name] ||
-        row.responsibility ||
-        recorded.get(row.name)?.responsibility ||
-        "Application package",
-    }),
-  );
+  const recorded = new Map((state.existing?.packageLayout || []).map((row) => [row.name, row]));
+  const packages = (corrections.packages || state.layout?.packages || []).map((row) => ({
+    ...row,
+    responsibility:
+      responsibilities[row.name] ||
+      row.responsibility ||
+      recorded.get(row.name)?.responsibility ||
+      "Application package",
+  }));
   const lines = [
     "## Package Layout",
     "",
@@ -2019,16 +1874,12 @@ function renderPackageLayout(state, corrections) {
   ];
   for (const row of packages) {
     const scannable =
-      row.scannable === "no"
-        ? row.language
-          ? `no (${row.language})`
-          : "no"
-        : "yes";
+      row.scannable === "no" ? (row.language ? `no (${row.language})` : "no") : "yes";
     const entries = Array.isArray(row.entryPoints)
       ? row.entryPoints.join(", ")
       : row.entryPoints || "index.ts";
     lines.push(
-      `| ${row.name} | ${row.path} | ${row.alias || "n/a"} | ${row.responsibility} | ${scannable} | ${entries} |`,
+      `| ${row.name} | ${row.path} | ${row.alias || "n/a"} | ${row.responsibility} | ${scannable} | ${entries} |`
     );
   }
   return lines.join("\n");
@@ -2036,7 +1887,7 @@ function renderPackageLayout(state, corrections) {
 
 function renderDocsLayout(state, corrections) {
   const recorded = new Map(
-    (state.existing?.docsLayout || []).map((row) => [posixPath(row.path), row]),
+    (state.existing?.docsLayout || []).map((row) => [posixPath(row.path), row])
   );
   const source = corrections.docs || state.docs?.rows || [];
   const rows = source.map((row) => {
@@ -2054,9 +1905,7 @@ function renderDocsLayout(state, corrections) {
     "",
     "| Path                                 | Role       | Responsibility                                                |",
     "| ------------------------------------ | ---------- | ------------------------------------------------------------- |",
-    ...rows.map(
-      (row) => `| \`${row.path}\` | \`${row.role}\` | ${row.responsibility} |`,
-    ),
+    ...rows.map((row) => `| \`${row.path}\` | \`${row.role}\` | ${row.responsibility} |`),
   ];
   return lines.join("\n");
 }
@@ -2070,11 +1919,9 @@ function renderConventions(state, corrections) {
   const gates = {
     "result-types": "`errors` #B (expected failures return `Result<T, E>`)",
     "branded-types": "`boundaries` A, `types` #4",
-    "barrel-exports":
-      "`imports` #4 (`export *`) — `yes` means barrels are allowed",
+    "barrel-exports": "`imports` #4 (`export *`) — `yes` means barrels are allowed",
     "design-tokens": "the whole `styling` category",
-    "coverage-floor":
-      "the Testability coverage floor and the pre-commit checklist",
+    "coverage-floor": "the Testability coverage floor and the pre-commit checklist",
   };
   const lines = [
     "## Conventions",
@@ -2091,9 +1938,7 @@ function renderConventions(state, corrections) {
 function renderRubric(state, corrections) {
   const paths = (
     corrections.rubric ||
-    (state.existing?.rubricPaths?.length
-      ? state.existing.rubricPaths
-      : state.rubric?.paths) ||
+    (state.existing?.rubricPaths?.length ? state.existing.rubricPaths : state.rubric?.paths) ||
     []
   )
     .map((item) => posixPath(item))
@@ -2150,8 +1995,7 @@ function renderAuditConfiguration(state, corrections, existingRows = {}) {
   for (const key of PRESERVE_AUDIT_KEYS) {
     if (existingRows[key]?.value) rows[key] = existingRows[key].value;
   }
-  if (corrections.scanExtensions)
-    rows["scan-extensions"] = corrections.scanExtensions;
+  if (corrections.scanExtensions) rows["scan-extensions"] = corrections.scanExtensions;
 
   const lines = [
     "## Audit Configuration",
@@ -2205,15 +2049,13 @@ function renderReference(state) {
   ];
   for (const name of order) {
     if (name !== "lodestar-setup" && !state.siblings.includes(name)) continue;
-    lines.push(
-      `| ${SKILL_LABELS[name]} | \`${parent}/${name}/SKILL.md\` | ${SKILL_WHEN[name]} |`,
-    );
+    lines.push(`| ${SKILL_LABELS[name]} | \`${parent}/${name}/SKILL.md\` | ${SKILL_WHEN[name]} |`);
   }
   lines.push(
     "",
     "One outcome sentence: a **single-concern, fixable violation** → an",
     "audit action item; a **multi-stage or cross-package redesign** →",
-    "`lodestar-plan`.",
+    "`lodestar-plan`."
   );
   return lines.join("\n");
 }
@@ -2248,10 +2090,7 @@ export function renderContext(state, corrections = {}) {
     renderBuildTest(state, corrections),
     "",
   ];
-  const dep = renderDependencyPolicy(
-    corrections,
-    state.existing?.dependencyPolicy,
-  );
+  const dep = renderDependencyPolicy(corrections, state.existing?.dependencyPolicy);
   if (dep) {
     parts.push(dep, "");
   }
@@ -2261,14 +2100,7 @@ export function renderContext(state, corrections = {}) {
   parts.push(renderConventions(state, corrections), "");
   parts.push(renderRubric(state, corrections), "");
   if (state.hasAudit) {
-    parts.push(
-      renderAuditConfiguration(
-        state,
-        corrections,
-        state.existing?.auditRows || {},
-      ),
-      "",
-    );
+    parts.push(renderAuditConfiguration(state, corrections, state.existing?.auditRows || {}), "");
   }
   parts.push(renderReference(state), "");
   return `${parts
@@ -2284,59 +2116,36 @@ export function mergeContext(existingText, state, corrections = {}) {
   let text = existingText.replace(/\r\n/g, "\n");
   text = removeSection(text, "Resolved Decisions");
   text = removeSection(text, "Dependency Direction");
-  text = replaceOrInsertSection(
-    text,
-    "Build & Test",
-    renderBuildTest(state, corrections),
-    ["Project"],
-  );
-  const dep = renderDependencyPolicy(
-    corrections,
-    state.existing?.dependencyPolicy,
-  );
+  text = replaceOrInsertSection(text, "Build & Test", renderBuildTest(state, corrections), [
+    "Project",
+  ]);
+  const dep = renderDependencyPolicy(corrections, state.existing?.dependencyPolicy);
   if (dep) {
-    text = replaceOrInsertSection(text, "Dependency Policy", dep, [
-      "Build & Test",
-    ]);
+    text = replaceOrInsertSection(text, "Dependency Policy", dep, ["Build & Test"]);
   } else {
     text = removeSection(text, "Dependency Policy");
   }
-  text = replaceOrInsertSection(
-    text,
-    "Package Layout",
-    renderPackageLayout(state, corrections),
-    ["Dependency Policy", "Build & Test"],
-  );
+  text = replaceOrInsertSection(text, "Package Layout", renderPackageLayout(state, corrections), [
+    "Dependency Policy",
+    "Build & Test",
+  ]);
   const docs = renderDocsLayout(state, corrections);
   if (docs) {
-    text = replaceOrInsertSection(text, "Docs Layout", docs, [
-      "Package Layout",
-    ]);
+    text = replaceOrInsertSection(text, "Docs Layout", docs, ["Package Layout"]);
   } else {
     text = removeSection(text, "Docs Layout");
   }
-  text = replaceOrInsertSection(
-    text,
+  text = replaceOrInsertSection(text, "Conventions", renderConventions(state, corrections), [
+    "Docs Layout",
+    "Package Layout",
+  ]);
+  text = replaceOrInsertSection(text, "Review Rubric", renderRubric(state, corrections), [
     "Conventions",
-    renderConventions(state, corrections),
-    ["Docs Layout", "Package Layout"],
-  );
-  text = replaceOrInsertSection(
-    text,
-    "Review Rubric",
-    renderRubric(state, corrections),
-    ["Conventions"],
-  );
+  ]);
   if (state.hasAudit) {
-    const audit = renderAuditConfiguration(
-      state,
-      corrections,
-      state.existing?.auditRows || {},
-    );
+    const audit = renderAuditConfiguration(state, corrections, state.existing?.auditRows || {});
     // Preserve selected rows already handled inside renderAuditConfiguration.
-    text = replaceOrInsertSection(text, "Audit Configuration", audit, [
-      "Review Rubric",
-    ]);
+    text = replaceOrInsertSection(text, "Audit Configuration", audit, ["Review Rubric"]);
   } else {
     text = removeSection(text, "Audit Configuration");
   }
@@ -2350,7 +2159,7 @@ export function mergeContext(existingText, state, corrections = {}) {
       text,
       "Project",
       `## Project\n\n${corrections.projectDescription}`,
-      [],
+      []
     );
   }
   return `${text.replace(/\n{3,}/g, "\n\n").trim()}\n`;
@@ -2361,33 +2170,23 @@ function cmdWriteContext(flags) {
   const statePath = path.resolve(requireFlag(flags, "state"));
   const correctionsPath = path.resolve(requireFlag(flags, "corrections"));
   const state = readJson(statePath);
-  const corrections = fs.existsSync(correctionsPath)
-    ? readJson(correctionsPath)
-    : {};
+  const corrections = fs.existsSync(correctionsPath) ? readJson(correctionsPath) : {};
   const target = path.join(root, ".agents", "lodestar", "context.md");
-  const existing = fs.existsSync(target)
-    ? fs.readFileSync(target, "utf8")
-    : null;
+  const existing = fs.existsSync(target) ? fs.readFileSync(target, "utf8") : null;
   // Refresh merge inputs from disk so a second write without re-collect
   // still preserves repo-owned layout/docs content.
   state.existing = {
     ...(state.existing || {}),
     contextExists: Boolean(existing),
     contextIsLegacy: existing
-      ? PRE09_HEADINGS.some((name) =>
-          new RegExp(`^## ${name}\\s*$`, "m").test(existing),
-        )
+      ? PRE09_HEADINGS.some((name) => new RegExp(`^## ${name}\\s*$`, "m").test(existing))
       : false,
     auditRows: existing ? parseAuditRows(existing) : state.existing?.auditRows,
     dependencyPolicy: existing
       ? parseDependencyPolicyBody(existing)
       : state.existing?.dependencyPolicy,
-    projectDescription: existing
-      ? parseProjectBlurb(existing)
-      : state.existing?.projectDescription,
-    packageLayout: existing
-      ? parsePackageLayoutSoft(existing)
-      : state.existing?.packageLayout,
+    projectDescription: existing ? parseProjectBlurb(existing) : state.existing?.projectDescription,
+    packageLayout: existing ? parsePackageLayoutSoft(existing) : state.existing?.packageLayout,
     docsLayout: existing
       ? (() => {
           try {
@@ -2397,9 +2196,7 @@ function cmdWriteContext(flags) {
           }
         })()
       : state.existing?.docsLayout,
-    rubricPaths: existing
-      ? parseRubricBullets(existing)
-      : state.existing?.rubricPaths,
+    rubricPaths: existing ? parseRubricBullets(existing) : state.existing?.rubricPaths,
   };
   const next = mergeContext(existing, state, corrections);
   atomicWrite(target, next);
@@ -2466,9 +2263,7 @@ function cmdSummarizeResults(flags) {
   if (flags.state && flags.state !== true) {
     try {
       const state = readJson(path.resolve(flags.state));
-      siblings = Array.isArray(state.siblings)
-        ? [...state.siblings].sort()
-        : [];
+      siblings = Array.isArray(state.siblings) ? [...state.siblings].sort() : [];
     } catch {
       siblings = [];
     }
@@ -2481,7 +2276,7 @@ function cmdSummarizeResults(flags) {
       failed,
       siblings,
       next,
-    }),
+    })
   );
   return 0;
 }
@@ -2490,18 +2285,14 @@ function suggestNextSkills(siblings) {
   const set = new Set(siblings || []);
   const tips = [];
   if (set.has("lodestar-audit") && set.has("lodestar-fix")) {
-    tips.push(
-      "Run lodestar-audit, then lodestar-fix for single-concern fixes.",
-    );
+    tips.push("Run lodestar-audit, then lodestar-fix for single-concern fixes.");
   }
   if (set.has("lodestar-architecture")) {
-    tips.push(
-      "Run lodestar-architecture for a second opinion on package layout.",
-    );
+    tips.push("Run lodestar-architecture for a second opinion on package layout.");
   }
   if (set.has("lodestar-plan") && set.has("lodestar-implement")) {
     tips.push(
-      "Run lodestar-plan for multi-stage or cross-package redesign, then lodestar-implement.",
+      "Run lodestar-plan for multi-stage or cross-package redesign, then lodestar-implement."
     );
   }
   if (set.has("lodestar-docs")) {

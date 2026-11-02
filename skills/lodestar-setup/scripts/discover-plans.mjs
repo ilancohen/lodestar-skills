@@ -3,8 +3,10 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import process from "node:process";
+
 import { parseDocsLayout } from "./discover-docs.mjs";
-import { parseArgs, printJson, fail, isMain } from "./runtime.mjs";
+import { fail, isMain, parseArgs, printJson } from "./runtime.mjs";
 
 export const DEFAULT_PLANS_ROOT = "docs/plans";
 export const RESERVED_NAMES = new Set(["done", "abandoned", "adr"]);
@@ -18,13 +20,8 @@ function normalizePlansRoot(relative) {
   const value = String(relative || DEFAULT_PLANS_ROOT)
     .replace(/\\/g, "/")
     .replace(/\/+$/, "");
-  if (
-    /^(\/|[a-z]:)/i.test(value) ||
-    value.split("/").some((segment) => segment === "..")
-  ) {
-    throw new Error(
-      `plans root must be a path inside the repository, got: ${value}`,
-    );
+  if (/^(\/|[a-z]:)/i.test(value) || value.split("/").some((segment) => segment === "..")) {
+    throw new Error(`plans root must be a path inside the repository, got: ${value}`);
   }
   return value;
 }
@@ -44,13 +41,8 @@ export function resolvePlansRoot(root, contextText = loadContext(root)) {
     return DEFAULT_PLANS_ROOT;
   }
   if (!rows) return DEFAULT_PLANS_ROOT;
-  const inflight = rows.filter(
-    (row) =>
-      row.role === "inflight" && !/\.[a-z0-9]+$/i.test(row.path),
-  );
-  const named = inflight.find((row) =>
-    /(^|\/)plans$/.test(normalizePlansRoot(row.path)),
-  );
+  const inflight = rows.filter((row) => row.role === "inflight" && !/\.[a-z0-9]+$/i.test(row.path));
+  const named = inflight.find((row) => /(^|\/)plans$/.test(normalizePlansRoot(row.path)));
   if (named) return normalizePlansRoot(named.path);
   if (inflight.length === 1) return normalizePlansRoot(inflight[0].path);
   return DEFAULT_PLANS_ROOT;

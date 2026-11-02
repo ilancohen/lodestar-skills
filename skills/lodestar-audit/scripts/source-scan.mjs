@@ -5,18 +5,11 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import process from "node:process";
+
 import { fail, isMain, parseArgs, printJson } from "./setup-modules.mjs";
 
-const BASE_SCAN_EXTENSIONS = [
-  ".ts",
-  ".tsx",
-  ".js",
-  ".jsx",
-  ".mjs",
-  ".cjs",
-  ".mts",
-  ".cts",
-];
+const BASE_SCAN_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".cts"];
 const DEFAULT_INCLUDE = BASE_SCAN_EXTENSIONS;
 const TEST_RE = /\.(spec|test)\./;
 const DTS_RE = /\.d\.ts$/;
@@ -29,18 +22,14 @@ export { BASE_SCAN_EXTENSIONS, DEFAULT_INCLUDE };
  * (.vue, .svelte, …) from the configured set.
  */
 export function resolveRecipeInclude(recipeInclude, configuredInclude) {
-  const configured = configuredInclude.length
-    ? configuredInclude
-    : [...BASE_SCAN_EXTENSIONS];
+  const configured = configuredInclude.length ? configuredInclude : [...BASE_SCAN_EXTENSIONS];
   if (!recipeInclude.length) return [...configured];
   const base = new Set(BASE_SCAN_EXTENSIONS);
   const intersection = recipeInclude.filter((ext) => configured.includes(ext));
   const extras = configured.filter((ext) => !base.has(ext));
   const resolved = [...new Set([...intersection, ...extras])];
   if (!resolved.length) {
-    return recipeInclude.filter(
-      (ext) => configured.includes(ext) || !base.has(ext),
-    );
+    return recipeInclude.filter((ext) => configured.includes(ext) || !base.has(ext));
   }
   return resolved;
 }
@@ -63,7 +52,7 @@ export function parseScanExtensionsValue(raw) {
     .filter(Boolean);
   if (!parts.length) {
     throw new Error(
-      "`scan-extensions` must list at least one extension (for example `.ts, .tsx, .vue`).",
+      "`scan-extensions` must list at least one extension (for example `.ts, .tsx, .vue`)."
     );
   }
   return [...new Set(parts)];
@@ -126,9 +115,7 @@ export function isExcluded(absPath, globs, cwd, isDir = false, walkRoot = cwd) {
   if (!globs.length) return false;
   const relToCwd = path.relative(cwd, absPath).replace(/\\/g, "/");
   const fromCwd = relToCwd && !relToCwd.startsWith("..");
-  const rel = fromCwd
-    ? relToCwd
-    : path.relative(walkRoot, absPath).replace(/\\/g, "/");
+  const rel = fromCwd ? relToCwd : path.relative(walkRoot, absPath).replace(/\\/g, "/");
   if (!rel || rel.startsWith("..")) return false;
   return globs.some((glob) => {
     if (matchesGlob(rel, glob)) return true;
@@ -145,8 +132,7 @@ function flagList(value) {
 function isTestFile(filePath, testGlobs, cwd, walkRoot) {
   const name = path.basename(filePath);
   if (DTS_RE.test(name)) return true;
-  if (testGlobs.length)
-    return isExcluded(filePath, testGlobs, cwd, false, walkRoot);
+  if (testGlobs.length) return isExcluded(filePath, testGlobs, cwd, false, walkRoot);
   return TEST_RE.test(name);
 }
 
@@ -160,8 +146,7 @@ export function walk(root, include, excludeTests, files = [], options = {}) {
   const stats = fs.statSync(root);
   if (stats.isFile()) {
     if (isExcluded(root, excludeGlobs, cwd, false, walkRoot)) return files;
-    if (excludeTests && isTestFile(root, testGlobs, cwd, walkRoot))
-      return files;
+    if (excludeTests && isTestFile(root, testGlobs, cwd, walkRoot)) return files;
     if (includeFile(root, include)) files.push(root);
     return files;
   }
@@ -170,11 +155,7 @@ export function walk(root, include, excludeTests, files = [], options = {}) {
     const full = path.join(root, entry.name);
     if (entry.isDirectory()) {
       if (isExcluded(full, excludeGlobs, cwd, true, walkRoot)) continue;
-      if (
-        excludeTests &&
-        testGlobs.length &&
-        isExcluded(full, testGlobs, cwd, true, walkRoot)
-      )
+      if (excludeTests && testGlobs.length && isExcluded(full, testGlobs, cwd, true, walkRoot))
         continue;
       walk(full, include, excludeTests, files, opts);
       continue;
@@ -191,8 +172,7 @@ export function matchLines(filePath, regex) {
   const text = fs.readFileSync(filePath, "utf8");
   const hits = [];
   text.split(/\r?\n/).forEach((line, index) => {
-    if (regex.test(line))
-      hits.push({ file: filePath, line: index + 1, text: line });
+    if (regex.test(line)) hits.push({ file: filePath, line: index + 1, text: line });
   });
   return hits;
 }
@@ -245,9 +225,7 @@ export function scan(argv = []) {
   const include = flags.include
     ? String(flags.include)
         .split(",")
-        .map((item) =>
-          item.startsWith(".") ? item : `.${item.replace(/^\*\./, "")}`,
-        )
+        .map((item) => (item.startsWith(".") ? item : `.${item.replace(/^\*\./, "")}`))
     : DEFAULT_INCLUDE;
   const excludeTests = flags["include-tests"] ? false : true;
   const options = {
@@ -269,14 +247,11 @@ export function scan(argv = []) {
     fail("source-scan requires --recipe NAME or --pattern REGEX", 1);
   }
 
-  const fileList = [
-    ...flagList(flags.file),
-    ...flagList(flags.files),
-  ].flatMap((value) =>
+  const fileList = [...flagList(flags.file), ...flagList(flags.files)].flatMap((value) =>
     String(value)
       .split(",")
       .map((part) => part.trim())
-      .filter(Boolean),
+      .filter(Boolean)
   );
 
   const hits = [];
@@ -286,8 +261,7 @@ export function scan(argv = []) {
       const abs = path.isAbsolute(rel) ? rel : path.resolve(cwd, rel);
       if (!fs.existsSync(abs) || !fs.statSync(abs).isFile()) continue;
       if (isExcluded(abs, options.excludeGlobs, cwd, false, cwd)) continue;
-      if (excludeTests && isTestFile(abs, options.testGlobs, cwd, cwd))
-        continue;
+      if (excludeTests && isTestFile(abs, options.testGlobs, cwd, cwd)) continue;
       if (!includeFile(abs, searchInclude)) continue;
       if (fileFilter && path.basename(abs) !== fileFilter) continue;
       hits.push(...matchLines(abs, regex));

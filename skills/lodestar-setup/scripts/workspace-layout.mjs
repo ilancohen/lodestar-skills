@@ -125,7 +125,7 @@ function expandWorkspaceGlobs(root, globs) {
   const members = new Set();
   for (const glob of include) {
     const hits =
-      /[*?\[]/.test(glob) && !glob.startsWith("!")
+      /[*?[]/.test(glob) && !glob.startsWith("!")
         ? fs.globSync(glob, { cwd: root })
         : fs.existsSync(path.join(root, glob))
           ? [glob]
@@ -137,9 +137,7 @@ function expandWorkspaceGlobs(root, globs) {
       members.add(posix);
     }
   }
-  return [...members]
-    .filter((member) => !exclude.some((glob) => matchesGlob(member, glob)))
-    .sort();
+  return [...members].filter((member) => !exclude.some((glob) => matchesGlob(member, glob))).sort();
 }
 
 export function listDeclaredMembers(root, layoutSource) {

@@ -2,19 +2,21 @@
 /**
  * Plan stage enumeration, done-marks, rigor, and verified move-to-done.
  */
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import process from "node:process";
 import { fileURLToPath } from "node:url";
-import { spawnSync } from "node:child_process";
+
 import {
   atomicWrite,
   doneDir,
   fail,
   isMain,
+  listPendingPlans,
   parseArgs,
   printJson,
   resolvePlansRoot,
-  listPendingPlans,
 } from "./setup-modules.mjs";
 
 export const TIERS = ["light", "standard", "full"];
@@ -40,10 +42,7 @@ export function setField(text, name, value) {
   const nextYaml = new RegExp(`^${name}:\\s*.*$`, "m").test(yaml)
     ? yaml.replace(new RegExp(`^${name}:\\s*.*$`, "m"), line)
     : `${yaml.trimEnd()}\n${line}`;
-  return text.replace(
-    /^---\r?\n[\s\S]*?\r?\n---\r?\n/,
-    `---\n${nextYaml}\n---\n`,
-  );
+  return text.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, `---\n${nextYaml}\n---\n`);
 }
 
 export function planKind(absPath) {
@@ -65,10 +64,7 @@ function exists(absPath) {
 }
 
 export function assertExclusiveLocation(root, plansRoot, slug) {
-  const candidates = [
-    path.join(root, plansRoot, slug),
-    path.join(root, plansRoot, `${slug}.md`),
-  ];
+  const candidates = [path.join(root, plansRoot, slug), path.join(root, plansRoot, `${slug}.md`)];
   const doneCandidates = [
     path.join(root, plansRoot, "done", slug),
     path.join(root, plansRoot, "done", `${slug}.md`),
@@ -77,7 +73,7 @@ export function assertExclusiveLocation(root, plansRoot, slug) {
   const dest = doneCandidates.find(exists);
   if (src && dest) {
     throw new Error(
-      `prior incomplete move: \`${path.relative(root, src)}\` and \`${path.relative(root, dest)}\` both exist. Resolve the leftover copy before re-running lodestar-implement.`,
+      `prior incomplete move: \`${path.relative(root, src)}\` and \`${path.relative(root, dest)}\` both exist. Resolve the leftover copy before re-running lodestar-implement.`
     );
   }
   return { src: src || null, dest: dest || null };
@@ -154,9 +150,7 @@ export function inferRigor(absPath) {
   if (
     RISK_RE.test(text) ||
     stages.some((stage) =>
-      fs.existsSync(stage.file)
-        ? RISK_RE.test(fs.readFileSync(stage.file, "utf8"))
-        : false,
+      fs.existsSync(stage.file) ? RISK_RE.test(fs.readFileSync(stage.file, "utf8")) : false
     )
   ) {
     return { rigor: "full", reason: "risk-signal" };
@@ -171,8 +165,7 @@ export function inferRigor(absPath) {
 }
 
 export function declaredRigor(absPath) {
-  const file =
-    planKind(absPath) === "folder" ? path.join(absPath, "README.md") : absPath;
+  const file = planKind(absPath) === "folder" ? path.join(absPath, "README.md") : absPath;
   const yaml = frontmatter(fs.readFileSync(file, "utf8"));
   const raw = field(yaml, "rigor");
   if (TIERS.includes(raw)) return raw;
@@ -189,8 +182,7 @@ export function effectiveRigor(absPath) {
 
 export function writeRigor(absPath, rigor, reason = "") {
   if (!TIERS.includes(rigor)) throw new Error(`invalid rigor: ${rigor}`);
-  const file =
-    planKind(absPath) === "folder" ? path.join(absPath, "README.md") : absPath;
+  const file = planKind(absPath) === "folder" ? path.join(absPath, "README.md") : absPath;
   let text = setField(fs.readFileSync(file, "utf8"), "rigor", rigor);
   if (reason) text = setField(text, "rigor_reason", reason);
   atomicWrite(file, text);
@@ -229,13 +221,13 @@ export function moveDone(root, plansRoot, srcAbs) {
   const destAbs = path.join(root, doneDir(plansRoot), slugName);
   if (exists(srcAbs) && exists(destAbs)) {
     throw new Error(
-      `move-done refused: both \`${path.relative(root, srcAbs)}\` and \`${path.relative(root, destAbs)}\` exist`,
+      `move-done refused: both \`${path.relative(root, srcAbs)}\` and \`${path.relative(root, destAbs)}\` exist`
     );
   }
   gitMv(root, srcAbs, destAbs);
   if (exists(srcAbs) || !exists(destAbs)) {
     throw new Error(
-      `move-done post-condition failed: source ${exists(srcAbs) ? "still present" : "gone"}, destination ${exists(destAbs) ? "present" : "missing"}`,
+      `move-done post-condition failed: source ${exists(srcAbs) ? "still present" : "gone"}, destination ${exists(destAbs) ? "present" : "missing"}`
     );
   }
   return {
@@ -253,8 +245,8 @@ export function resolvePrinciplesCandidates() {
         "..",
         "..",
         "lodestar-setup",
-        "principles.md",
-      ),
+        "principles.md"
+      )
     );
     if (fs.existsSync(sibling)) {
       candidates.push(sibling.split(path.sep).join("/"));
@@ -265,15 +257,13 @@ export function resolvePrinciplesCandidates() {
   candidates.push(
     ".agents/skills/lodestar-setup/principles.md",
     ".cursor/skills/lodestar-setup/principles.md",
-    ".claude/skills/lodestar-setup/principles.md",
+    ".claude/skills/lodestar-setup/principles.md"
   );
   return candidates;
 }
 
 function isPrinciplesPath(p) {
-  return /(?:^|\/)lodestar-setup\/principles\.md$/.test(
-    String(p).replace(/\\/g, "/"),
-  );
+  return /(?:^|\/)lodestar-setup\/principles\.md$/.test(String(p).replace(/\\/g, "/"));
 }
 
 export function parseReviewRubric(contextText) {
@@ -363,8 +353,7 @@ export function run(argv = process.argv.slice(2)) {
     return 0;
   }
   if (command === "write-rigor") {
-    if (!flags.plan || !flags.rigor)
-      fail("write-rigor requires --plan and --rigor");
+    if (!flags.plan || !flags.rigor) fail("write-rigor requires --plan and --rigor");
     const plansRoot = resolvePlansRoot(root);
     const abs = resolvePlanAbs(root, plansRoot, flags.plan);
     printJson(writeRigor(abs, flags.rigor, flags.reason || ""));

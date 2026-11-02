@@ -4,6 +4,8 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import process from "node:process";
+
 import { atomicWrite, fail, isMain, parseArgs } from "./setup-modules.mjs";
 
 const ITEM_RE = /^\d{3}-[a-z0-9-]+\.md$/;
@@ -49,8 +51,7 @@ function listItems(runDir) {
 function countBacklog(runDir) {
   const file = path.join(runDir, "findings.md");
   if (!fs.existsSync(file)) return 0;
-  return (fs.readFileSync(file, "utf8").match(/^- in_scope:\s*false\s*$/gm) || [])
-    .length;
+  return (fs.readFileSync(file, "utf8").match(/^- in_scope:\s*false\s*$/gm) || []).length;
 }
 
 function summarize(runDir) {
@@ -68,8 +69,7 @@ function summarize(runDir) {
     });
   }
   items.sort((a, b) => {
-    const cat =
-      CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category);
+    const cat = CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category);
     if (cat !== 0) return cat;
     return a.id.localeCompare(b.id);
   });
@@ -80,7 +80,7 @@ function moveAtomic(from, to) {
   fs.mkdirSync(path.dirname(to), { recursive: true });
   try {
     fs.renameSync(from, to);
-  } catch (error) {
+  } catch {
     if (process.platform === "win32" && fs.existsSync(to)) {
       fs.rmSync(to);
       fs.renameSync(from, to);
@@ -94,9 +94,7 @@ function moveAtomic(from, to) {
 function cmdList(flags) {
   const runDir = flags["run-dir"];
   if (!runDir) fail("list requires --run-dir");
-  process.stdout.write(
-    `${JSON.stringify({ items: summarize(runDir) }, null, 2)}\n`,
-  );
+  process.stdout.write(`${JSON.stringify({ items: summarize(runDir) }, null, 2)}\n`);
 }
 
 function cmdSetStatus(flags) {
@@ -104,18 +102,14 @@ function cmdSetStatus(flags) {
   const status = flags.status;
   if (!file || !status) fail("set-status requires --file and --status");
   const allowed = ["in_progress", "done", "skipped", "deferred"];
-  if (!allowed.includes(status))
-    fail(`status must be one of ${allowed.join(", ")}`);
+  if (!allowed.includes(status)) fail(`status must be one of ${allowed.join(", ")}`);
   const current = fs.readFileSync(file, "utf8");
   let next = setField(current, "status", status);
   if (flags.note) next = setField(next, "note", flags.note);
-  if (flags["completed-at"])
-    next = setField(next, "completed_at", flags["completed-at"]);
+  if (flags["completed-at"]) next = setField(next, "completed_at", flags["completed-at"]);
   if (flags.commit) next = setField(next, "commit", flags.commit);
   atomicWrite(file, next);
-  process.stdout.write(
-    `${JSON.stringify({ ok: true, file, status }, null, 2)}\n`,
-  );
+  process.stdout.write(`${JSON.stringify({ ok: true, file, status }, null, 2)}\n`);
 }
 
 function cmdMoveDone(flags) {
@@ -124,9 +118,7 @@ function cmdMoveDone(flags) {
   if (!file || !runDir) fail("move-done requires --file and --run-dir");
   const dest = path.join(runDir, "done", path.basename(file));
   moveAtomic(file, dest);
-  process.stdout.write(
-    `${JSON.stringify({ ok: true, from: file, to: dest }, null, 2)}\n`,
-  );
+  process.stdout.write(`${JSON.stringify({ ok: true, from: file, to: dest }, null, 2)}\n`);
 }
 
 function cmdArchiveRun(flags) {
@@ -134,16 +126,13 @@ function cmdArchiveRun(flags) {
   if (!runDir) fail("archive-run requires --run-dir");
   const remaining = listItems(runDir);
   if (remaining.length) {
-    fail(
-      `cannot archive: ${remaining.length} action items remain in the run root`,
-      2,
-    );
+    fail(`cannot archive: ${remaining.length} action items remain in the run root`, 2);
   }
   const backlog = countBacklog(runDir);
   if (backlog && flags["abandon-backlog"] !== true) {
     fail(
       `cannot archive: ${backlog} compact findings (in_scope: false) remain in findings.md; pass --abandon-backlog only if the user chose to drop them`,
-      2,
+      2
     );
   }
   const dest = path.join(path.dirname(runDir), "done", path.basename(runDir));
@@ -156,56 +145,46 @@ function cmdArchiveRun(flags) {
 // rather than repair — the value comes from context.md and should be fixed
 // there.
 const MAX_COMMIT_LINE = 200;
-const CONTROL_CHARS = /[\u0000-\u001f\u007f]/;
+
+function hasControlChars(value) {
+  for (let i = 0; i < value.length; i += 1) {
+    const code = value.charCodeAt(i);
+    if (code <= 0x1f || code === 0x7f) return true;
+  }
+  return false;
+}
 
 function assertCommitLine(value, field, stage) {
   if (typeof value !== "string" || value.trim() === "") {
     throw new Error(
-      `## Audit Configuration \`${field}\` is empty (${stage}). Set a single-line value.`,
+      `## Audit Configuration \`${field}\` is empty (${stage}). Set a single-line value.`
     );
   }
-  if (CONTROL_CHARS.test(value)) {
+  if (hasControlChars(value)) {
     throw new Error(
-      `## Audit Configuration \`${field}\` contains a newline or control character (${stage}). A commit ${field === "trailer" ? "trailer" : "subject"} must be a single line.`,
+      `## Audit Configuration \`${field}\` contains a newline or control character (${stage}). A commit ${field === "trailer" ? "trailer" : "subject"} must be a single line.`
     );
   }
   if (value.length > MAX_COMMIT_LINE) {
     throw new Error(
-      `## Audit Configuration \`${field}\` is ${value.length} characters (${stage}); the limit is ${MAX_COMMIT_LINE}.`,
+      `## Audit Configuration \`${field}\` is ${value.length} characters (${stage}); the limit is ${MAX_COMMIT_LINE}.`
     );
   }
   return value;
 }
 
-export function formatCommitMessage({
-  subjectFormat,
-  trailer,
-  category,
-  slug,
-  item,
-}) {
+export function formatCommitMessage({ subjectFormat, trailer, category, slug, item }) {
   const vars = { category, slug, item };
   const replace = (template) =>
-    String(template).replaceAll(
-      /<(category|slug|item)>/g,
-      (_, name) => vars[name],
-    );
+    String(template).replaceAll(/<(category|slug|item)>/g, (_, name) => vars[name]);
 
   assertCommitLine(subjectFormat, "subject-format", "template");
-  const subject = assertCommitLine(
-    replace(subjectFormat),
-    "subject-format",
-    "after substitution",
-  );
+  const subject = assertCommitLine(replace(subjectFormat), "subject-format", "after substitution");
 
   if (!trailer || trailer === "none") return `${subject}\n`;
 
   assertCommitLine(trailer, "trailer", "template");
-  const trailerLine = assertCommitLine(
-    replace(trailer),
-    "trailer",
-    "after substitution",
-  );
+  const trailerLine = assertCommitLine(replace(trailer), "trailer", "after substitution");
   return `${subject}\n\n${trailerLine}\n`;
 }
 
@@ -234,7 +213,7 @@ function cmdCommitMessage(flags) {
       category,
       slug,
       item: flags.item || path.basename(file),
-    }),
+    })
   );
 }
 
@@ -250,10 +229,7 @@ function main(argv = process.argv.slice(2)) {
   const { flags, positionals } = parseArgs(argv);
   const command = positionals[0];
   const handler = COMMANDS[command];
-  if (!handler)
-    fail(
-      "Usage: action-state list|set-status|move-done|archive-run|commit-message",
-    );
+  if (!handler) fail("Usage: action-state list|set-status|move-done|archive-run|commit-message");
   handler(flags);
 }
 

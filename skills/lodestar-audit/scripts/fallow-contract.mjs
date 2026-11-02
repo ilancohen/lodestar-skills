@@ -2,10 +2,13 @@
 /**
  * Validate Fallow binaries and JSON envelopes before audit findings are written.
  */
+import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { spawn, spawnSync } from "node:child_process";
+import process from "node:process";
+import { clearInterval, clearTimeout, setInterval, setTimeout } from "node:timers";
 import { fileURLToPath } from "node:url";
+
 import {
   atomicWrite,
   fail,
@@ -94,15 +97,12 @@ export function readCompatRecord(root) {
  */
 export function writeCompatRecord(root, record) {
   try {
-    atomicWrite(
-      path.join(root, COMPAT_FILE),
-      `${JSON.stringify(record, null, 2)}\n`,
-    );
+    atomicWrite(path.join(root, COMPAT_FILE), `${JSON.stringify(record, null, 2)}\n`);
     return true;
   } catch (error) {
     process.stderr.write(
       `[lodestar-audit] WARNING: could not write ${COMPAT_FILE}: ${error.message}.` +
-        ` The audit continues; the next run will re-verify this Fallow schema.\n`,
+        ` The audit continues; the next run will re-verify this Fallow schema.\n`
     );
     return false;
   }
@@ -117,11 +117,7 @@ export function remediation(contract, details, extras = {}) {
   if (extras.aboveBaseline) {
     // A newer Fallow schema dropped a field the audit reads — pin backwards.
     const goodVersion = contract.last_good_version || contract.tool_version;
-    const install = installFallowCommand(
-      `~${goodVersion}`,
-      extras.manager,
-      addDev,
-    );
+    const install = installFallowCommand(`~${goodVersion}`, extras.manager, addDev);
     return [
       details,
       `Installed Fallow: ${installed}.`,
@@ -133,11 +129,7 @@ export function remediation(contract, details, extras = {}) {
   }
 
   const range = fallowInstallSpec(contract.tool_version);
-  const install = installFallowCommand(
-    range,
-    extras.manager,
-    extras.addDev || null,
-  );
+  const install = installFallowCommand(range, extras.manager, extras.addDev || null);
   return [
     details,
     `Installed Fallow: ${installed}.`,
@@ -180,9 +172,7 @@ export function parseEnvelope(text) {
 }
 
 function commandSpec(contract, kindOrId) {
-  return (contract.commands || []).find(
-    (item) => item.kind === kindOrId || item.id === kindOrId,
-  );
+  return (contract.commands || []).find((item) => item.kind === kindOrId || item.id === kindOrId);
 }
 
 /**
@@ -201,15 +191,11 @@ export function validateEnvelope(envelope, spec, contract, options = {}) {
 
   if (spec.require_schema) {
     const baseline =
-      spec.schema_version !== undefined
-        ? spec.schema_version
-        : contract.schema_version;
+      spec.schema_version !== undefined ? spec.schema_version : contract.schema_version;
     const got = envelope.schema_version;
 
     if (typeof got !== "number" || got < baseline) {
-      throw new Error(
-        `unsupported schema ${got}; expected ${baseline} or newer`,
-      );
+      throw new Error(`unsupported schema ${got}; expected ${baseline} or newer`);
     }
     if (got > baseline) {
       const kind = spec.kind || envelope.kind;
@@ -229,19 +215,16 @@ export function validateEnvelope(envelope, spec, contract, options = {}) {
   if (spec.kind && envelope.kind !== spec.kind) {
     throw new Error(`expected kind=${spec.kind}, got ${envelope.kind}`);
   }
-  if (
-    envelope.version &&
-    !compatibleFallowVersion(envelope.version, contract.tool_version)
-  ) {
+  if (envelope.version && !compatibleFallowVersion(envelope.version, contract.tool_version)) {
     throw new Error(
-      `unsupported Fallow ${envelope.version}; supported ${fallowInstallSpec(contract.tool_version)}`,
+      `unsupported Fallow ${envelope.version}; supported ${fallowInstallSpec(contract.tool_version)}`
     );
   }
   for (const field of spec.required_fields || []) {
     if (!hasPath(envelope, field)) {
       if (needsRecord) {
         const err = new Error(
-          `Fallow ${needsRecord.fallowVersion ?? "unknown"} (schema ${needsRecord.schema}) dropped required field ${field}`,
+          `Fallow ${needsRecord.fallowVersion ?? "unknown"} (schema ${needsRecord.schema}) dropped required field ${field}`
         );
         err.schemaTooNew = true;
         throw err;
@@ -252,9 +235,7 @@ export function validateEnvelope(envelope, spec, contract, options = {}) {
   if (spec.kind === "combined") {
     const total = envelope.check?.entry_points?.total;
     if (total === 0) {
-      throw new Error(
-        "check.entry_points.total is 0; Fallow found no entry points",
-      );
+      throw new Error("check.entry_points.total is 0; Fallow found no entry points");
     }
   }
   if (spec.instance_fields?.length) {
@@ -291,13 +272,13 @@ export function validateEnvelope(envelope, spec, contract, options = {}) {
     const total = envelope.entry_point_count;
     if (typeof total !== "number" || total <= 0) {
       throw new Error(
-        "entry_point_count is 0; Fallow found no entry points — add an `entry` array to .fallowrc.json or fix package.json / framework detection",
+        "entry_point_count is 0; Fallow found no entry points — add an `entry` array to .fallowrc.json or fix package.json / framework detection"
       );
     }
     const minimum = options.minimum;
     if (typeof minimum === "number" && minimum > 0 && total < minimum) {
       throw new Error(
-        `entry_point_count is ${total}; expected at least ${minimum} for this layout — add missing paths to the \`entry\` array in .fallowrc.json`,
+        `entry_point_count is ${total}; expected at least ${minimum} for this layout — add missing paths to the \`entry\` array in .fallowrc.json`
       );
     }
   }
@@ -328,9 +309,7 @@ export function validateEnvelope(envelope, spec, contract, options = {}) {
     process.stderr.write(
       `[lodestar-audit] Fallow ${needsRecord.fallowVersion ?? "unknown"} emits ${needsRecord.kind} schema ${needsRecord.schema}` +
         ` (baseline ${needsRecord.baseline}). Field validation passed — schema accepted` +
-        (recorded
-          ? ` and recorded in ${COMPAT_FILE}. Commit that file.\n`
-          : ` but not recorded.\n`),
+        (recorded ? ` and recorded in ${COMPAT_FILE}. Commit that file.\n` : ` but not recorded.\n`)
     );
   }
 
@@ -346,11 +325,7 @@ function binSpawnOpts(extra = {}) {
 }
 
 export function detectVersion(bin) {
-  const result = spawnSync(
-    bin,
-    ["--version"],
-    binSpawnOpts({ encoding: "utf8" }),
-  );
+  const result = spawnSync(bin, ["--version"], binSpawnOpts({ encoding: "utf8" }));
   if (result.status !== 0) {
     throw new Error(`could not read Fallow version from ${bin}`);
   }
@@ -372,9 +347,7 @@ export function fallowProjectStatus(root, contract = loadContract()) {
       version = null;
     }
   }
-  const compatible = version
-    ? compatibleFallowVersion(version, contract.tool_version)
-    : false;
+  const compatible = version ? compatibleFallowVersion(version, contract.tool_version) : false;
   return {
     declared: Boolean(declared),
     declaredField: declared?.field ?? null,
@@ -405,8 +378,8 @@ export function resolveFallow(root, contract = loadContract()) {
           installed: "none",
           manager,
           addDev: status.addDev,
-        },
-      ),
+        }
+      )
     );
   }
   if (!status.declared) {
@@ -414,7 +387,7 @@ export function resolveFallow(root, contract = loadContract()) {
       [
         "fallow is present in node_modules/.bin but not declared in package.json devDependencies or dependencies.",
         `Declare and pin it with: ${addDev}`,
-      ].join(" "),
+      ].join(" ")
     );
   }
   if (!status.bin) {
@@ -426,7 +399,7 @@ export function resolveFallow(root, contract = loadContract()) {
         `fallow is declared in package.json (${status.declaredField}: ${status.declaredRange}) but node_modules/.bin/fallow is missing.`,
         `Install dependencies with: ${install}`,
         `If it is still missing, add or upgrade with: ${addDev}`,
-      ].join(" "),
+      ].join(" ")
     );
   }
   if (!status.compatible) {
@@ -435,7 +408,7 @@ export function resolveFallow(root, contract = loadContract()) {
         installed: status.version,
         manager,
         addDev: status.addDev,
-      }),
+      })
     );
   }
   return {
@@ -483,7 +456,7 @@ export function runWithLiveness(bin, argv, options = {}) {
         cwd,
         env,
         stdio: ["ignore", "pipe", "pipe"],
-      }),
+      })
     );
 
     const finish = (fn, value) => {
@@ -500,12 +473,12 @@ export function runWithLiveness(bin, argv, options = {}) {
         if (silentFor < heartbeatMs) return;
         if (stream) {
           process.stderr.write(
-            `[${label}] still running (${Math.round((Date.now() - started) / 1000)}s)…\n`,
+            `[${label}] still running (${Math.round((Date.now() - started) / 1000)}s)…\n`
           );
         }
         lastOutputAt = Date.now();
       },
-      Math.min(heartbeatMs, 5_000),
+      Math.min(heartbeatMs, 5_000)
     );
 
     const timer = setTimeout(() => {
@@ -537,13 +510,11 @@ export function runWithLiveness(bin, argv, options = {}) {
       const durationMs = Date.now() - started;
       if (stream) {
         process.stderr.write(
-          `[${label}] finished in ${(durationMs / 1000).toFixed(1)}s (exit ${status ?? "?"})\n`,
+          `[${label}] finished in ${(durationMs / 1000).toFixed(1)}s (exit ${status ?? "?"})\n`
         );
       }
       if (timedOut) {
-        const error = new Error(
-          `${label} timed out after ${Math.round(timeoutMs / 1000)}s`,
-        );
+        const error = new Error(`${label} timed out after ${Math.round(timeoutMs / 1000)}s`);
         error.exitCode = null;
         error.stdout = stdout;
         error.stderr = stderr;
@@ -572,14 +543,12 @@ export function runFallow(bin, argv, options = {}) {
       encoding: "utf8",
       maxBuffer: 32 * 1024 * 1024,
       timeout: timeoutMs,
-    }),
+    })
   );
   const durationMs = Date.now() - started;
   const stdout = result.stdout || "";
   if (result.error?.code === "ETIMEDOUT" || result.signal === "SIGTERM") {
-    const error = new Error(
-      `fallow timed out after ${Math.round(timeoutMs / 1000)}s`,
-    );
+    const error = new Error(`fallow timed out after ${Math.round(timeoutMs / 1000)}s`);
     error.exitCode = null;
     error.stdout = stdout;
     error.durationMs = durationMs;
@@ -680,7 +649,7 @@ function cmdValidate(flags, contract) {
         addDev: resolved?.addDev ?? null,
         aboveBaseline: error.schemaTooNew,
       }),
-      2,
+      2
     );
   }
 }
@@ -697,7 +666,7 @@ function positionalValue(value, flagName) {
   if (value.startsWith("-")) {
     fail(
       `run --${flagName} value must not start with "-" (got ${value}); Fallow would read it as a flag`,
-      2,
+      2
     );
   }
   return value;
@@ -750,7 +719,7 @@ async function cmdRun(flags, contract) {
         installed: resolved.version,
         manager: resolved.manager,
       }),
-      2,
+      2
     );
   }
   let envelope;
@@ -762,7 +731,7 @@ async function cmdRun(flags, contract) {
         installed: resolved.version,
         manager: resolved.manager,
       }),
-      2,
+      2
     );
   }
   try {
@@ -771,9 +740,7 @@ async function cmdRun(flags, contract) {
       minimum: flags.minimum ? Number(flags.minimum) : undefined,
     });
     if (flags.out) {
-      const outPath = path.isAbsolute(flags.out)
-        ? flags.out
-        : path.resolve(root, flags.out);
+      const outPath = path.isAbsolute(flags.out) ? flags.out : path.resolve(root, flags.out);
       fs.mkdirSync(path.dirname(outPath), { recursive: true });
       fs.writeFileSync(outPath, `${JSON.stringify(envelope)}\n`, "utf8");
       printJson({
@@ -796,7 +763,7 @@ async function cmdRun(flags, contract) {
         manager: resolved.manager,
         aboveBaseline: error.schemaTooNew,
       }),
-      2,
+      2
     );
   }
 }
@@ -845,9 +812,7 @@ async function cmdRunLiveness(flags, _contract, restArgv = []) {
       cwd: root,
       label: typeof flags.label === "string" ? flags.label : "probe",
       timeoutMs: flags.timeout ? Number(flags.timeout) : LIVENESS_TIMEOUT_MS,
-      heartbeatMs: flags.heartbeat
-        ? Number(flags.heartbeat)
-        : LIVENESS_HEARTBEAT_MS,
+      heartbeatMs: flags.heartbeat ? Number(flags.heartbeat) : LIVENESS_HEARTBEAT_MS,
     });
     fs.mkdirSync(path.dirname(outPath), { recursive: true });
     fs.writeFileSync(outPath, result.stdout ?? "", "utf8");
@@ -874,7 +839,7 @@ export async function main(argv = process.argv.slice(2)) {
   const command = positionals[0];
   if (!command) {
     process.stderr.write(
-      "Usage: fallow-contract status|resolve-bin|validate|run|run-liveness [options]\n",
+      "Usage: fallow-contract status|resolve-bin|validate|run|run-liveness [options]\n"
     );
     process.exit(1);
   }

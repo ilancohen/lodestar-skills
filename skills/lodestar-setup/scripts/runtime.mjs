@@ -1,9 +1,11 @@
 // Shared across the suite. Other skills must reach this through their own
 // scripts/setup-modules.mjs, never by importing this path directly.
+import { Buffer } from "node:buffer";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import process from "node:process";
 import { pathToFileURL } from "node:url";
 
 export function fail(message, code = 1) {
@@ -35,11 +37,7 @@ export function parseArgs(argv) {
   return { flags, positionals };
 }
 
-export function localBin(
-  name,
-  root = process.cwd(),
-  platform = process.platform,
-) {
+export function localBin(name, root = process.cwd(), platform = process.platform) {
   const local = path.join(root, "node_modules", ".bin", name);
   if (platform === "win32") {
     for (const ext of [".cmd", ".exe", ".bat"]) {
@@ -54,10 +52,7 @@ export function localBin(
 export function atomicWrite(filePath, contents) {
   const dir = path.dirname(filePath);
   fs.mkdirSync(dir, { recursive: true });
-  const temp = path.join(
-    dir,
-    `.${path.basename(filePath)}.${process.pid}.${Date.now()}.tmp`,
-  );
+  const temp = path.join(dir, `.${path.basename(filePath)}.${process.pid}.${Date.now()}.tmp`);
   fs.writeFileSync(temp, contents, { encoding: "utf8" });
   try {
     renameWithRetry(temp, filePath);
@@ -75,7 +70,7 @@ const TRANSIENT_RENAME_CODES = new Set(["EPERM", "EACCES", "EBUSY"]);
 export function renameWithRetry(
   from,
   to,
-  { platform = process.platform, attempts = 10, delayMs = 50, rename = fs.renameSync } = {},
+  { platform = process.platform, attempts = 10, delayMs = 50, rename = fs.renameSync } = {}
 ) {
   for (let attempt = 1; ; attempt += 1) {
     try {
@@ -83,9 +78,7 @@ export function renameWithRetry(
       return;
     } catch (error) {
       const retry =
-        platform === "win32" &&
-        attempt < attempts &&
-        TRANSIENT_RENAME_CODES.has(error?.code);
+        platform === "win32" && attempt < attempts && TRANSIENT_RENAME_CODES.has(error?.code);
       if (!retry) throw error;
       Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, delayMs * attempt);
     }

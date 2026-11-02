@@ -2,7 +2,8 @@
 // dynamic so an absent lodestar-setup names itself here instead of surfacing as
 // ERR_MODULE_NOT_FOUND for a path the user never chose.
 import fs from "node:fs";
-import { fileURLToPath } from "node:url";
+import process from "node:process";
+import { fileURLToPath, URL } from "node:url";
 
 const BASE_DIR = new URL("../../lodestar-setup/scripts/", import.meta.url);
 
@@ -12,7 +13,7 @@ function baseModule(name) {
   process.stderr.write(
     `ERROR: lodestar-audit requires the lodestar-setup skill, which is not installed alongside it (looked for ${fileURLToPath(url)}).\n` +
       "Reinstall lodestar-setup (the base skill) alongside this skill with:\n" +
-      "  npx skills add ilancohen/lodestar-skills --skill '*' -y\n",
+      "  npx skills add ilancohen/lodestar-skills --skill '*' -y\n"
   );
   process.exit(1);
 }
@@ -33,8 +34,7 @@ export const tempDir = runtime.tempDir;
 export const utcDate = runtime.utcDate;
 
 export const detectLinter = detectLinterModule.detectLinter;
-export const inferProbeFromLintScript =
-  detectLinterModule.inferProbeFromLintScript;
+export const inferProbeFromLintScript = detectLinterModule.inferProbeFromLintScript;
 
 export const checkDocsLayoutDrift = discoverDocs.checkDocsLayoutDrift;
 

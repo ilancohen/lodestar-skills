@@ -4,6 +4,8 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import process from "node:process";
+
 import { fail, isMain, parseArgs, printJson } from "./runtime.mjs";
 
 export const LINTER_PROBE_SUFFIX = "<all_pkg_roots>";
@@ -154,7 +156,7 @@ export function formatLintCell(devCommand, detection) {
   const probe = detection?.probe;
   if (!tool || !probe) {
     throw new Error(
-      "lint cell needs dev-command; tool; probe-command — run detect-linter.mjs or ask once for the JSON probe.",
+      "lint cell needs dev-command; tool; probe-command — run detect-linter.mjs or ask once for the JSON probe."
     );
   }
   return `${command}; ${tool}; ${probe}`;
@@ -188,8 +190,7 @@ export function detectLinter(root) {
     if (!deps.has(pkg)) continue;
     return {
       tool,
-      probe:
-        LINTER_PROBE_DEFAULTS[tool] ?? inferProbeFromLintScript(root, tool),
+      probe: LINTER_PROBE_DEFAULTS[tool] ?? inferProbeFromLintScript(root, tool),
       signals: [`package.json dependency ${pkg}`],
     };
   }
@@ -197,8 +198,7 @@ export function detectLinter(root) {
   for (const name of deps) {
     if (!/lint/i.test(name) || /eslint-plugin/i.test(name)) continue;
     const tool = PACKAGE_TOOL_ALIASES[name] ?? name;
-    const probe =
-      LINTER_PROBE_DEFAULTS[tool] ?? inferProbeFromLintScript(root, tool);
+    const probe = LINTER_PROBE_DEFAULTS[tool] ?? inferProbeFromLintScript(root, tool);
     if (probe) {
       return {
         tool,

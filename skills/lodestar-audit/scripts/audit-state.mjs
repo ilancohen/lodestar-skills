@@ -6,9 +6,11 @@
  * changed-files, merge-findings, validate-output, checkpoint,
  * recover
  */
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
+import process from "node:process";
+
 import {
   atomicWrite,
   checkDocsLayoutDrift,
@@ -23,12 +25,7 @@ import {
   resolvePkgManager,
   utcDate,
 } from "./setup-modules.mjs";
-import {
-  DEFAULT_INCLUDE,
-  matchesGlob,
-  parseScanExtensionsValue,
-  walk,
-} from "./source-scan.mjs";
+import { DEFAULT_INCLUDE, matchesGlob, parseScanExtensionsValue, walk } from "./source-scan.mjs";
 
 export { detectPkgManager, resolvePkgManager } from "./setup-modules.mjs";
 
@@ -156,7 +153,7 @@ export function parsePackageLayout(contextText) {
     const reason = responsibilityProblem(row);
     if (reason) {
       throw new Error(
-        `Package \`${row.name}\` has no real Responsibility. ${reason} Re-run lodestar-setup and write a concrete one-sentence description. The audit relies on this column to judge boundary findings and won't run with a placeholder.`,
+        `Package \`${row.name}\` has no real Responsibility. ${reason} Re-run lodestar-setup and write a concrete one-sentence description. The audit relies on this column to judge boundary findings and won't run with a placeholder.`
       );
     }
   }
@@ -171,7 +168,7 @@ function parseScannableCell(raw) {
   const match = stripped.match(/^(yes|no)(?:\s*\(([^)]+)\))?$/);
   if (!match) {
     throw new Error(
-      `Package Layout has an invalid Scannable value: \`${stripped}\`. Expected yes or no.`,
+      `Package Layout has an invalid Scannable value: \`${stripped}\`. Expected yes or no.`
     );
   }
   return { scannable: match[1], language: (match[2] || "").trim() };
@@ -217,9 +214,7 @@ export function isDeclaredEntryImport(specifier, alias, entryPoints) {
   if (spec === prefix) return true;
   if (!spec.startsWith(`${prefix}/`)) return false;
   const subpath = canonicalizeEntry(spec.slice(prefix.length + 1));
-  const entries = (entryPoints?.length ? entryPoints : ["index.ts"]).map(
-    canonicalizeEntry,
-  );
+  const entries = (entryPoints?.length ? entryPoints : ["index.ts"]).map(canonicalizeEntry);
   return entries.includes(subpath);
 }
 
@@ -227,7 +222,7 @@ export function countScannableFiles(
   repoRoot,
   pkgPath,
   excludedPaths = [],
-  include = DEFAULT_INCLUDE,
+  include = DEFAULT_INCLUDE
 ) {
   let count = 0;
   for (const dir of packageDirs(repoRoot, pkgPath)) {
@@ -241,14 +236,9 @@ export function countScannableFiles(
 
 function packageDirs(repoRoot, pkgPath) {
   const normalized = String(pkgPath).replace(/\\/g, "/");
-  const isGlob =
-    normalized.includes("*") ||
-    normalized.includes("?") ||
-    normalized.includes("[");
+  const isGlob = normalized.includes("*") || normalized.includes("?") || normalized.includes("[");
   if (isGlob) {
-    return fs
-      .globSync(normalized, { cwd: repoRoot })
-      .map((hit) => path.join(repoRoot, hit));
+    return fs.globSync(normalized, { cwd: repoRoot }).map((hit) => path.join(repoRoot, hit));
   }
   return [path.join(repoRoot, ...normalized.split("/").filter(Boolean))];
 }
@@ -257,21 +247,16 @@ export function attachScannableCounts(
   repoRoot,
   packages,
   excludedPaths = [],
-  include = DEFAULT_INCLUDE,
+  include = DEFAULT_INCLUDE
 ) {
   return packages.map((row) => {
     if (row.scannable === "no") {
       return { ...row, scannableCount: 0 };
     }
-    const scannableCount = countScannableFiles(
-      repoRoot,
-      row.path,
-      excludedPaths,
-      include,
-    );
+    const scannableCount = countScannableFiles(repoRoot, row.path, excludedPaths, include);
     if (scannableCount === 0) {
       throw new Error(
-        `Package \`${row.name}\` is marked Scannable: yes but contains no scannable source files under \`${row.path}\` (extensions: ${include.join(", ")}). The glob is stale or wrong — re-run lodestar-setup, or mark the row Scannable: no if it is not a scanned package.`,
+        `Package \`${row.name}\` is marked Scannable: yes but contains no scannable source files under \`${row.path}\` (extensions: ${include.join(", ")}). The glob is stale or wrong — re-run lodestar-setup, or mark the row Scannable: no if it is not a scanned package.`
       );
     }
     return { ...row, scannableCount };
@@ -306,7 +291,7 @@ export function parseLintCell(raw) {
     .filter(Boolean);
   if (parts.length < 3) {
     throw new Error(
-      "lint row must be dev-command; tool; probe-command or n/a. Re-run lodestar-setup.",
+      "lint row must be dev-command; tool; probe-command or n/a. Re-run lodestar-setup."
     );
   }
   return {
@@ -319,9 +304,7 @@ export function parseLintCell(raw) {
 export function parseCommands(contextText) {
   const commands = {};
   for (const name of COMMAND_NAMES) {
-    const match = contextText.match(
-      new RegExp(`\\|\\s*${name}\\s*\\|\\s*([^|]+)\\|`, "i"),
-    );
+    const match = contextText.match(new RegExp(`\\|\\s*${name}\\s*\\|\\s*([^|]+)\\|`, "i"));
     if (!match) continue;
     const raw = match[1].trim();
     if (name === "lint") {
@@ -366,15 +349,10 @@ export function parseLinter(contextText) {
 function requireLinter(contextText, commands) {
   const lint = commands.lint?.trim();
   const hasLint = lint && !/^n\/a$/i.test(lint);
-  let linter;
-  try {
-    linter = parseLinter(contextText);
-  } catch (error) {
-    throw error;
-  }
+  const linter = parseLinter(contextText);
   if (hasLint && !linter) {
     throw new Error(
-      "lint row must include dev-command; tool; probe-command. Re-run lodestar-setup.",
+      "lint row must include dev-command; tool; probe-command. Re-run lodestar-setup."
     );
   }
   return linter;
@@ -484,10 +462,7 @@ function rowCoversMember(root, rowPath, memberDir) {
 }
 
 function memberHasScannableSource(root, member) {
-  return (
-    walk(path.join(root, member), DEFAULT_INCLUDE, false, [], { cwd: root })
-      .length > 0
-  );
+  return walk(path.join(root, member), DEFAULT_INCLUDE, false, [], { cwd: root }).length > 0;
 }
 
 const NON_SCRIPT_BUILTINS = new Set([
@@ -540,11 +515,7 @@ export function scriptNameFromCommand(command, pkgManager) {
   const usedRun = Boolean(match[1]);
   const token = match[2];
   if (!usedRun && NON_SCRIPT_BUILTINS.has(token)) return null;
-  if (
-    pkgManager === "npm" &&
-    !usedRun &&
-    !["test", "start", "stop", "restart"].includes(token)
-  ) {
+  if (pkgManager === "npm" && !usedRun && !["test", "start", "stop", "restart"].includes(token)) {
     return null;
   }
   return token;
@@ -569,9 +540,7 @@ function checkMissingPackages(root, packages, layoutSource) {
     const posix = posixPath(member);
     if (posix === "." || posix === "") continue;
     if (!memberHasScannableSource(root, member)) continue;
-    const covered = packages.some((row) =>
-      rowCoversMember(root, row.path, member),
-    );
+    const covered = packages.some((row) => rowCoversMember(root, row.path, member));
     if (!covered) {
       drift.push({
         fact: "missing-package",
@@ -613,8 +582,7 @@ function checkStaleCommands(root, commands, detected) {
   } catch {
     return skipRemaining("root package.json is not valid JSON");
   }
-  const scripts =
-    pkg.scripts && typeof pkg.scripts === "object" ? pkg.scripts : {};
+  const scripts = pkg.scripts && typeof pkg.scripts === "object" ? pkg.scripts : {};
   for (const name of COMMAND_NAMES) {
     const recorded = commands[name];
     if (!recorded) continue;
@@ -653,9 +621,7 @@ function parseFactsFlag(raw) {
     .map((part) => part.trim())
     .filter(Boolean);
   if (!parts.length) {
-    throw new Error(
-      "check-freshness --facts requires layout, commands, and/or docs",
-    );
+    throw new Error("check-freshness --facts requires layout, commands, and/or docs");
   }
   const facts = { layout: false, commands: false, docs: false };
   for (const part of parts) {
@@ -665,9 +631,7 @@ function parseFactsFlag(raw) {
     } else if (part === "docs" || part === "docs-layout") {
       facts.docs = true;
     } else {
-      throw new Error(
-        `unknown --facts value: ${part}. Use layout, commands, docs.`,
-      );
+      throw new Error(`unknown --facts value: ${part}. Use layout, commands, docs.`);
     }
   }
   return facts;
@@ -677,9 +641,7 @@ export function checkFreshness(root, options = {}) {
   const facts = options.facts || { layout: true, commands: true, docs: true };
   const contextPath = path.join(root, ".agents", "lodestar", "context.md");
   if (!fs.existsSync(contextPath)) {
-    throw new Error(
-      ".agents/lodestar/context.md is missing. Run lodestar-setup first.",
-    );
+    throw new Error(".agents/lodestar/context.md is missing. Run lodestar-setup first.");
   }
   const contextText = fs.readFileSync(contextPath, "utf8");
   const commands = parseCommands(contextText);
@@ -714,9 +676,7 @@ export function checkFreshness(root, options = {}) {
 }
 
 function printDriftHuman(drift) {
-  process.stderr.write(
-    ".agents/lodestar/context.md no longer matches the repo:\n",
-  );
+  process.stderr.write(".agents/lodestar/context.md no longer matches the repo:\n");
   for (const item of drift) {
     if (item.fact === "missing-package") {
       process.stderr.write(`- missing package: ${item.observed}\n`);
@@ -726,11 +686,11 @@ function printDriftHuman(drift) {
       process.stderr.write(`- extra docs path: ${item.observed}\n`);
     } else if (item.fact === "stale-linter") {
       process.stderr.write(
-        `- stale linter \`${item.name}\`: recorded \`${item.recorded}\` but ${item.observed}\n`,
+        `- stale linter \`${item.name}\`: recorded \`${item.recorded}\` but ${item.observed}\n`
       );
     } else {
       process.stderr.write(
-        `- stale command \`${item.name}\`: recorded \`${item.recorded}\` but ${item.observed}\n`,
+        `- stale command \`${item.name}\`: recorded \`${item.recorded}\` but ${item.observed}\n`
       );
     }
   }
@@ -746,12 +706,7 @@ function packageForSpecifier(spec, packages) {
   return null;
 }
 
-function collectImportEdges(
-  root,
-  packages,
-  excludedPaths = [],
-  include = DEFAULT_INCLUDE,
-) {
+function collectImportEdges(root, packages, excludedPaths = [], include = DEFAULT_INCLUDE) {
   const counts = new Map();
   for (const from of packages) {
     for (const dir of packageDirs(root, from.path)) {
@@ -809,9 +764,7 @@ function renderDirectionMarkdown(result) {
   if (result.cyclic) {
     for (const edge of result.edges) {
       const tag = canReach(result.edges, edge.to, edge.from) ? " [cycle]" : "";
-      lines.push(
-        `- ${edge.from} → ${edge.to} ${importCountLabel(edge.count)}${tag}`,
-      );
+      lines.push(`- ${edge.from} → ${edge.to} ${importCountLabel(edge.count)}${tag}`);
     }
     lines.push("");
     lines.push("The graph is cyclic — no single dependency order exists.");
@@ -826,9 +779,7 @@ function renderDirectionMarkdown(result) {
 export function deriveDirection(root) {
   const contextPath = path.join(root, ".agents", "lodestar", "context.md");
   if (!fs.existsSync(contextPath)) {
-    throw new Error(
-      ".agents/lodestar/context.md is missing. Run lodestar-setup first.",
-    );
+    throw new Error(".agents/lodestar/context.md is missing. Run lodestar-setup first.");
   }
   const contextText = fs.readFileSync(contextPath, "utf8");
   const packages = parsePackageLayout(contextText);
@@ -839,7 +790,7 @@ export function deriveDirection(root) {
     root,
     packages,
     excluded.excludedPaths,
-    auditSettings.scanExtensions,
+    auditSettings.scanExtensions
   );
   const cyclic = hasDirectedCycle(edges);
   const chain = cyclic ? null : topologicalChain(names, edges) || names;
@@ -866,8 +817,7 @@ export function parseDirection(contextText) {
   const bulletEdges = parseEdgeBullets(section);
   if (bulletEdges.length) {
     const packages = collectPackagesFromEdges(bulletEdges);
-    const cyclic =
-      bulletEdges.some((edge) => edge.cycle) || hasDirectedCycle(bulletEdges);
+    const cyclic = bulletEdges.some((edge) => edge.cycle) || hasDirectedCycle(bulletEdges);
     return {
       chain: null,
       edges: bulletEdges,
@@ -944,14 +894,14 @@ function parseConventionValue(key, raw) {
   if (BOOLEAN_CONVENTIONS.has(key)) {
     if (raw === "yes" || raw === "no") return raw;
     throw new Error(
-      `## Conventions has an invalid value for \`${key}\`: \`${raw}\`. Expected yes or no.`,
+      `## Conventions has an invalid value for \`${key}\`: \`${raw}\`. Expected yes or no.`
     );
   }
   if (key === "coverage-floor") {
     if (raw === "none") return "none";
     if (/^[1-9]\d*$/.test(raw)) return Number(raw);
     throw new Error(
-      `## Conventions has an invalid value for \`coverage-floor\`: \`${raw}\`. Expected a positive integer or none.`,
+      `## Conventions has an invalid value for \`coverage-floor\`: \`${raw}\`. Expected a positive integer or none.`
     );
   }
   throw new Error(`## Conventions has an unknown key \`${key}\`.`);
@@ -978,24 +928,17 @@ export const PRE09_SECTION_HEADINGS = [
 
 export function rejectPre09Context(contextText) {
   const found = PRE09_SECTION_HEADINGS.filter((name) =>
-    new RegExp(`^## ${name}\\s*$`, "m").test(contextText),
+    new RegExp(`^## ${name}\\s*$`, "m").test(contextText)
   );
   if (!found.length) return;
   throw new Error(
     `.agents/lodestar/context.md uses the pre-0.9 section layout (found: ${found
       .map((name) => `## ${name}`)
-      .join(
-        ", ",
-      )}). Re-run lodestar-setup to regenerate it. There is no migration.`,
+      .join(", ")}). Re-run lodestar-setup to regenerate it. There is no migration.`
   );
 }
 
-export function deriveResolvedDecisions({
-  conventions,
-  packages,
-  directionGraph,
-  linter,
-}) {
+export function deriveResolvedDecisions({ conventions, packages, directionGraph, linter }) {
   const gatedOut = new Set(); // "category:subtype" or "category:*"
   const conventionBlindSpots = [];
   const singlePackageBlindSpots = [];
@@ -1004,7 +947,7 @@ export function deriveResolvedDecisions({
   if (conventions["barrel-exports"] === "yes") {
     gatedOut.add("imports:#4");
     conventionBlindSpots.push(
-      "`imports` #4 (`export *` re-exports) — skipped; `barrel-exports` is `yes`",
+      "`imports` #4 (`export *` re-exports) — skipped; `barrel-exports` is `yes`"
     );
   }
 
@@ -1012,11 +955,9 @@ export function deriveResolvedDecisions({
   if (conventions["branded-types"] === "no") {
     gatedOut.add("types:#4");
     gatedOut.add("boundaries:A");
+    conventionBlindSpots.push("`types` #4 (branded ID types) — skipped; `branded-types` is `no`");
     conventionBlindSpots.push(
-      "`types` #4 (branded ID types) — skipped; `branded-types` is `no`",
-    );
-    conventionBlindSpots.push(
-      "`boundaries` A (branded-primitive check) — skipped; `branded-types` is `no`",
+      "`boundaries` A (branded-primitive check) — skipped; `branded-types` is `no`"
     );
   }
 
@@ -1024,45 +965,38 @@ export function deriveResolvedDecisions({
   if (conventions["result-types"] === "no") {
     gatedOut.add("errors:B");
     conventionBlindSpots.push(
-      "`errors` B (expected-failure Result returns) — skipped; `result-types` is `no`",
+      "`errors` B (expected-failure Result returns) — skipped; `result-types` is `no`"
     );
   }
 
   // design-tokens: no → skip whole styling category
   if (conventions["design-tokens"] === "no") {
     gatedOut.add("styling:*");
-    conventionBlindSpots.push(
-      "`styling` (entire category) — skipped; `design-tokens` is `no`",
-    );
+    conventionBlindSpots.push("`styling` (entire category) — skipped; `design-tokens` is `no`");
   }
 
   // coverage-floor: none → omit coverage check; do NOT add a blind-spot line
 
   // Structural: single scannable package + empty policy graph
-  const scannablePackages = (packages || []).filter(
-    (row) => row.scannable !== "no",
-  );
+  const scannablePackages = (packages || []).filter((row) => row.scannable !== "no");
   const isSingleScannable = scannablePackages.length === 1;
-  const hasNoEdges =
-    !directionGraph ||
-    !directionGraph.edges ||
-    directionGraph.edges.length === 0;
+  const hasNoEdges = !directionGraph || !directionGraph.edges || directionGraph.edges.length === 0;
 
   if (isSingleScannable && hasNoEdges) {
     gatedOut.add("imports:#6");
     gatedOut.add("boundaries:B");
     singlePackageBlindSpots.push(
-      "`imports` #6 (wrong-direction imports) — not applicable: single-package repo",
+      "`imports` #6 (wrong-direction imports) — not applicable: single-package repo"
     );
     singlePackageBlindSpots.push(
-      "`boundaries` B (cross-package misplaced logic) — not applicable: single-package repo",
+      "`boundaries` B (cross-package misplaced logic) — not applicable: single-package repo"
     );
   } else if (hasNoEdges) {
     // Multi-package without `## Dependency Policy`: skip wrong-direction
     // only. Cycles (#3) still run. Do not gate boundaries:B.
     gatedOut.add("imports:#6");
     singlePackageBlindSpots.push(
-      "`imports` #6 (wrong-direction imports) — skipped; no `## Dependency Policy` in context.md",
+      "`imports` #6 (wrong-direction imports) — skipped; no `## Dependency Policy` in context.md"
     );
   }
 
@@ -1089,9 +1023,7 @@ export function deriveResolvedDecisions({
   const activeDetectors = [];
   for (const [category, subtypes] of Object.entries(CATEGORY_SUBTYPES)) {
     if (gatedOut.has(`${category}:*`)) continue; // whole category gated off
-    const activeSubtypes = subtypes.filter(
-      (s) => !gatedOut.has(`${category}:${s}`),
-    );
+    const activeSubtypes = subtypes.filter((s) => !gatedOut.has(`${category}:${s}`));
     activeDetectors.push({ category, subtypes: activeSubtypes });
   }
 
@@ -1170,10 +1102,7 @@ export function parseExcludedPaths(contextText) {
       bucket = "testGlobs";
       continue;
     }
-    if (
-      /^\s*\*\*Not audited\b/i.test(line) ||
-      /^\s*Not audited\b/i.test(line)
-    ) {
+    if (/^\s*\*\*Not audited\b/i.test(line) || /^\s*Not audited\b/i.test(line)) {
       bucket = "excludedPaths";
     }
   }
@@ -1188,7 +1117,7 @@ function parseCategorySetting(raw) {
     .filter(Boolean);
   if (!names.length) {
     throw new Error(
-      "## Audit Configuration has an empty `categories` value. Expected `all` or a comma-separated list of category names.",
+      "## Audit Configuration has an empty `categories` value. Expected `all` or a comma-separated list of category names."
     );
   }
   const unknown = names.filter((name) => !CATEGORIES.includes(name));
@@ -1196,7 +1125,7 @@ function parseCategorySetting(raw) {
     throw new Error(
       `## Audit Configuration has unknown categor${unknown.length === 1 ? "y" : "ies"}: ${unknown
         .map((name) => `\`${name}\``)
-        .join(", ")}.`,
+        .join(", ")}.`
     );
   }
   return [...new Set(names)];
@@ -1206,11 +1135,11 @@ function parseFallowSetting(raw) {
   if (raw === "required") return raw;
   if (raw === "optional") {
     throw new Error(
-      "## Audit Configuration has `fallow: optional`, which is no longer supported. Fallow is required for every audit. Remove the `fallow` row (default required) or set `fallow: required`, then install a compatible local Fallow (re-run `lodestar-setup` with `lodestar-audit` installed, or add `fallow@^3.15.0` and install deps).",
+      "## Audit Configuration has `fallow: optional`, which is no longer supported. Fallow is required for every audit. Remove the `fallow` row (default required) or set `fallow: required`, then install a compatible local Fallow (re-run `lodestar-setup` with `lodestar-audit` installed, or add `fallow@^3.15.0` and install deps)."
     );
   }
   throw new Error(
-    `## Audit Configuration has an invalid value for \`fallow\`: \`${raw}\`. Expected \`required\` (or omit the row).`,
+    `## Audit Configuration has an invalid value for \`fallow\`: \`${raw}\`. Expected \`required\` (or omit the row).`
   );
 }
 
@@ -1221,7 +1150,7 @@ function parseOutputRootSetting(raw) {
   const segments = raw.split(/[/\\]/);
   if (path.isAbsolute(raw) || raw.startsWith("~") || segments.includes("..")) {
     throw new Error(
-      `## Audit Configuration has an invalid \`output-root\`: \`${raw}\`. Expected a relative path with no \`..\`.`,
+      `## Audit Configuration has an invalid \`output-root\`: \`${raw}\`. Expected a relative path with no \`..\`.`
     );
   }
   return raw.replace(/\/$/, "");
@@ -1281,9 +1210,7 @@ export function parseAuditScope(contextText) {
     if (date) scope.baselineDate = date;
   }
   if (scope.mode === "changed-since" && !scope.baselineRef) {
-    throw new Error(
-      "## Audit Configuration has `mode: changed-since` but no `baseline-ref`.",
-    );
+    throw new Error("## Audit Configuration has `mode: changed-since` but no `baseline-ref`.");
   }
   return scope;
 }
@@ -1291,7 +1218,7 @@ export function parseAuditScope(contextText) {
 function parseScopeMode(raw) {
   if (SCOPE_MODES.has(raw)) return raw;
   throw new Error(
-    `## Audit Configuration has an invalid value for \`mode\`: \`${raw}\`. Expected all or changed-since.`,
+    `## Audit Configuration has an invalid value for \`mode\`: \`${raw}\`. Expected all or changed-since.`
   );
 }
 
@@ -1308,19 +1235,14 @@ function resolveBaselineRef(root, ref) {
   const result = gitAt(root, ["rev-parse", "--verify", `${ref}^{commit}`]);
   if (result.status !== 0) {
     throw new Error(
-      `## Audit Configuration \`baseline-ref\` \`${ref}\` does not resolve. History was probably rewritten (force-push or rebase). Re-run lodestar-setup or edit the ref in context.md.`,
+      `## Audit Configuration \`baseline-ref\` \`${ref}\` does not resolve. History was probably rewritten (force-push or rebase). Re-run lodestar-setup or edit the ref in context.md.`
     );
   }
   return result.stdout.trim();
 }
 
 export function listChangedFiles(root, since, excludedPaths = []) {
-  const diff = gitAt(root, [
-    "diff",
-    "--name-status",
-    "--find-renames",
-    `${since}...HEAD`,
-  ]);
+  const diff = gitAt(root, ["diff", "--name-status", "--find-renames", `${since}...HEAD`]);
   if (diff.status !== 0) {
     throw new Error(diff.stderr.trim() || `git diff ${since}...HEAD failed`);
   }
@@ -1340,16 +1262,14 @@ export function listChangedFiles(root, since, excludedPaths = []) {
     paths.add(filePath.replace(/\\/g, "/"));
   }
   return [...paths]
-    .filter(
-      (filePath) => !excludedPaths.some((glob) => matchesGlob(filePath, glob)),
-    )
+    .filter((filePath) => !excludedPaths.some((glob) => matchesGlob(filePath, glob)))
     .sort();
 }
 
 function parseGitCommits(raw) {
   if (GIT_COMMITS.has(raw)) return raw;
   throw new Error(
-    `## Audit Configuration has an invalid value for \`commits\`: \`${raw}\`. Expected ask, per-item, or never.`,
+    `## Audit Configuration has an invalid value for \`commits\`: \`${raw}\`. Expected ask, per-item, or never.`
   );
 }
 
@@ -1358,17 +1278,24 @@ function parseGitCommits(raw) {
 // lodestar-fix has already edited files. Mirrored in lodestar-fix's
 // action-state.mjs, which enforces the same rule at commit time.
 const MAX_COMMIT_LINE = 200;
-const COMMIT_LINE_CONTROL_CHARS = /[\u0000-\u001f\u007f]/;
+
+function hasControlChars(value) {
+  for (let i = 0; i < value.length; i += 1) {
+    const code = value.charCodeAt(i);
+    if (code <= 0x1f || code === 0x7f) return true;
+  }
+  return false;
+}
 
 function assertCommitLine(raw, field) {
-  if (COMMIT_LINE_CONTROL_CHARS.test(raw)) {
+  if (hasControlChars(raw)) {
     throw new Error(
-      `## Audit Configuration has an invalid \`${field}\`: it contains a newline or control character. It must be a single line.`,
+      `## Audit Configuration has an invalid \`${field}\`: it contains a newline or control character. It must be a single line.`
     );
   }
   if (raw.length > MAX_COMMIT_LINE) {
     throw new Error(
-      `## Audit Configuration has an invalid \`${field}\`: it is ${raw.length} characters. The limit is ${MAX_COMMIT_LINE}.`,
+      `## Audit Configuration has an invalid \`${field}\`: it is ${raw.length} characters. The limit is ${MAX_COMMIT_LINE}.`
     );
   }
   return raw;
@@ -1380,7 +1307,7 @@ function parseGitSubjectFormat(raw) {
   }
   if (!raw.includes("<slug>")) {
     throw new Error(
-      `## Audit Configuration has an invalid \`subject-format\`: \`${raw}\`. It must contain \`<slug>\`.`,
+      `## Audit Configuration has an invalid \`subject-format\`: \`${raw}\`. It must contain \`<slug>\`.`
     );
   }
   return assertCommitLine(raw, "subject-format");
@@ -1388,9 +1315,7 @@ function parseGitSubjectFormat(raw) {
 
 function parseGitTrailer(raw) {
   if (!raw) {
-    throw new Error(
-      "## Audit Configuration has an empty `trailer`. Use `none` for no trailer.",
-    );
+    throw new Error("## Audit Configuration has an empty `trailer`. Use `none` for no trailer.");
   }
   return assertCommitLine(raw, "trailer");
 }
@@ -1408,16 +1333,14 @@ function parseGitProtected(raw) {
 function parseGitRequireClean(raw) {
   if (raw === "yes" || raw === "no") return raw;
   throw new Error(
-    `## Audit Configuration has an invalid value for \`require-clean\`: \`${raw}\`. Expected yes or no.`,
+    `## Audit Configuration has an invalid value for \`require-clean\`: \`${raw}\`. Expected yes or no.`
   );
 }
 
 function parseEdgeBullets(section) {
   const edges = [];
   for (const line of section.split(/\r?\n/)) {
-    const match = line.match(
-      /^-\s+([A-Za-z0-9._/-]+)\s*→\s*([A-Za-z0-9._/-]+)/,
-    );
+    const match = line.match(/^-\s+([A-Za-z0-9._/-]+)\s*→\s*([A-Za-z0-9._/-]+)/);
     if (!match) continue;
     const from = match[1].trim();
     const to = match[2].trim();
@@ -1436,18 +1359,14 @@ function parseChain(section) {
   const fenceMatch = section.match(/```[^\n]*\n([^`]+)```/);
   if (fenceMatch) {
     const chainLine = fenceMatch[1].trim().split(/\r?\n/)[0];
-    const chainMatch = chainLine.match(
-      /^([A-Za-z0-9._/-]+(?:\s*→\s*[A-Za-z0-9._/-]+)+)\s*$/,
-    );
+    const chainMatch = chainLine.match(/^([A-Za-z0-9._/-]+(?:\s*→\s*[A-Za-z0-9._/-]+)+)\s*$/);
     if (chainMatch) {
       return chainMatch[1].split(/\s*→\s*/).map((part) => part.trim());
     }
   }
   for (const line of section.split(/\r?\n/)) {
     if (line.startsWith("-")) continue;
-    const chainMatch = line.match(
-      /^([A-Za-z0-9._/-]+(?:\s*→\s*[A-Za-z0-9._/-]+)+)\s*$/,
-    );
+    const chainMatch = line.match(/^([A-Za-z0-9._/-]+(?:\s*→\s*[A-Za-z0-9._/-]+)+)\s*$/);
     if (chainMatch) {
       return chainMatch[1].split(/\s*→\s*/).map((part) => part.trim());
     }
@@ -1559,9 +1478,7 @@ function canReach(edges, start, end) {
 }
 
 export function aliasPrefix(packages) {
-  const aliases = packages
-    .map((row) => row.alias)
-    .filter((alias) => alias && alias !== "n/a");
+  const aliases = packages.map((row) => row.alias).filter((alias) => alias && alias !== "n/a");
   if (aliases.length < 2) return aliases[0] || "";
   let prefix = aliases[0];
   for (const alias of aliases.slice(1)) {
@@ -1587,23 +1504,15 @@ export function findingPath(entry) {
 
 export function findingInScope(finding, changedSet) {
   if (finding.scope_unit === "advisory") return true;
-  return (finding.files || []).some((entry) =>
-    changedSet.has(findingPath(entry)),
-  );
+  return (finding.files || []).some((entry) => changedSet.has(findingPath(entry)));
 }
 
 /**
  * Limit detector roots to files that fall under a package path.
  * Used for changed-since / widen: discover only these paths.
  */
-export function filterPathsUnderRoots(
-  filePaths,
-  pkgRoots,
-  cwd = process.cwd(),
-) {
-  const roots = (pkgRoots || []).map((root) =>
-    path.resolve(cwd, root).replace(/\\/g, "/"),
-  );
+export function filterPathsUnderRoots(filePaths, pkgRoots, cwd = process.cwd()) {
+  const roots = (pkgRoots || []).map((root) => path.resolve(cwd, root).replace(/\\/g, "/"));
   return (filePaths || [])
     .map((filePath) => String(filePath).replace(/\\/g, "/"))
     .filter((filePath) => {
@@ -1624,7 +1533,7 @@ export function filterPathsUnderRoots(
 export function applyChangedFiles(findings, changedFiles, expand = null) {
   if (changedFiles != null) {
     const changedSet = new Set(
-      changedFiles.map((filePath) => String(filePath).replace(/\\/g, "/")),
+      changedFiles.map((filePath) => String(filePath).replace(/\\/g, "/"))
     );
     return findings.map((finding) => ({
       ...finding,
@@ -1640,10 +1549,7 @@ export function applyChangedFiles(findings, changedFiles, expand = null) {
   // Default: keep an explicit boolean; otherwise await expansion (false).
   return findings.map((finding) => ({
     ...finding,
-    in_scope:
-      finding.in_scope === true || finding.in_scope === false
-        ? finding.in_scope
-        : false,
+    in_scope: finding.in_scope === true || finding.in_scope === false ? finding.in_scope : false,
   }));
 }
 
@@ -1655,30 +1561,26 @@ export function parseFindingBlock(block) {
     return match ? match[1].trim() : "";
   };
   const files = [];
-  const filesMatch = block.match(/- files:\n((?:  - .+\n?)*)/);
+  const filesMatch = block.match(/- files:\n((?: {2}- .+\n?)*)/);
   if (filesMatch) {
     for (const line of filesMatch[1].split(/\n/)) {
       const item = line.match(/^\s+- (.+)$/);
       if (item) files.push(item[1].trim());
     }
   }
-  const evidenceMatch = block.match(/- evidence: \|\n((?:    .*\n?)*)/);
-  const notesMatch = block.match(/- notes: \|\n((?:    .*\n?)*)/);
+  const evidenceMatch = block.match(/- evidence: \|\n((?: {4}.*\n?)*)/);
+  const notesMatch = block.match(/- notes: \|\n((?: {4}.*\n?)*)/);
   return {
     id: idMatch[1],
     category: field("category"),
     subtype: field("subtype"),
     package: field("package") || null,
     files,
-    evidence: evidenceMatch
-      ? evidenceMatch[1].replace(/^    /gm, "").trimEnd()
-      : field("evidence"),
+    evidence: evidenceMatch ? evidenceMatch[1].replace(/^ {4}/gm, "").trimEnd() : field("evidence"),
     scope_unit: field("scope_unit"),
     requires_decision: field("requires_decision") === "true",
     in_scope: parseInScopeField(field("in_scope")),
-    notes: notesMatch
-      ? notesMatch[1].replace(/^    /gm, "").trimEnd()
-      : field("notes"),
+    notes: notesMatch ? notesMatch[1].replace(/^ {4}/gm, "").trimEnd() : field("notes"),
   };
 }
 
@@ -1694,18 +1596,12 @@ export function parseFindings(text) {
   }
   for (const category of CATEGORIES) {
     const marker = text.match(
-      new RegExp(
-        `^## category: ${category} — complete(?: \\((\\d+) findings\\))?\\s*$`,
-        "m",
-      ),
+      new RegExp(`^## category: ${category} — complete(?: \\((\\d+) findings\\))?\\s*$`, "m")
     );
     if (marker) {
       complete.push({
         category,
-        count: Number(
-          marker[1] ||
-            findings.filter((item) => item.category === category).length,
-        ),
+        count: Number(marker[1] || findings.filter((item) => item.category === category).length),
       });
     } else {
       incompleteCategories.push(category);
@@ -1775,15 +1671,12 @@ export function renderDriftLines(payload) {
       lines.push(`- missing package: \`${item.observed}\``);
     } else {
       lines.push(
-        `- stale command \`${item.name}\`: recorded \`${item.recorded}\` but ${item.observed}`,
+        `- stale command \`${item.name}\`: recorded \`${item.recorded}\` but ${item.observed}`
       );
     }
   }
   lines.push("");
-  lines.push(
-    "Re-run `lodestar-setup`, then re-audit, to supersede this run.",
-    "",
-  );
+  lines.push("Re-run `lodestar-setup`, then re-audit, to supersede this run.", "");
   return lines;
 }
 
@@ -1804,9 +1697,7 @@ export function renderFindings(runId, findings, complete = [], drift = null) {
     }
     byCategory.get(finding.category).push(finding);
   }
-  const completeMap = new Map(
-    complete.map((item) => [item.category, item.count]),
-  );
+  const completeMap = new Map(complete.map((item) => [item.category, item.count]));
   for (const category of CATEGORIES) {
     const items = byCategory.get(category);
     if (completeMap.has(category)) {
@@ -1829,12 +1720,8 @@ export function renderFindings(runId, findings, complete = [], drift = null) {
         lines.push(`    ${line}`);
       }
       lines.push(`- scope_unit: ${finding.scope_unit}`);
-      lines.push(
-        `- requires_decision: ${finding.requires_decision ? "true" : "false"}`,
-      );
-      lines.push(
-        `- in_scope: ${finding.in_scope === false ? "false" : "true"}`,
-      );
+      lines.push(`- requires_decision: ${finding.requires_decision ? "true" : "false"}`);
+      lines.push(`- in_scope: ${finding.in_scope === false ? "false" : "true"}`);
       lines.push("- notes: |");
       for (const line of String(finding.notes || "").split("\n")) {
         lines.push(`    ${line}`);
@@ -1929,9 +1816,7 @@ export function validateActionItem(text, options = {}) {
   const placeholders = findPlaceholders(text);
   if (placeholders.length) {
     errors.push(
-      `unresolved placeholders at lines ${placeholders
-        .map((hit) => hit.line)
-        .join(", ")}`,
+      `unresolved placeholders at lines ${placeholders.map((hit) => hit.line).join(", ")}`
     );
   }
   const fields = parseActionFrontmatter(text);
@@ -1951,10 +1836,7 @@ export function validateActionItem(text, options = {}) {
   if (!ACTION_RISKS.has(fields.risk)) {
     errors.push("risk must be low | medium | high");
   }
-  if (
-    fields.requires_decision !== "true" &&
-    fields.requires_decision !== "false"
-  ) {
+  if (fields.requires_decision !== "true" && fields.requires_decision !== "false") {
     errors.push("requires_decision must be true or false");
   }
   if (!Array.isArray(fields.files) || fields.files.length === 0) {
@@ -1985,24 +1867,18 @@ export function validateActionItem(text, options = {}) {
   }
   // Nested indentation smell from the old template.
   if (/^files:\s*$/m.test(text) && /^\s+scope:/m.test(text)) {
-    errors.push(
-      "scope must be a top-level frontmatter field, not nested under files",
-    );
+    errors.push("scope must be a top-level frontmatter field, not nested under files");
   }
   if (/^\s+findings:/m.test(text) && !/^findings:/m.test(text)) {
-    errors.push(
-      "findings must be a top-level frontmatter field, not nested under files",
-    );
+    errors.push("findings must be a top-level frontmatter field, not nested under files");
   }
   if (sectionBody(text, "Scope rules") !== null) {
     errors.push(
-      "## Scope rules is removed — use ## Scope exceptions for item-specific overrides only (generic safety lives in lodestar-fix)",
+      "## Scope rules is removed — use ## Scope exceptions for item-specific overrides only (generic safety lives in lodestar-fix)"
     );
   }
   if (sectionBody(text, "Prompt for an agent") !== null) {
-    errors.push(
-      "## Prompt for an agent is removed — lodestar-fix owns the executor prompt",
-    );
+    errors.push("## Prompt for an agent is removed — lodestar-fix owns the executor prompt");
   }
   if (sectionBody(text, "Why this matters") !== null) {
     errors.push("## Why this matters is removed — keep evidence in ## Problem");
@@ -2013,20 +1889,13 @@ export function validateActionItem(text, options = {}) {
       errors.push(`missing ## ${heading}`);
       continue;
     }
-    if (
-      !body ||
-      (/[<>].*[<>]/.test(body) && /PLACEHOLDER|path\/to|e\.g\./i.test(body))
-    ) {
+    if (!body || (/[<>].*[<>]/.test(body) && /PLACEHOLDER|path\/to|e\.g\./i.test(body))) {
       errors.push(`## ${heading} is empty or still a placeholder`);
     }
     if (heading === "Problem" && body.length < 20) {
       errors.push("## Problem must include concrete evidence");
     }
-    if (
-      heading === "Suggested fix" &&
-      !/\d+\./.test(body) &&
-      body.length < 20
-    ) {
+    if (heading === "Suggested fix" && !/\d+\./.test(body) && body.length < 20) {
       errors.push("## Suggested fix must be a concrete step list");
     }
     if (heading === "Acceptance check" && body.length < 5) {
@@ -2036,10 +1905,7 @@ export function validateActionItem(text, options = {}) {
   for (const heading of ACTION_ITEM_OPTIONAL_SECTIONS) {
     const body = sectionBody(text, heading);
     if (body === null) continue;
-    if (
-      !body ||
-      (/[<>].*[<>]/.test(body) && /PLACEHOLDER|path\/to|e\.g\./i.test(body))
-    ) {
+    if (!body || (/[<>].*[<>]/.test(body) && /PLACEHOLDER|path\/to|e\.g\./i.test(body))) {
       errors.push(`## ${heading} is empty or still a placeholder`);
     }
   }
@@ -2095,8 +1961,7 @@ function cmdResolveRun(flags) {
   const resumeCandidates = inProgressRuns(auditRoot, date);
   const architectureRoot = architectureOutputRoot(outputRoot);
   if (flags.resume) {
-    const runId =
-      flags.resume === true ? resumeCandidates.at(-1) : flags.resume;
+    const runId = flags.resume === true ? resumeCandidates.at(-1) : flags.resume;
     if (!runId) fail("no in-progress run to resume", 2);
     const runDir = path.join(auditRoot, runId);
     printJson({
@@ -2119,10 +1984,7 @@ function cmdResolveRun(flags) {
   }
   fs.mkdirSync(runDir, { recursive: true });
   if (drift) {
-    atomicWrite(
-      path.join(runDir, ".checkpoint.json"),
-      `${JSON.stringify({ drift }, null, 2)}\n`,
-    );
+    atomicWrite(path.join(runDir, ".checkpoint.json"), `${JSON.stringify({ drift }, null, 2)}\n`);
   }
   printJson({
     runId,
@@ -2170,10 +2032,7 @@ function cmdValidateInput(flags) {
   const root = flags.root || process.cwd();
   const contextPath = path.join(root, ".agents", "lodestar", "context.md");
   if (!fs.existsSync(contextPath)) {
-    fail(
-      ".agents/lodestar/context.md is missing. Run lodestar-setup first.",
-      2,
-    );
+    fail(".agents/lodestar/context.md is missing. Run lodestar-setup first.", 2);
   }
   const contextText = fs.readFileSync(contextPath, "utf8");
   try {
@@ -2218,7 +2077,7 @@ function cmdValidateInput(flags) {
       root,
       packages,
       excluded.excludedPaths,
-      auditSettings.scanExtensions,
+      auditSettings.scanExtensions
     );
   } catch (error) {
     fail(error.message, 2);
@@ -2268,9 +2127,7 @@ function cmdChangedFiles(flags) {
   let excludedPaths = [];
   if (fs.existsSync(contextPath)) {
     try {
-      excludedPaths = parseExcludedPaths(
-        fs.readFileSync(contextPath, "utf8"),
-      ).excludedPaths;
+      excludedPaths = parseExcludedPaths(fs.readFileSync(contextPath, "utf8")).excludedPaths;
     } catch (error) {
       fail(error.message, 2);
     }
@@ -2313,14 +2170,12 @@ function cmdMergeFindings(flags) {
   const merged = applyChangedFiles(
     assignIds(dedupeFindings(sortFindings(findings))),
     changedFiles,
-    expand,
+    expand
   );
   const runId = flags["run-id"] || "merged";
   const complete = [];
   if (flags.out && fs.existsSync(flags.out)) {
-    complete.push(
-      ...parseFindings(fs.readFileSync(flags.out, "utf8")).complete,
-    );
+    complete.push(...parseFindings(fs.readFileSync(flags.out, "utf8")).complete);
   }
   for (const file of files) {
     if (!file.endsWith(".json") && fs.existsSync(file)) {
@@ -2404,10 +2259,8 @@ function cmdValidateOutput(flags) {
   const placeholders = findPlaceholders(text);
   if (placeholders.length) {
     fail(
-      `unresolved placeholders at ${placeholders
-        .map((hit) => `${target}:${hit.line}`)
-        .join(", ")}`,
-      2,
+      `unresolved placeholders at ${placeholders.map((hit) => `${target}:${hit.line}`).join(", ")}`,
+      2
     );
   }
   const parsed = parseFindings(text);
@@ -2418,13 +2271,9 @@ function cmdValidateOutput(flags) {
   parsed.findings.forEach((finding, index) => {
     const expected = padFindingId(index + 1);
     if (finding.id !== expected) {
-      errors.push(
-        `finding ids must be sequential; expected ${expected}, got ${finding.id}`,
-      );
+      errors.push(`finding ids must be sequential; expected ${expected}, got ${finding.id}`);
     }
-    errors.push(
-      ...validateFinding(finding).map((msg) => `${finding.id}: ${msg}`),
-    );
+    errors.push(...validateFinding(finding).map((msg) => `${finding.id}: ${msg}`));
   });
   if (errors.length) fail(errors.join("\n"), 2);
   printJson({
@@ -2439,15 +2288,13 @@ function cmdCheckpoint(flags) {
   const category = flags.category;
   const status = flags.status || "complete";
   const count = Number(flags.count || 0);
-  if (!runDir || !category)
-    fail("checkpoint requires --run-dir and --category", 2);
+  if (!runDir || !category) fail("checkpoint requires --run-dir and --category", 2);
   if (!CATEGORIES.includes(category)) fail(`unknown category ${category}`, 2);
   fs.mkdirSync(runDir, { recursive: true });
   const findingsPath = path.join(runDir, "findings.md");
   const markerPath = path.join(runDir, ".checkpoint.json");
   let existing = "";
-  if (fs.existsSync(findingsPath))
-    existing = fs.readFileSync(findingsPath, "utf8");
+  if (fs.existsSync(findingsPath)) existing = fs.readFileSync(findingsPath, "utf8");
   if (status === "complete") {
     const line = `## category: ${category} — complete (${count} findings)\n`;
     if (!existing.includes(`## category: ${category} — complete`)) {
@@ -2477,9 +2324,7 @@ function cmdCheckpoint(flags) {
       if (!Array.isArray(scanned)) {
         fail("checkpoint --scan-files must be a JSON array of paths", 2);
       }
-      const prior = Array.isArray(previous.scannedFiles)
-        ? previous.scannedFiles
-        : [];
+      const prior = Array.isArray(previous.scannedFiles) ? previous.scannedFiles : [];
       checkpoint.scannedFiles = [
         ...new Set([
           ...prior.map((p) => String(p).replace(/\\/g, "/")),
@@ -2529,16 +2374,9 @@ function cmdRecover(flags) {
       checkpoint = null;
     }
   }
-  const discoverDone =
-    parsed.incompleteCategories.length === 0 &&
-    checkpoint?.status !== "partial";
+  const discoverDone = parsed.incompleteCategories.length === 0 && checkpoint?.status !== "partial";
   printJson({
-    action:
-      indexExists && discoverDone
-        ? "done"
-        : discoverDone
-          ? "plan"
-          : "resume-discover",
+    action: indexExists && discoverDone ? "done" : discoverDone ? "plan" : "resume-discover",
     lastComplete,
     incompleteCategories: parsed.incompleteCategories,
     findings: merged,

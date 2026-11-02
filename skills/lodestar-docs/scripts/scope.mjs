@@ -4,21 +4,19 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import process from "node:process";
+
 import {
+  architectureOutputRoot,
   DEFAULT_ARCHITECTURE_ROOT,
   DEFAULT_OUTPUT_ROOT,
-  architectureOutputRoot,
   isMain,
   observeDocsLayout,
   parseArgs,
   parseDocsLayout,
 } from "./setup-modules.mjs";
 
-export {
-  DEFAULT_ARCHITECTURE_ROOT,
-  DEFAULT_OUTPUT_ROOT,
-  architectureOutputRoot,
-};
+export { DEFAULT_ARCHITECTURE_ROOT, DEFAULT_OUTPUT_ROOT, architectureOutputRoot };
 
 const SKIP_DIR_NAMES = new Set([".git", "node_modules", "dist"]);
 
@@ -32,13 +30,9 @@ function readContext(root) {
     return { contextPath, missing: true };
   }
   const text = fs.readFileSync(contextPath, "utf8");
-  const outputMatch = text.match(
-    /^\|\s*`output-root`\s*\|\s*`?([^`|\n]+)`?/m,
-  );
+  const outputMatch = text.match(/^\|\s*`output-root`\s*\|\s*`?([^`|\n]+)`?/m);
   const commitsMatch = text.match(/^\|\s*`commits`\s*\|\s*`?([^`|\n]+)`?/m);
-  const outputRoot = outputMatch
-    ? outputMatch[1].trim()
-    : DEFAULT_OUTPUT_ROOT;
+  const outputRoot = outputMatch ? outputMatch[1].trim() : DEFAULT_OUTPUT_ROOT;
   return {
     contextPath,
     missing: false,
@@ -163,11 +157,10 @@ export function agentsMdHasDocsMap(root) {
 }
 
 function lastCommitDate(root, relative) {
-  const result = spawnSync(
-    "git",
-    ["log", "-1", "--format=%ad", "--date=short", "--", relative],
-    { cwd: root, encoding: "utf8" },
-  );
+  const result = spawnSync("git", ["log", "-1", "--format=%ad", "--date=short", "--", relative], {
+    cwd: root,
+    encoding: "utf8",
+  });
   if (result.status !== 0) return null;
   const value = result.stdout.trim();
   return value || null;
@@ -191,7 +184,7 @@ function inflightPrefixes(root, context) {
   const staging = new Set(
     resolveLayoutRows(root, context)
       .filter((row) => row.role === "staging")
-      .map((row) => row.path),
+      .map((row) => row.path)
   );
   for (const row of resolveLayoutRows(root, context)) {
     if (row.role !== "inflight") continue;
@@ -214,13 +207,8 @@ function classify(relative, liveRuns, inflight, stagingPaths) {
   if (liveRuns.some((prefix) => underPrefix(relative, prefix))) {
     return { protected: true, reason: "live-audit-run" };
   }
-  const underStaging = stagingPaths.some((prefix) =>
-    underPrefix(relative, prefix),
-  );
-  if (
-    inflight.some((prefix) => underPrefix(relative, prefix)) &&
-    !underStaging
-  ) {
+  const underStaging = stagingPaths.some((prefix) => underPrefix(relative, prefix));
+  if (inflight.some((prefix) => underPrefix(relative, prefix)) && !underStaging) {
     return { protected: true, reason: "inflight-plan" };
   }
   return { protected: false, reason: null };
@@ -266,12 +254,9 @@ export function survey(root, options = {}) {
       const relative = posixRel(root, file);
       if (seen.has(relative)) continue;
       seen.add(relative);
-      const { protected: isProtected, reason } = classify(
-        relative,
-        liveRuns,
-        inflight.prefixes,
-        [...inflight.staging],
-      );
+      const { protected: isProtected, reason } = classify(relative, liveRuns, inflight.prefixes, [
+        ...inflight.staging,
+      ]);
       const stat = fs.statSync(file);
       files.push({
         path: relative,
