@@ -612,6 +612,14 @@ test("isDeclaredEntryImport matches package root and declared subpaths", () => {
   );
 });
 
+test("isDeclaredEntryImport accepts any subpath when entries include *", () => {
+  assert.equal(
+    isDeclaredEntryImport("@common/utils/logout", "@common", ["*"]),
+    true,
+  );
+  assert.equal(isDeclaredEntryImport("@commonx/utils", "@common", ["*"]), false);
+});
+
 test("validate-input accepts one package with an empty dependency graph", () => {
   const tmp = writeLayoutRepo(
     `## Package Layout
@@ -1738,6 +1746,15 @@ test("parseCommands uses only the dev lint command", () => {
   const commands = parseCommands(
     "## Build & Test\n\n| lint | npm run lint; eslint; eslint --format json . |\n",
   );
+  assert.equal(commands.lint, "npm run lint");
+});
+
+test("parseCommands reads backticked labels written by setup", () => {
+  const commands = parseCommands(
+    "## Build & Test\n\n| `build`     | npm run build |\n| `test`      | `npm run test` |\n| `lint`      | npm run lint; eslint; eslint --format json . |\n",
+  );
+  assert.equal(commands.build, "npm run build");
+  assert.equal(commands.test, "npm run test");
   assert.equal(commands.lint, "npm run lint");
 });
 

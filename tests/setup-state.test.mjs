@@ -85,6 +85,30 @@ test("tsconfig paths fill missing package aliases", (t) => {
   );
 });
 
+test("tsconfig directory aliases without an index record * entry points", (t) => {
+  const repo = makeRepo("lodestar-setup-dir-alias-", {
+    "tsconfig.json": `{ "compilerOptions": { "paths": {
+      "@common/*": ["./Common/*"],
+      "@lib/*": ["./Lib/src/*"]
+    } } }`,
+    "Common/utils/logout.ts": "export {};\n",
+    "Lib/src/index.ts": "export {};\n",
+  });
+  t.after(() => fs.rmSync(repo, { recursive: true, force: true }));
+  const rows = applyTsPathAliases(
+    [
+      { name: "Common", path: "Common", alias: "n/a", entryPoints: ["index.ts"] },
+      { name: "Lib", path: "Lib/src", alias: "n/a", entryPoints: ["index.ts"] },
+    ],
+    tsPathAliases(repo),
+    repo,
+  );
+  assert.deepEqual(
+    rows.map((row) => row.entryPoints),
+    [["*"], ["index.ts"]],
+  );
+});
+
 test("collect writes full state and bounded projection", () => {
   const repo = makeRepo("lodestar-setup-state-", {
     "package.json": JSON.stringify({

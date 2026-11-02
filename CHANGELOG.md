@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented here.
 
+## [0.18.9] - 2026-11-02
+
+### Fixed
+
+- **Audit reads setup's command rows.** `parseCommands` accepts the backticked labels setup writes in `## Build & Test`, so acceptance commands and freshness checks no longer silently drop out.
+- **Directory aliases are not deep-import violations.** An `Entry points` value of `*` marks every subpath public, and setup records it for tsconfig directory aliases that have no index file.
+- **Action-item frontmatter starts on line 1.** The template's guidance comment now sits after the frontmatter, so generated items pass validation and `action-state` updates.
+- **Detector greps run as written.** The `errors` A, `boundaries` C, and `testability` A pipelines use extended regex and account for `grep -n` prefixes, so they return candidates instead of failing or matching nothing.
+
 ## [0.18.8] - 2026-11-02
 
 ### Fixed

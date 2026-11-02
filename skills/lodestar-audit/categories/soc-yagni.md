@@ -94,7 +94,7 @@ grep -rEn "\([^)]*: *boolean[^)]*: *boolean" <all_pkg_roots> \
   --include="*.ts" --include="*.tsx"
 #   Adjacent boolean literals at call sites (heuristic — check context):
 grep -rEn "\((true|false), *(true|false)" <all_pkg_roots> \
-  --include="*.ts" --include="*.tsx" | grep -v "\.spec\.\|\.test\."
+  --include="*.ts" --include="*.tsx" | grep -vE "\.(spec|test)\."
 
 # C — optional params with no caller (per function; needs a per-function loop)
 #   1. Find candidates: `grep -rEn "\?: " <all_pkg_roots> --include="*.ts"`

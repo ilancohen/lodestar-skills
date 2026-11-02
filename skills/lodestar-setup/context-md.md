@@ -107,7 +107,9 @@ behavior; every row is scanned.
 `Entry points` are comma-separated paths relative to the package root
 (`index.ts`, `server`, `client`). **Absent means `index.ts`.** A
 multi-entry `exports` map is a deliberate API surface — importing those
-subpaths is not `imports` #1.
+subpaths is not `imports` #1. `*` means every subpath is public — use it
+for a directory alias (tsconfig `@common/*` → `Common/*`) with no index
+file; setup records it automatically in that case.
 
 A single-package repo with **one** scannable row has no policy edges.
 `imports` #6 and `boundaries` B cannot fire — list them in `INDEX.md` as

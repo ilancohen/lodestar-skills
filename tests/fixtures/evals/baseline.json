@@ -1,14 +1,14 @@
 {
   "version": 1,
   "capturedAt": "2026-09-08",
-  "notes": "Stage 02 setup slimdown (reduce-setup-conversation-cost): collector-driven setup refs; lodestar-setup markdownWords 8154 (was ~12358; +88 vs first slim draft restores Fallow entry-point review + summarize --state next tips; +38 in 0.18.6 for the linter-probe question so unknown linters no longer produce contexts audit rejects; +14 in 0.18.7 so Fallow installs run with network access and never switch registries). Informal Cursor context figures (~44.8K / ~21.7K conversation pre-slimdown) are motivation only — hostJourneys.cursor stays untested until a full recorded journey lands under results/. Hermetic acceptance: setup-state caps, write-context goldens, unit tests. Other hosts untested. Stage-01 scenario re-compares still deferred. PR-review fixes: lodestar-fix +54 so fix commits are path-scoped and runs with compact backlog are not archived; lodestar-audit +2 for dropping linter mappings that misclassified types #1 / errors B.",
+  "notes": "Stage 02 setup slimdown (reduce-setup-conversation-cost): collector-driven setup refs; lodestar-setup markdownWords 8154 (was ~12358; +88 vs first slim draft restores Fallow entry-point review + summarize --state next tips; +38 in 0.18.6 for the linter-probe question so unknown linters no longer produce contexts audit rejects; +14 in 0.18.7 so Fallow installs run with network access and never switch registries). Informal Cursor context figures (~44.8K / ~21.7K conversation pre-slimdown) are motivation only — hostJourneys.cursor stays untested until a full recorded journey lands under results/. Hermetic acceptance: setup-state caps, write-context goldens, unit tests. Other hosts untested. Stage-01 scenario re-compares still deferred. PR-review fixes: lodestar-fix +54 so fix commits are path-scoped and runs with compact backlog are not archived; lodestar-audit +2 for dropping linter mappings that misclassified types #1 / errors B. 0.18.9 PR-review fixes: lodestar-setup +8 documents the * entry point for directory aliases; lodestar-audit +29 for that entry point in imports #1, the action-item template comment moved below frontmatter, and working detector greps.",
   "markdownWords": {
     "lodestar-setup": {
-      "words": 8206,
+      "words": 8214,
       "files": 16
     },
     "lodestar-audit": {
-      "words": 17579,
+      "words": 17608,
       "files": 18
     },
     "lodestar-fix": {

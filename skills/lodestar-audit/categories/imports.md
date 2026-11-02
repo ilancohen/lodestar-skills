@@ -18,7 +18,9 @@ barrels) are grep-only; #6 falls back to the grep below when
    A multi-entry `exports` map is a deliberate API surface, not a
    violation. Drop a hit when `isDeclaredEntryImport(specifier, alias,
 entryPoints)` is true (`audit-state.mjs`): canonicalize by stripping
-   `./`, and treat empty / `.` / `index.ts` as the default entry.
+   `./`, and treat empty / `.` / `index.ts` as the default entry. An
+   entry of `*` (directory alias) makes every subpath declared, so #1
+   never fires for that package.
 
 2. **Missing re-export** — an external consumer needs something that isn't
    exported from the source package's `index.ts`.

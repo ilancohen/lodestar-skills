@@ -349,14 +349,23 @@ export function tsPathAliases(root) {
   return aliases;
 }
 
-export function applyTsPathAliases(packages, aliases) {
+const INDEX_FILES = ["index.ts", "index.tsx", "index.js", "index.mjs", "index.cjs"];
+
+export function applyTsPathAliases(packages, aliases, root = null) {
   return packages.map((row) => {
     if (row.alias && row.alias !== "n/a") return row;
     const pkgPath = posixPath(row.path);
     const match = aliases
       .filter(({ dir }) => pkgPath === "." || dir === pkgPath || dir.startsWith(`${pkgPath}/`))
       .sort((a, b) => a.dir.length - b.dir.length || a.alias.localeCompare(b.alias))[0];
-    return match ? { ...row, alias: match.alias } : row;
+    if (!match) return row;
+    const defaultEntries =
+      !row.entryPoints?.length || (row.entryPoints.length === 1 && row.entryPoints[0] === "index.ts");
+    const directoryAlias =
+      root && !INDEX_FILES.some((name) => existsFile(root, `${match.dir}/${name}`));
+    return defaultEntries && directoryAlias
+      ? { ...row, alias: match.alias, entryPoints: ["*"] }
+      : { ...row, alias: match.alias };
   });
 }
 
@@ -1652,7 +1661,7 @@ export function collectState(root, options = {}) {
   let layout = collectPackages(root, commands.layoutSource);
   layout = {
     ...layout,
-    packages: applyTsPathAliases(layout.packages, tsPathAliases(root)),
+    packages: applyTsPathAliases(layout.packages, tsPathAliases(root), root),
   };
   // Preserve recorded package responsibilities and hand-set aliases.
   if (existing.packageLayout?.length) {

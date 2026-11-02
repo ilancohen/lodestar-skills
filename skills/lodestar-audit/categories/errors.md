@@ -52,7 +52,7 @@ silently.
 # A — empty / log-only catches (use if linter probe didn't cover this)
 grep -rEn -A 4 "} catch" <all_pkg_roots> \
   --include="*.ts" --include="*.tsx" \
-  | grep -B 3 "^\s*}|console\.(log|warn|error)\s*\("
+  | grep -E -B 3 "[:-][0-9]+[:-][[:space:]]*}[[:space:]]*$|console\.(log|warn|error)[[:space:]]*\("
 
 # B — thrown errors that look expected (use if linter probe didn't cover this)
 # Skip this grep when `errors` B is absent from validate-input activeDetectors.

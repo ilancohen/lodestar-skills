@@ -51,7 +51,7 @@ table in `context.md`. Substitute before running.
 ```bash
 # A — calls at module scope (heuristic; review required)
 grep -rEn "^[a-zA-Z_].*\(" <all_pkg_roots> --include="*.ts" \
-  | grep -v "^[^:]*:[[:space:]]*(export|const|let|var|function|class|interface|type|import|//)"
+  | grep -vE "^[^:]*:[0-9]+:[[:space:]]*(export|const|let|var|async|function|class|interface|type|import|//)"
 
 # Event listeners and connection openers at module scope (apply A's
 # requires_decision defaults from prose above).
@@ -60,7 +60,7 @@ grep -rEn "^.*(addEventListener|\.on\(|subscribe\(|connect\(|createPool|createCl
 
 # B — module-level mutable bindings
 grep -rEn "^(let|var) " <all_pkg_roots> --include="*.ts" \
-  | grep -v "\.spec\.\|\.test\."
+  | grep -vE "\.(spec|test)\."
 ```
 
 ## Action-item granularity

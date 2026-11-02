@@ -1,10 +1,3 @@
-<!--
-Template for a single action-item file.
-Replace every <PLACEHOLDER>. Omit ## Decision unless requires_decision is
-true. Omit ## Scope exceptions when resident lodestar-fix rules suffice.
-The file must be understandable alone, without copying whole category docs.
--->
-
 ---
 id: <NNN>
 category: <imports | types | boundaries | errors | testability | soc-yagni | dry | ssot | styling>
@@ -17,6 +10,14 @@ files:
 scope: <one-line description of the smallest landable unit>
 findings: <comma-separated F-IDs this action item absorbs, e.g. F0007, F0008>
 ---
+
+<!--
+Template for a single action-item file. Frontmatter must stay on line 1.
+Replace every <PLACEHOLDER>, then delete this comment. Omit ## Decision
+unless requires_decision is true. Omit ## Scope exceptions when resident
+lodestar-fix rules suffice. The file must be understandable alone, without
+copying whole category docs.
+-->
 
 # <NNN> — <Imperative title, e.g. "Move `User` type to shared/types/domain.ts">
 

@@ -116,15 +116,15 @@ grep -rEn "(id|Id): string|(price|amount): number|slug: string" \
 grep -rEn "^\s*if \(" <all_pkg_roots> \
   --include="*.ts" --include="*.tsx" \
   | grep -E "/(routes|handlers|controllers)/|\.tsx:|/(infra|adapters|persistence|integrations)/" \
-  | grep -v "\.spec\.\|\.test\."
+  | grep -vE "\.(spec|test)\."
 
 # C — function returns AND causes a side effect (heuristic; needs review)
 grep -rEn -A 10 "(async function|=> \{)" <all_pkg_roots> --include="*.ts" \
-  | grep -B5 "return " | grep -B5 "await.*\.(create|update|delete|save|insert)\(\|emit\(\|dispatch\("
+  | grep -B5 "return " | grep -E -B5 "await.*\.(create|update|delete|save|insert)\(|emit\(|dispatch\("
 
 # D — getter chains
 grep -rEn "\.\w+\(\)\.\w+\(\)\." <all_pkg_roots> --include="*.ts" \
-  | grep -v "\.spec\.\|\.test\.\|\.d\.ts"
+  | grep -vE "\.(spec|test)\.|\.d\.ts"
 
 # E — validation inside non-boundary files
 #   First find all validation calls, then filter to files that don't look

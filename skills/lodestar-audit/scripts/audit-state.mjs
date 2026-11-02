@@ -213,6 +213,7 @@ export function isDeclaredEntryImport(specifier, alias, entryPoints) {
     .trim();
   if (spec === prefix) return true;
   if (!spec.startsWith(`${prefix}/`)) return false;
+  if (entryPoints?.includes("*")) return true;
   const subpath = canonicalizeEntry(spec.slice(prefix.length + 1));
   const entries = (entryPoints?.length ? entryPoints : ["index.ts"]).map(canonicalizeEntry);
   return entries.includes(subpath);
@@ -304,9 +305,9 @@ export function parseLintCell(raw) {
 export function parseCommands(contextText) {
   const commands = {};
   for (const name of COMMAND_NAMES) {
-    const match = contextText.match(new RegExp(`\\|\\s*${name}\\s*\\|\\s*([^|]+)\\|`, "i"));
+    const match = contextText.match(new RegExp(`\\|\\s*\`?${name}\`?\\s*\\|\\s*([^|]+)\\|`, "i"));
     if (!match) continue;
-    const raw = match[1].trim();
+    const raw = match[1].trim().replace(/^`+|`+$/g, "");
     if (name === "lint") {
       try {
         const cell = parseLintCell(raw);
