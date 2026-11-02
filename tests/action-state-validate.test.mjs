@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -27,6 +28,32 @@ test("action-state usage lists only serial state commands", () => {
     /list\|set-status\|move-done\|archive-run\|commit-message/,
   );
   assert.doesNotMatch(result.stderr, /validate-returns/);
+});
+
+test("archive-run refuses while compact findings remain", (t) => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "action-archive-"));
+  t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+  const runDir = path.join(tmp, "2026-08-18");
+  fs.mkdirSync(runDir);
+  fs.copyFileSync(
+    path.join(ROOT, "tests/fixtures/audit-runs/scoped-backlog/findings.md"),
+    path.join(runDir, "findings.md"),
+  );
+  const archive = (...extra) =>
+    spawnSync(
+      process.execPath,
+      [ACTION, "archive-run", "--run-dir", runDir, ...extra],
+      { encoding: "utf8" },
+    );
+
+  const blocked = archive();
+  assert.equal(blocked.status, 2);
+  assert.match(blocked.stderr, /1 compact findings/);
+  assert.ok(fs.existsSync(runDir));
+
+  const abandoned = archive("--abandon-backlog");
+  assert.equal(abandoned.status, 0, abandoned.stderr);
+  assert.ok(fs.existsSync(path.join(tmp, "done", "2026-08-18", "findings.md")));
 });
 
 test("fix skill and execute refs forbid fan-out and dirty-file edits", () => {

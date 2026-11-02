@@ -63,16 +63,19 @@ These detectors produce candidate clusters (confirm each per the scope rules bel
 # A — repeated string literals across 3+ files
 #   The 3-file threshold filters two-copy coincidences. Adjust by hand
 #   if the codebase has well-known shared strings (logger tags, etc.).
-grep -rEohn "'[A-Za-z_./:@-][A-Za-z0-9_./:@-]{3,}'" <all_pkg_roots> \
+#   Counts distinct files per literal.
+grep -rEoH "'[A-Za-z_./:@-][A-Za-z0-9_./:@-]{3,}'" <all_pkg_roots> \
   --include="*.ts" --include="*.tsx" \
+  | sort -u | sed 's/^[^:]*://' \
   | sort | uniq -c | awk '$1 >= 3 {print}' | sort -rn
 
 # A — repeated numeric constants (3+ digit integers, excluding test files)
 #   Filter trivial / common values (1000, 60000, 200, 404, 500) by hand —
 #   not every shared number is an SSOT violation.
-grep -rEohn "\b[0-9]{3,}\b" <all_pkg_roots> \
+grep -rEoH "\b[0-9]{3,}\b" <all_pkg_roots> \
   --include="*.ts" --include="*.tsx" \
-  | grep -vE "\.spec\.|\.test\." \
+  --exclude="*.spec.*" --exclude="*.test.*" \
+  | sort -u | sed 's/^[^:]*://' \
   | sort | uniq -c | awk '$1 >= 3 {print}' | sort -rn
 
 # B — schema factories called in 2+ packages

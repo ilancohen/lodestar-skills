@@ -37,8 +37,7 @@ null.
 
 From the cached output, extract violations for:
 
-- **#1** → misplaced-type (see rule table in linter-probe.md)
-- **#3** → unguarded-any
+- **#3** → unguarded-any (#1 comes only from the scan below)
 
 If the linter probe produces no output (not configured, wrong rules, error),
 fall through to the greps below silently.

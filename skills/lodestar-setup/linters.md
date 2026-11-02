@@ -18,10 +18,7 @@ Recommend enabling (in `eslint.config.*` or `.eslintrc.*`):
 ```js
 // @typescript-eslint rules that map directly to lodestar-audit categories
 '@typescript-eslint/no-explicit-any': 'error',          // types #3
-'@typescript-eslint/consistent-type-imports': 'error',  // types #1
 '@typescript-eslint/no-floating-promises': 'error',     // errors A
-'@typescript-eslint/no-throw-literal': 'error',         // errors B
-'@typescript-eslint/prefer-promise-reject-errors': 'error', // errors B
 ```
 
 These rules are already assumed by lodestar-audit's fix recipes (e.g. the
@@ -54,7 +51,6 @@ groups. Check that these are enabled:
 
 - `correctness/noFloatingPromises` → errors A
 - `suspicious/noExplicitAny` → types #3
-- `correctness/useImportType` → types #1
 
 Biome does not have a boundaries/layer enforcement rule. The grep fallback
 in lodestar-audit handles `boundaries.B` when Biome is the only linter.
@@ -64,6 +60,6 @@ in lodestar-audit handles `boundaries.B` when Biome is the only linter.
 When the recorded tool is not ESLint or Biome, look up that linter's
 docs for rules equivalent to the mappings in
 [`lodestar-audit/references/linter-probe.md`](../lodestar-audit/references/linter-probe.md)
-(`types` #1/#3, `errors` A/B). Enable them in the existing config only
+(`types` #3, `errors` A). Enable them in the existing config only
 — do not install packages. If the tool has no JSON reporter or no
 matching rule, skip; the audit falls back to grep heuristics.

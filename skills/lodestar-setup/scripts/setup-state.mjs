@@ -306,6 +306,91 @@ function packageAlias(pkgJson) {
   return "n/a";
 }
 
+export function parseJsonc(text) {
+  let out = "";
+  let inString = false;
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (inString) {
+      out += ch;
+      if (ch === "\\") out += text[++i] ?? "";
+      else if (ch === '"') inString = false;
+    } else if (ch === '"') {
+      inString = true;
+      out += ch;
+    } else if (ch === "/" && text[i + 1] === "/") {
+      while (i < text.length && text[i] !== "\n") i += 1;
+      out += "\n";
+    } else if (ch === "/" && text[i + 1] === "*") {
+      i = text.indexOf("*/", i + 2);
+      if (i < 0) break;
+      i += 1;
+    } else {
+      out += ch;
+    }
+  }
+  return JSON.parse(out.replace(/,(\s*[}\]])/g, "$1"));
+}
+
+function readTsPaths(root) {
+  for (const name of ["tsconfig.json", "jsconfig.json"]) {
+    let file = path.join(root, name);
+    for (let depth = 0; depth < 5 && fs.existsSync(file); depth += 1) {
+      let config;
+      try {
+        config = parseJsonc(fs.readFileSync(file, "utf8"));
+      } catch {
+        break;
+      }
+      const options = config?.compilerOptions || {};
+      if (options.paths && typeof options.paths === "object") {
+        const base = path.resolve(path.dirname(file), options.baseUrl || ".");
+        return { base, paths: options.paths };
+      }
+      const parent = typeof config?.extends === "string" ? config.extends : "";
+      if (!parent.startsWith(".")) break;
+      file = path.resolve(path.dirname(file), parent);
+      if (!file.endsWith(".json")) file += ".json";
+    }
+  }
+  return null;
+}
+
+export function tsPathAliases(root) {
+  const found = readTsPaths(root);
+  if (!found) return [];
+  const aliases = [];
+  for (const [key, targets] of Object.entries(found.paths)) {
+    if (!key.endsWith("/*") || !Array.isArray(targets)) continue;
+    const target = targets.find(
+      (entry) => typeof entry === "string" && entry.endsWith("/*"),
+    );
+    if (!target) continue;
+    const dir = posixPath(
+      path.relative(root, path.resolve(found.base, target.slice(0, -2))),
+    );
+    if (dir.startsWith("..")) continue;
+    aliases.push({ alias: key.slice(0, -2), dir });
+  }
+  return aliases;
+}
+
+export function applyTsPathAliases(packages, aliases) {
+  return packages.map((row) => {
+    if (row.alias && row.alias !== "n/a") return row;
+    const pkgPath = posixPath(row.path);
+    const match = aliases
+      .filter(
+        ({ dir }) =>
+          pkgPath === "." || dir === pkgPath || dir.startsWith(`${pkgPath}/`),
+      )
+      .sort(
+        (a, b) => a.dir.length - b.dir.length || a.alias.localeCompare(b.alias),
+      )[0];
+    return match ? { ...row, alias: match.alias } : row;
+  });
+}
+
 function packageEntryPoints(pkgJson) {
   if (!pkgJson || typeof pkgJson !== "object") return ["index.ts"];
   const entries = new Set();
@@ -1687,7 +1772,11 @@ export function collectState(root, options = {}) {
     });
   }
   let layout = collectPackages(root, commands.layoutSource);
-  // Preserve recorded package responsibilities when present.
+  layout = {
+    ...layout,
+    packages: applyTsPathAliases(layout.packages, tsPathAliases(root)),
+  };
+  // Preserve recorded package responsibilities and hand-set aliases.
   if (existing.packageLayout?.length) {
     const byName = new Map(
       existing.packageLayout.map((row) => [row.name, row]),
@@ -1699,8 +1788,12 @@ export function collectState(root, options = {}) {
       ...layout,
       packages: layout.packages.map((row) => {
         const prev = byName.get(row.name) || byPath.get(posixPath(row.path));
-        if (!prev?.responsibility) return row;
-        return { ...row, responsibility: prev.responsibility };
+        if (!prev) return row;
+        const next = { ...row };
+        if (prev.responsibility) next.responsibility = prev.responsibility;
+        if ((!row.alias || row.alias === "n/a") && prev.alias && prev.alias !== "n/a")
+          next.alias = prev.alias;
+        return next;
       }),
     };
   }

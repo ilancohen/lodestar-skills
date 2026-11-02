@@ -58,20 +58,21 @@ message text when ids differ.
 
 ### `types`
 
-| Finding           | Rule ids (any match)                                                                                                |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------- |
-| #1 misplaced-type | `@typescript-eslint/consistent-type-imports`, `correctness/useImportType`, `import/consistent-type-specifier-style` |
-| #3 unguarded-any  | `@typescript-eslint/no-explicit-any`, `suspicious/noExplicitAny`, `typescript/no-explicit-any`                      |
+| Finding          | Rule ids (any match)                                                                           |
+| ---------------- | ---------------------------------------------------------------------------------------------- |
+| #3 unguarded-any | `@typescript-eslint/no-explicit-any`, `suspicious/noExplicitAny`, `typescript/no-explicit-any` |
+
+#1 has no linter mapping: type-import syntax rules do not show which
+package owns a type.
 
 ### `errors`
 
-| Finding                   | Rule ids (any match)                                                                                                                                               |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| A swallowed-async         | `@typescript-eslint/no-floating-promises`, `correctness/noFloatingPromises`, `typescript/no-floating-promises`                                                     |
-| B expected-failure-thrown | `@typescript-eslint/no-throw-literal`, `@typescript-eslint/prefer-promise-reject-errors`, `style/noThrowLiteral` (skip when `conventions["result-types"]` is `no`) |
+| Finding           | Rule ids (any match)                                                                                           |
+| ----------------- | -------------------------------------------------------------------------------------------------------------- |
+| A swallowed-async | `@typescript-eslint/no-floating-promises`, `correctness/noFloatingPromises`, `typescript/no-floating-promises` |
 
-Linter-sourced B findings do not require `requires_decision: true` by
-default (unlike grep-sourced ones).
+B has no linter mapping: non-Error throw rules do not show whether a
+failure is expected.
 
 ### `boundaries` B
 

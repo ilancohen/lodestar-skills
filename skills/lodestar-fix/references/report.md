@@ -27,7 +27,8 @@ What you can do next:
 ### Step 4a — Promote a finished run
 
 After the report, if the run root has no action-item files left
-(`INDEX.md`, `done/`, and other non-items ok), the run is resolved:
+(`INDEX.md`, `done/`, and other non-items ok) **and** `findings.md` has
+no compact findings (`in_scope: false`), the run is resolved:
 
 ```text
 node <skill-dir>/scripts/action-state.mjs archive-run --run-dir <output-root>/<RUN_ID>
@@ -40,6 +41,10 @@ Nothing left in this batch. Moved it to <output-root>/done/<RUN_ID>/.
 ```
 
 If action-item files remain, skip this step.
+
+If compact findings remain, skip it too and tell the user to rerun
+`lodestar-audit` on this run for the next slice. Pass
+`--abandon-backlog` only if the user says to drop them.
 
 ### Step 4b — Do not overwrite Dependency Policy from observation
 

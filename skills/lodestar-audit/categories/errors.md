@@ -43,12 +43,10 @@ null.
 
 From the cached output, extract violations for:
 
-- **A** → swallowed-async
-- **B** → expected-failure-thrown (skip when absent from `activeDetectors`)
+- **A** → swallowed-async (B comes only from the grep and caller check below)
 
-Linter-sourced B findings do not require `requires_decision: true` by
-default (unlike grep-sourced ones). If the probe produces no output,
-fall through to the greps below silently.
+If the probe produces no output, fall through to the greps below
+silently.
 
 ```bash
 # A — empty / log-only catches (use if linter probe didn't cover this)

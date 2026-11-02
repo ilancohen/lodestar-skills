@@ -9,6 +9,7 @@ import {
   MAX_FAILURE_BYTES,
   MAX_STDOUT_BYTES,
   STATE_VERSION,
+  applyTsPathAliases,
   collectState,
   composeFallowAddDev,
   mergeContext,
@@ -16,6 +17,7 @@ import {
   projectPermissions,
   projectReview,
   renderContext,
+  tsPathAliases,
 } from "../skills/lodestar-setup/scripts/setup-state.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -46,6 +48,42 @@ function writeSkillsTree(base, names) {
     fs.writeFileSync(path.join(skill, "SKILL.md"), `# ${name}\n`);
   }
 }
+
+test("tsconfig paths fill missing package aliases", (t) => {
+  const repo = makeRepo("lodestar-setup-paths-", {
+    "tsconfig.base.json": `{
+      // comments and trailing commas are allowed
+      "compilerOptions": {
+        "$schema": "https://example.com/x",
+        "baseUrl": "./",
+        "paths": {
+          "@recovery/*": ["./ADFR/src/app/*"],
+          "@common/*": ["./Common/*"],
+          "@sharedUtils/*": ["./Shared/Scripts/utils/*"],
+          "@shared/*": ["./Shared/src/*"],
+          "commonUtils": ["./Shared/Scripts/utils/commonUtils.js"],
+          "@/*": ["./*"],
+        },
+      },
+    }`,
+    "tsconfig.json": `{ "extends": "./tsconfig.base.json" }`,
+  });
+  t.after(() => fs.rmSync(repo, { recursive: true, force: true }));
+  const rows = applyTsPathAliases(
+    [
+      { name: "ADFR", path: "ADFR/src", alias: "n/a" },
+      { name: "Common", path: "Common", alias: "n/a" },
+      { name: "Shared", path: "Shared/src", alias: "n/a" },
+      { name: "Named", path: "Named/src", alias: "@scope/named" },
+      { name: "Other", path: "Other/src", alias: "n/a" },
+    ],
+    tsPathAliases(repo),
+  );
+  assert.deepEqual(
+    rows.map((row) => row.alias),
+    ["@recovery", "@common", "@shared", "@scope/named", "n/a"],
+  );
+});
 
 test("collect writes full state and bounded projection", () => {
   const repo = makeRepo("lodestar-setup-state-", {

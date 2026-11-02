@@ -46,6 +46,13 @@ function listItems(runDir) {
     .map((name) => path.join(runDir, name));
 }
 
+function countBacklog(runDir) {
+  const file = path.join(runDir, "findings.md");
+  if (!fs.existsSync(file)) return 0;
+  return (fs.readFileSync(file, "utf8").match(/^- in_scope:\s*false\s*$/gm) || [])
+    .length;
+}
+
 function summarize(runDir) {
   const items = [];
   for (const file of listItems(runDir)) {
@@ -129,6 +136,13 @@ function cmdArchiveRun(flags) {
   if (remaining.length) {
     fail(
       `cannot archive: ${remaining.length} action items remain in the run root`,
+      2,
+    );
+  }
+  const backlog = countBacklog(runDir);
+  if (backlog && flags["abandon-backlog"] !== true) {
+    fail(
+      `cannot archive: ${backlog} compact findings (in_scope: false) remain in findings.md; pass --abandon-backlog only if the user chose to drop them`,
       2,
     );
   }

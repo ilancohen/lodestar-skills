@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented here.
 
+## [0.18.8] - 2026-11-02
+
+### Fixed
+
+- **Import aliases from tsconfig paths.** Setup fills missing package aliases from `tsconfig.json` / `jsconfig.json` `paths` (following relative `extends`) and keeps hand-set aliases on rerun, so audit sees alias imports between packages.
+- **Fix commits are path-scoped.** `lodestar-fix` commits with a pathspec so files the user already staged never ride along.
+- **Backlog keeps runs live.** `archive-run` refuses while `findings.md` still has `in_scope: false` findings unless `--abandon-backlog` is passed.
+- **SSOT detectors count files.** The repeated string and number greps count distinct files instead of `line:value` pairs, and skip test files properly.
+- **No misleading linter mappings.** Type-import syntax rules no longer produce `types` #1 findings, and non-Error throw rules no longer produce `errors` B findings.
+
 ## [0.18.7] - 2026-09-27
 
 ### Fixed

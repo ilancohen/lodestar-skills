@@ -86,9 +86,11 @@ If `AUTO_COMMIT == yes`:
 Write stdout to a temp file, then:
 
 ```
-git add <files from item>
-git commit -F <temp>
+git add -- <files from item>
+git commit -F <temp> -- <files from item>
 ```
+
+Keep the commit pathspec so unrelated staged work stays out.
 
 Delete the temp message file after the commit attempt (success or
 failure). Do not leave diagnostic temps in the repo.
