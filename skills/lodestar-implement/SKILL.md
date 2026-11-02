@@ -12,7 +12,7 @@ license: MIT
 compatibility: Requires git, Node.js, and the target repository's typecheck and test commands — read from .agents/lodestar/context.md when present, otherwise discovered from the repo (a check with no command is skipped). Needs lodestar-setup installed, not run. Lockfiles detect npm, pnpm, yarn, and Bun; other managers via context.md. No Deno or Bazel.
 metadata:
   author: Ilan Cohen
-  version: "0.18.7"
+  version: "0.18.8"
 ---
 
 You are running `lodestar-implement`. Execute a plan from the resolved
